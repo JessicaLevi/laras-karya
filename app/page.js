@@ -1,7 +1,15 @@
-export default function Page() {
+import Hero from "@/components/landing/hero";
+import { Questions, Jobs, CtaBanner } from "@/components/landing/sections";
+import Footer from "@/components/landing/footer";
+
+export default function LandingPage() {
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Onboarding</h1>
+    <main>
+      <Hero />
+      <Questions />
+      <Jobs />
+      <CtaBanner />
+      <Footer />
     </main>
   );
 }
