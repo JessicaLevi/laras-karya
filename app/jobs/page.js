@@ -10,7 +10,7 @@ export const metadata = {
 export default function JobsPage() {
   return (
     <main className="flex-1 bg-surface">
-      <div className="mx-auto max-w-6xl px-5 pb-16 pt-8">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 pb-16 pt-8">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
           <Link href="/home" className="hover:underline">Beranda</Link> / <span>Rekomendasi Karier</span>
         </nav>
