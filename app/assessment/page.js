@@ -3,3 +3,4 @@ import { redirect } from "next/navigation";
 export default function AssessmentIndexPage() {
   redirect("/assessment/1");
 }
+
