@@ -141,7 +141,9 @@
   --color-ink: #16302a;
   --color-surface: #f8faf8;
   --color-mint: #e8f4f0;
+  --color-mint-line: #c8e6dc;
   --color-line: #e2e8f0;
+  --color-warn: #b45309;
   --color-teal: #39786c;
   --color-ai: #be185d; /* aksen AI untuk teks, kontras ±6:1 */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
