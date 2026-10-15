@@ -13,7 +13,7 @@ export default function Hero() {
   return (
     <>
       <section id="tentang" className="bg-surface">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:py-24">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 md:px-6 xl:px-8 py-16 md:grid-cols-2 md:py-24">
           <div>
             <span className="inline-block rounded-full bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand">
               Platform Karier Hijau untuk Perempuan
@@ -63,7 +63,7 @@ export default function Hero() {
       </section>
 
       <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-6 text-center">
+        <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-6 text-center">
           <p className="text-sm font-medium text-slate-700">
             Peluang green jobs untuk perempuan yang berpindah karier, belajar dari pengalaman praktik, atau baru memulai
           </p>

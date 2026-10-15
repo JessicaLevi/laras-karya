@@ -19,7 +19,7 @@ const Linkedin = () => (
 export default function Footer() {
   return (
     <footer className="bg-brand text-emerald-100/80">
-      <div className="mx-auto max-w-6xl px-5 pt-14">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 pt-14">
         <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
           <div>
             <Logo light />

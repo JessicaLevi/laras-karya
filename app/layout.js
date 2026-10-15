@@ -3,6 +3,9 @@ import { Navbar } from "@/components/layout/navbar";
 import PwaRegister from "@/components/pwa-register";
 import "./globals.css";
 
+import { Suspense } from "react";
+import NavbarGate from "@/components/layout/navbar-gate";
+
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   weight: ["400", "500", "600", "700"],
@@ -13,7 +16,11 @@ export const metadata = {
   title: "Laras Karya",
   description: "Platform Karir Sektor Hijau untuk Perempuan Indonesia",
   applicationName: "Laras Karya",
-  appleWebApp: { capable: true, title: "Laras Karya", statusBarStyle: "default" },
+  appleWebApp: {
+    capable: true,
+    title: "Laras Karya",
+    statusBarStyle: "default",
+  },
   icons: { icon: "/favicon.ico", apple: "/icons/icon-192.png" },
 };
 
@@ -27,7 +34,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Navbar />
+        <Suspense fallback={null}>
+          <NavbarGate>
+            <Navbar />
+          </NavbarGate>
+        </Suspense>
         {children}
         <PwaRegister />
       </body>

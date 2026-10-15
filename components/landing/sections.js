@@ -26,7 +26,7 @@ const jobs = [
 export function Questions() {
   return (
     <section className="bg-brand-light">
-      <div className="mx-auto max-w-6xl px-5 py-16">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
         <h2 className="text-center text-3xl font-bold text-brand">Empat pertanyaan yang kami bantu jawab</h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {questions.map(({ icon: Icon, title, text }) => (
@@ -63,7 +63,7 @@ export function Questions() {
 export function Jobs() {
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-6xl px-5 py-16">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
         <div className="flex items-end justify-between">
           <h2 className="text-3xl font-bold text-ink">Peluang Karier Hijau untuk Anda</h2>
           <Link href="/jobs" className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline">
@@ -100,7 +100,7 @@ export function Jobs() {
 export function CtaBanner() {
   return (
     <section className="bg-surface">
-      <div className="mx-auto max-w-6xl px-5 py-10">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-10">
         <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand p-8 md:flex-row md:items-center md:p-14">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-ai">
