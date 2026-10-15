@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -94,14 +94,18 @@ function NavbarView({ user, pathname, open, onToggle }) {
   );
 }
 
-/** Bagian yang membaca URL (usePathname). Harus berada di dalam <Suspense>. */
-function NavbarContent({ user }) {
-  const pathname = usePathname();
+/** Bagian tampilan navbar dengan state menu mobile. */
+function NavbarContent({ user, pathname }) {
   const [open, setOpen] = useState(false);
 
-  useEffect(() => setOpen(false), [pathname]);
-
   return <NavbarView user={user} pathname={pathname} open={open} onToggle={() => setOpen((v) => !v)} />;
+}
+
+/** Bagian yang membaca URL (usePathname). key={pathname} otomatis mereset menu mobile saat rute berganti. */
+function NavbarRouter({ user }) {
+  const pathname = usePathname();
+
+  return <NavbarContent key={pathname} user={user} pathname={pathname} />;
 }
 
 /**
@@ -113,7 +117,7 @@ function NavbarContent({ user }) {
 export function Navbar({ user = MOCK_USER }) {
   return (
     <Suspense fallback={<NavbarView user={user} pathname="" open={false} onToggle={() => {}} />}>
-      <NavbarContent user={user} />
+      <NavbarRouter user={user} />
     </Suspense>
   );
 }

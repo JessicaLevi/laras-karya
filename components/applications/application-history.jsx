@@ -95,12 +95,24 @@ export function ApplicationHistory({ applications }) {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulasi fetch (hapus saat data dari Supabase)
+  // Simulasi fetch pertama kali (hapus saat data dari Supabase)
   useEffect(() => {
-    setIsLoading(true);
     const t = setTimeout(() => setIsLoading(false), 350);
     return () => clearTimeout(t);
-  }, [filter, page]);
+  }, []);
+
+  const handleFilterChange = (val) => {
+    setFilter(val);
+    setPage(1);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 350);
+  };
+
+  const handlePageChange = (p) => {
+    setPage(p);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 350);
+  };
 
   const filtered = useMemo(
     () => (filter === "semua" ? applications : applications.filter((a) => a.status === filter)),
@@ -123,10 +135,7 @@ export function ApplicationHistory({ applications }) {
           <select
             id="status-filter"
             value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => handleFilterChange(e.target.value)}
             className="min-h-11 cursor-pointer appearance-none rounded-full border border-line bg-white py-1.5 pl-3.5 pr-8 text-[11px] font-semibold text-ink md:min-h-8"
           >
             {FILTER_OPTIONS.map((o) => (
@@ -159,7 +168,7 @@ export function ApplicationHistory({ applications }) {
         <p className="text-[11px] text-ink/70" aria-live="polite">
           Menampilkan {visible.length} dari {filtered.length} lamaran
         </p>
-        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
       </div>
     </section>
   );
