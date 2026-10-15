@@ -1,28 +1,36 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { Navbar } from "@/components/layout/navbar";
+import PwaRegister from "@/components/pwa-register";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
 export const metadata = {
   title: "Laras Karya",
-  description: "untuk diisi nanti",
+  description: "Platform Karir Sektor Hijau untuk Perempuan Indonesia",
+  applicationName: "Laras Karya",
+  appleWebApp: { capable: true, title: "Laras Karya", statusBarStyle: "default" },
+  icons: { icon: "/favicon.ico", apple: "/icons/icon-192.png" },
+};
+
+export const viewport = {
+  themeColor: "#055c45",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html
-      lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <Navbar />
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }
