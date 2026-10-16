@@ -21,22 +21,8 @@ const SKILL_STATUS = {
  */
 export function MatchSkillGapCard({ job, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [applyState, setApplyState] = useState("idle");
 
   const missing = job.skills.filter((s) => s.status !== "terpenuhi");
-
-  function handleApply() {
-    setApplyState("loading");
-    setTimeout(() => setApplyState("done"), 1000); // ganti dengan request ke back-end nanti
-  }
-
-  const applyLabel = !job.isOpen
-    ? "Lowongan Ditutup"
-    : applyState === "loading"
-      ? "Mengirim…"
-      : applyState === "done"
-        ? "Lamaran Terkirim"
-        : "Lamar Sekarang";
 
   return (
     <section aria-labelledby="match-title" className="rounded-xl bg-brand p-5 text-white shadow-sm lg:sticky lg:top-24">
@@ -103,15 +89,22 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleApply}
-        disabled={!job.isOpen || applyState !== "idle"}
-        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-brand transition-colors hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-80"
-      >
-        {applyState === "done" ? <Check className="size-4" aria-hidden="true" /> : <ArrowRight className="size-4" aria-hidden="true" />}
-        {applyLabel}
-      </button>
+      {job.isOpen ? (
+        <Link
+          href={`/applications/prepare?job=${job.id}`}
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-brand transition-colors hover:bg-brand-light"
+        >
+          Lamar Sekarang <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white/70 text-[13px] font-bold text-brand/60 cursor-not-allowed"
+        >
+          Lowongan Ditutup
+        </button>
+      )}
     </section>
   );
 }
