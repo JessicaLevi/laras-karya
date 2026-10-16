@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import PrepareApplication from "@/components/applications/prepare-application";
-import PageFooter from "@/components/layout/page-footer";
+import { Footer } from "@/components/layout/footer";
 
 export const metadata = {
   title: "Persiapan Lamaran | Laras Karya",
@@ -20,7 +20,7 @@ export default function PrepareApplicationPage() {
       >
         <PrepareApplication />
       </Suspense>
-      <PageFooter />
+      <Footer />
     </main>
   );
 }
