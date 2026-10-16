@@ -14,6 +14,7 @@ import { CourseCard } from "@/components/home/course-card";
 import { RecommendedJobs } from "@/components/home/recommended-jobs";
 import { WelcomeBanner } from "@/components/home/welcome-banner";
 //import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { StatCard } from "@/components/ui/stat-card";
 import { HOME_ALERT, HOME_STATS, HOME_USER, MOCK_COURSES, MOCK_JOBS } from "@/lib/home-data";
 
@@ -71,11 +72,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t border-line bg-white">
-        <p className="mx-auto max-w-[1200px] px-4 py-5 text-center text-[11px] text-ink/70 md:px-6 xl:px-8">
-          © 2026 Laras Karya. Platform Karir Sektor Hijau untuk Perempuan Indonesia.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

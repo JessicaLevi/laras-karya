@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SavedJobs from "@/components/bookmarks/saved-jobs";
+import { Footer } from "@/components/layout/footer";
 
 export const metadata = {
   title: "Lowongan Tersimpan | Laras Karya",
@@ -19,9 +20,7 @@ export default function BookmarksPage() {
         <SavedJobs />
       </div>
 
-      <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        © 2026 Laras Karya. Platform Karier Sektor Hijau untuk Perempuan Indonesia.
-      </footer>
+      <Footer />
     </main>
   );
 }

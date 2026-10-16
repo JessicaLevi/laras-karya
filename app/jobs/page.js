@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import JobList from "@/components/jobs/job-list";
+import { Footer } from "@/components/layout/footer";
 
 export const metadata = {
   title: "Rekomendasi Karier Hijau | Laras Karya",
@@ -28,9 +29,7 @@ export default function JobsPage() {
         <JobList />
       </div>
 
-      <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        © 2026 Laras Karya. Platform Karier Sektor Hijau untuk Perempuan Indonesia.
-      </footer>
+      <Footer />
     </main>
   );
 }

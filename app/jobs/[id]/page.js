@@ -8,6 +8,7 @@ import { JobRequirements } from "@/components/jobs/job-requirements";
 import { JobSidebarInfo } from "@/components/jobs/job-sidebar-info";
 import { MatchSkillGapCard } from "@/components/jobs/match-skill-gap-card";
 //import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { countMissingSkills, getJobDetail } from "@/lib/job-detail-data";
 
 /*
@@ -84,11 +85,7 @@ export default function JobDetailPage({ params }) {
         </Suspense>
       </main>
 
-      <footer className="border-t border-line bg-white">
-        <p className="mx-auto max-w-[1200px] px-4 py-5 text-center text-[11px] text-ink/70 md:px-6 xl:px-8">
-          © 2026 Laras Karya. Platform Karir Sektor Hijau untuk Perempuan Indonesia.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }
