@@ -14,8 +14,17 @@ export default function SubmissionDialog({ open, onClose, job, applyUrl }) {
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
-    if (!open && d.open) d.close();
+    if (open && !d.open) {
+      d.showModal();
+      document.body.style.overflow = "hidden";
+    }
+    if (!open && d.open) {
+      d.close();
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   return (
