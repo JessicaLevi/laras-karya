@@ -1,29 +1,24 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, ClipboardList, GraduationCap, Home, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { label: "Beranda", href: "/home", icon: Home },
-  { label: "Lowongan", href: "/jobs", icon: Briefcase },
-  { label: "Pelatihan", href: "/learning-path", icon: GraduationCap },
-  { label: "Lamaran", href: "/applications", icon: ClipboardList },
-];
-
-// Mock pengguna (nanti dari Supabase Auth + profiles)
-const MOCK_USER = { name: "Aisyah Putri", initials: "AP" };
+import { NAV_ITEMS, MOCK_USER, isNavItemActive } from "@/lib/navigation";
 
 /**
  * Tampilan navbar (tanpa hook URL). Dipakai oleh versi final dan oleh fallback Suspense.
  * @param {{ user: { name: string, initials: string }, pathname: string, open: boolean, onToggle: () => void }} props
  */
 function NavbarView({ user, pathname, open, onToggle }) {
-  const isActive = (href) => pathname === href || pathname.startsWith(`${href}/`);
+  // Menu aktif ditentukan oleh lib/navigation.js (lihat activeFor), mis. /bookmarks menyalakan "Lowongan".
+  const isActive = (href) => {
+    const item = NAV_ITEMS.find((i) => i.href === href);
+    return item ? isNavItemActive(item, pathname) : false;
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
@@ -99,14 +94,18 @@ function NavbarView({ user, pathname, open, onToggle }) {
   );
 }
 
-/** Bagian yang membaca URL (usePathname). Harus berada di dalam <Suspense>. */
-function NavbarContent({ user }) {
-  const pathname = usePathname();
+/** Bagian tampilan navbar dengan state menu mobile. */
+function NavbarContent({ user, pathname }) {
   const [open, setOpen] = useState(false);
 
-  useEffect(() => setOpen(false), [pathname]);
-
   return <NavbarView user={user} pathname={pathname} open={open} onToggle={() => setOpen((v) => !v)} />;
+}
+
+/** Bagian yang membaca URL (usePathname). key={pathname} otomatis mereset menu mobile saat rute berganti. */
+function NavbarRouter({ user }) {
+  const pathname = usePathname();
+
+  return <NavbarContent key={pathname} user={user} pathname={pathname} />;
 }
 
 /**
@@ -118,7 +117,7 @@ function NavbarContent({ user }) {
 export function Navbar({ user = MOCK_USER }) {
   return (
     <Suspense fallback={<NavbarView user={user} pathname="" open={false} onToggle={() => {}} />}>
-      <NavbarContent user={user} />
+      <NavbarRouter user={user} />
     </Suspense>
   );
 }
