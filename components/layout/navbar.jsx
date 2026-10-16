@@ -1,13 +1,113 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Bookmark, LogOut, Menu, User, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, MOCK_USER, isNavItemActive } from "@/lib/navigation";
+
+/** Item-item yang muncul di dropdown avatar profil. */
+const PROFILE_MENU = [
+  { label: "Profil Saya", href: "/profile", icon: User },
+  { label: "Lowongan Tersimpan", href: "/bookmarks", icon: Bookmark },
+  // Tambahkan item lain di sini (mis. Pengaturan)
+  { label: "Keluar", href: "/login", icon: LogOut, isDivider: true },
+];
+
+/**
+ * Dropdown profil yang muncul saat avatar diklik.
+ * Menutup sendiri saat klik di luar (onClose) atau saat item dipilih.
+ * @param {{ user: { name: string, initials: string }, onClose: () => void }} props
+ */
+function ProfileDropdown({ user, onClose }) {
+  const ref = useRef(null);
+
+  // Tutup saat klik di luar dropdown
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        onClose();
+      }
+    }
+    // Gunakan capture agar mencegat sebelum event lain
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside, true);
+  }, [onClose]);
+
+  // Tutup saat Escape ditekan
+  useEffect(() => {
+    function handleEsc(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      role="menu"
+      aria-label={`Menu akun ${user.name}`}
+      className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-line bg-white shadow-lg"
+    >
+      {/* Info pengguna */}
+      <div className="border-b border-line px-4 py-3">
+        <p className="text-sm font-semibold text-ink">{user.name}</p>
+        <p className="mt-0.5 text-xs text-subtle">Pencari kerja</p>
+      </div>
+
+      {/* Menu items */}
+      <ul className="py-1.5">
+        {PROFILE_MENU.map(({ label, href, icon: Icon, isDivider }) => (
+          <li key={href}>
+            {isDivider && <hr className="my-1.5 border-line" />}
+            <Link
+              href={href}
+              role="menuitem"
+              onClick={onClose}
+              className="flex min-h-10 items-center gap-3 px-4 text-sm text-ink/80 transition-colors hover:bg-brand-light hover:text-brand focus-visible:bg-brand-light focus-visible:text-brand focus-visible:outline-none"
+            >
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Tombol avatar + dropdown profil. State dropdown dikelola di sini,
+ * terpisah dari state menu mobile.
+ * @param {{ user: { name: string, initials: string } }} props
+ */
+function ProfileMenu({ user }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`Menu akun ${user.name}`}
+        onClick={() => setOpen((v) => !v)}
+        className="grid size-9 place-items-center rounded-full bg-brand-light text-xs font-bold text-brand transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        {user.initials}
+      </button>
+
+      {open && (
+        <ProfileDropdown user={user} onClose={() => setOpen(false)} />
+      )}
+    </div>
+  );
+}
 
 /**
  * Tampilan navbar (tanpa hook URL). Dipakai oleh versi final dan oleh fallback Suspense.
@@ -50,14 +150,10 @@ function NavbarView({ user, pathname, open, onToggle }) {
             ))}
           </ul>
 
-          <Link
-            href="/profile"
-            aria-label={`Profil ${user.name}`}
-            className="grid size-9 place-items-center rounded-full bg-brand-light text-xs font-bold text-brand"
-          >
-            {user.initials}
-          </Link>
+          {/* Avatar → dropdown profil (desktop & tablet) */}
+          <ProfileMenu user={user} />
 
+          {/* Hamburger mobile */}
           <button
             type="button"
             className="grid size-11 place-items-center rounded-lg text-ink md:hidden"
@@ -82,6 +178,22 @@ function NavbarView({ user, pathname, open, onToggle }) {
                   "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm",
                   isActive(href) ? "bg-brand-light font-bold text-brand" : "font-medium text-ink/80"
                 )}
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {label}
+              </Link>
+            </li>
+          ))}
+
+          {/* Tambahkan item profil di menu mobile juga */}
+          <li>
+            <hr className="my-1.5 border-line" />
+          </li>
+          {PROFILE_MENU.map(({ label, href, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-ink/80"
               >
                 <Icon className="size-4" aria-hidden="true" />
                 {label}
