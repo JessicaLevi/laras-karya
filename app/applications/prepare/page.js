@@ -1,7 +1,26 @@
-export default function Page() {
+import { Suspense } from "react";
+import PrepareApplication from "@/components/applications/prepare-application";
+import PageFooter from "@/components/layout/page-footer";
+
+export const metadata = {
+  title: "Persiapan Lamaran | Laras Karya",
+  description: "Lengkapi dan periksa dokumen Anda sebelum melamar di situs perusahaan.",
+};
+
+export default function PrepareApplicationPage() {
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Persiapan Lamaran</h1>
+    <main className="flex-1 bg-surface">
+      {/* Suspense diwajibkan karena komponen membaca parameter URL (?job=...) di Next.js 16 */}
+      <Suspense
+        fallback={
+          <div role="status" className="mx-auto max-w-[1200px] px-4 py-16 text-slate-600 md:px-6 xl:px-8">
+            Memuat persiapan lamaran…
+          </div>
+        }
+      >
+        <PrepareApplication />
+      </Suspense>
+      <PageFooter />
     </main>
   );
 }
