@@ -1,6 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
+// Menu navbar publik (landing, Employer, dan halaman publik lain).
+export const PUBLIC_NAV_ITEMS = [
+  { label: "Tentang", href: "/#tentang" },
+  { label: "Karier Hijau", href: "/jobs" },
+  { label: "Employer", href: "/employer" },
+];
+
 // Logo yang sama dengan navbar global (public/logo-laras-karya.png)
 export function Logo({ light = false }) {
   return (
@@ -18,16 +25,26 @@ export function Logo({ light = false }) {
   );
 }
 
-export default function Navbar() {
+/**
+ * active = href menu yang sedang dibuka, mis. <Navbar active="/employer" />
+ */
+export default function Navbar({ active }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 md:px-6 xl:px-8">
         <Logo />
-        <nav aria-label="Navigasi landing" className="flex items-center gap-4 text-sm font-medium text-slate-800 sm:gap-6">
-          <Link href="#tentang" className="hidden hover:text-brand md:inline">Tentang</Link>
-          <Link href="/jobs" className="hidden hover:text-brand md:inline">Karier Hijau</Link>
-          <Link href="/employer" className="hidden hover:text-brand md:inline">Employer</Link>
-          <Link href="/login" className="px-2 text-brand hover:underline">Masuk</Link>
+        <nav aria-label="Navigasi publik" className="flex items-center gap-4 text-sm font-medium sm:gap-6">
+          {PUBLIC_NAV_ITEMS.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active === href ? "page" : undefined}
+              className={`hidden md:inline ${active === href ? "font-semibold text-brand" : "text-slate-800 hover:text-brand"}`}
+            >
+              {label}
+            </Link>
+          ))}
+          <Link href="/login" className="px-2 text-brand hover:underline md:ml-3">Masuk</Link>
           <Link
             href="/login?mode=daftar"
             className="rounded-full bg-brand px-5 py-2.5 text-white transition hover:bg-brand/90"
