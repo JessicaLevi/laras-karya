@@ -5,6 +5,7 @@ import { ExperienceSection } from "@/components/profile/experience-section";
 import { LanguageSection } from "@/components/profile/language-section";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SkillsSection } from "@/components/profile/skills-section";
+import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { PROFILE } from "@/lib/profile-data";
 
@@ -14,7 +15,8 @@ export default function ProfilePage() {
   const p = PROFILE;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6 md:py-10 xl:px-8">
+    <main className="flex-1 bg-surface">
+      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6 md:py-10 xl:px-8">
       <ProfileHeader
         name={p.name}
         initials={p.initials}
@@ -55,5 +57,7 @@ export default function ProfilePage() {
         </div>
       </section>
     </div>
-  );
+    <Footer />
+  </main>
+);
 }
