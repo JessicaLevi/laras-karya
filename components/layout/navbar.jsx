@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Bookmark, LogOut, Menu, User, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { NAV_ITEMS, MOCK_USER, isNavItemActive } from "@/lib/navigation";
 
 /** Item-item yang muncul di dropdown avatar profil. */
@@ -68,7 +69,17 @@ function ProfileDropdown({ user, onClose }) {
             <Link
               href={href}
               role="menuitem"
-              onClick={onClose}
+              onClick={async () => {
+                onClose();
+                if (href === "/login") {
+                  try {
+                    const supabase = createClient();
+                    if (supabase) await supabase.auth.signOut();
+                  } catch {
+                    // ignore
+                  }
+                }
+              }}
               className="flex min-h-10 items-center gap-3 px-4 text-sm text-ink/80 transition-colors hover:bg-brand-light hover:text-brand focus-visible:bg-brand-light focus-visible:text-brand focus-visible:outline-none"
             >
               <Icon className="size-4 shrink-0" aria-hidden="true" />

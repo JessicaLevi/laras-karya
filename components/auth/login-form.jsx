@@ -2,11 +2,13 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Lock, Mail } from "lucide-react";
 
 import { Field, PasswordToggle } from "@/components/auth/field";
 import { GoogleIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import { validateIdentifier } from "@/lib/validation";
 
 /** @returns {Record<string, string>} pesan galat per kolom (kosong jika valid) */
@@ -19,24 +21,69 @@ function validate({ identifier, password }) {
 }
 
 /**
- * Form masuk. Hanya front-end: validasi di sisi klien, lalu memanggil `onSubmit`.
+ * Form masuk. Terhubung langsung ke Supabase Auth (jika kunci API sudah ada),
+ * dan memiliki fallback mulus langsung mengarah ke /home jika database belum terhubung.
  * @param {{ onSubmit?: (values: { identifier: string, password: string }) => void }} props
  */
 export function LoginForm({ onSubmit }) {
   const uid = useId();
+  const router = useRouter();
   const [values, setValues] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const found = validate(values);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
-    // TODO: sambungkan ke Supabase Auth (signInWithPassword) lalu arahkan ke /home.
-    onSubmit?.(values);
+
+    setIsLoading(true);
+
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: values.identifier,
+          password: values.password,
+        });
+
+        if (error) {
+          setErrors({ identifier: error.message || "Email atau kata sandi tidak cocok." });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      onSubmit?.(values);
+      router.push("/home");
+    } catch {
+      setErrors({ identifier: "Terjadi kesalahan saat masuk. Silakan coba lagi." });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/home`,
+          },
+        });
+      } else {
+        router.push("/home");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -80,8 +127,8 @@ export function LoginForm({ onSubmit }) {
           trailing={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
         />
 
-        <Button type="submit" className="mt-4 h-12 w-full rounded-xl text-base font-semibold">
-          Masuk
+        <Button type="submit" disabled={isLoading} className="mt-4 h-12 w-full rounded-xl text-base font-semibold">
+          {isLoading ? "Memproses..." : "Masuk"}
         </Button>
 
         <div className="flex items-center gap-4 text-sm text-subtle" role="separator" aria-label="atau">
@@ -93,6 +140,8 @@ export function LoginForm({ onSubmit }) {
         <Button
           type="button"
           variant="outline"
+          disabled={isLoading}
+          onClick={handleGoogleLogin}
           className="h-12 w-full gap-3 rounded-xl border-line bg-white text-base font-semibold text-ink"
         >
           <GoogleIcon className="size-5" />
