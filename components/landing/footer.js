@@ -33,9 +33,9 @@ const Linkedin = () => (
 );
 
 const SOCIALS = [
-  { label: "Instagram", Icon: Instagram },
-  { label: "X (Twitter)", Icon: Twitter },
-  { label: "LinkedIn", Icon: Linkedin },
+  { label: "Instagram", href: "https://instagram.com", Icon: Instagram },
+  { label: "X (Twitter)", href: "https://x.com", Icon: Twitter },
+  { label: "LinkedIn", href: "https://linkedin.com", Icon: Linkedin },
 ];
 
 export default function Footer() {
@@ -80,12 +80,14 @@ export default function Footer() {
             <p className="mt-4 text-sm">hubungi@laraskarya.id</p>
             <p className="mt-3 text-sm">Jakarta, Indonesia</p>
             <div className="mt-4 flex gap-3">
-              {SOCIALS.map(({ label, Icon }) => (
+              {SOCIALS.map(({ label, href, Icon }) => (
                 <a
                   key={label}
-                  href="#"
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-100/30 hover:bg-white/10"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-100/30 transition hover:bg-white/10"
                 >
                   <Icon />
                 </a>

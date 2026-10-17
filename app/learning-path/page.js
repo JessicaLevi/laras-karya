@@ -4,13 +4,15 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { LearningSteps } from "@/components/learning/learning-steps";
 import { SkillGapHero } from "@/components/learning/skill-gap-hero";
 import { TrainingList } from "@/components/learning/training-list";
+import { Footer } from "@/components/layout/footer";
 import { LEARNING_STEPS, LEARNING_TARGET, TRAININGS, TRAINING_FILTERS } from "@/lib/learning-data";
 
 export const metadata = { title: "Jalur Belajar & Pelatihan" };
 
 export default function LearningPathPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6 md:py-10 xl:px-8">
+    <main className="flex-1 bg-surface">
+      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6 md:py-10 xl:px-8">
       <nav aria-label="Breadcrumb" className="text-sm text-ink/70">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
@@ -51,5 +53,7 @@ export default function LearningPathPage() {
         </aside>
       </div>
     </div>
-  );
+    <Footer />
+  </main>
+);
 }
