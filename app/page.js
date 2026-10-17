@@ -1,19 +1,16 @@
-  import Navbar from "@/components/landing/navbar";
-  import Hero from "@/components/landing/hero";
-  import { Questions, Jobs, CtaBanner } from "@/components/landing/sections";
-  import Footer from "@/components/landing/footer";
+import PublicShell from "@/components/layout/public-shell";
+import Hero from "@/components/landing/hero";
+import { Questions, Jobs, CtaBanner } from "@/components/landing/sections";
 
-  export default function LandingPage() {
-    return (
-      <>
-        <Navbar />
-        <main>
-          <Hero />
-          <Questions />
-          <Jobs />
-          <CtaBanner />
-        </main>
-        <Footer />
-      </>
-    );
-  }
+export default function LandingPage() {
+  return (
+    <PublicShell>
+      <main>
+        <Hero />
+        <Questions />
+        <Jobs />
+        <CtaBanner />
+      </main>
+    </PublicShell>
+  );
+}
