@@ -11,7 +11,7 @@ import { Leaf } from "lucide-react";
 export function AuthShell({ title, description, panelMedia, panelFooter, children }) {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <aside className="relative flex flex-col overflow-hidden bg-brand px-6 py-8 text-white lg:w-[45%] lg:px-[72px] lg:py-[72px]">
+      <aside className="relative flex flex-col overflow-hidden bg-brand px-6 py-8 text-white lg:w-[45%] lg:px-12 lg:py-[clamp(1.5rem,5vh,3rem)] 2xl:px-[72px]">
         <Link href="/" aria-label="Laras Karya, ke halaman awal" className="inline-flex w-fit">
           {/* Logo berwarna dijadikan putih lewat filter, jadi tidak perlu aset baru */}
           <Image
@@ -20,18 +20,20 @@ export function AuthShell({ title, description, panelMedia, panelFooter, childre
             width={462}
             height={138}
             priority
-            className="h-14 w-auto brightness-0 invert"
+            className="h-14 w-auto brightness-0 invert lg:h-[clamp(2.5rem,7vh,3.5rem)]"
           />
         </Link>
 
-        <div className="mt-8 lg:mt-16">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight lg:text-5xl lg:leading-[1.15]">{title}</h1>
-          <p className="mt-4 hidden max-w-[34rem] text-lg leading-relaxed text-white/90 lg:block">{description}</p>
+        <div className="mt-8 lg:mt-[clamp(1rem,4vh,2.5rem)]">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight lg:text-[length:clamp(1.75rem,5.5vh,3rem)] lg:leading-[1.15]">{title}</h1>
+          <p className="mt-4 hidden max-w-[34rem] text-lg leading-relaxed text-white/90 lg:block lg:text-[length:clamp(0.95rem,2.4vh,1.125rem)]">{description}</p>
         </div>
 
-        {panelMedia && <div className="hidden flex-1 items-center justify-center py-10 lg:flex">{panelMedia}</div>}
+        {panelMedia && <div className="hidden min-h-0 flex-1 items-center justify-center py-4 lg:flex">{panelMedia}</div>}
 
-        {panelFooter && <div className="mt-auto hidden pt-10 lg:block">{panelFooter}</div>}
+        {panelFooter && (
+          <div className={`mt-auto hidden pt-4 lg:block ${panelMedia ? "" : "lg:mb-24"}`}>{panelFooter}</div>
+        )}
 
         {!panelMedia && (
           <>
@@ -49,7 +51,7 @@ export function AuthShell({ title, description, panelMedia, panelFooter, childre
         )}
       </aside>
 
-      <section className="flex flex-1 items-center justify-center bg-canvas px-6 py-10 lg:px-12 lg:py-16">
+      <section className="flex flex-1 items-center justify-center bg-canvas px-6 py-10 lg:px-12 lg:py-3">
         {children}
       </section>
     </div>
