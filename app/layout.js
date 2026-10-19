@@ -6,6 +6,8 @@ import "./globals.css";
 import { Suspense } from "react";
 import NavbarGate from "@/components/layout/navbar-gate";
 
+import { ToastProvider } from "@/context/toast-context";
+
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   weight: ["400", "500", "600", "700"],
@@ -34,13 +36,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Suspense fallback={null}>
-          <NavbarGate>
-            <Navbar />
-          </NavbarGate>
-        </Suspense>
-        {children}
-        <PwaRegister />
+        <ToastProvider>
+          <Suspense fallback={null}>
+            <NavbarGate>
+              <Navbar />
+            </NavbarGate>
+          </Suspense>
+          {children}
+          <PwaRegister />
+        </ToastProvider>
       </body>
     </html>
   );
