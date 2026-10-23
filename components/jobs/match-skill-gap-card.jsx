@@ -2,14 +2,34 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check, ClipboardCheck, X } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  X,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { hasApplied } from "@/lib/applications-data";
 
 const SKILL_STATUS = {
-  terpenuhi: { label: "Terpenuhi", pill: "bg-emerald-400/20 text-emerald-200", ok: true },
-  peningkatan: { label: "Perlu peningkatan", pill: "bg-red-400/20 text-red-200", ok: false },
-  belum: { label: "Belum dimiliki", pill: "bg-red-400/20 text-red-200", ok: false },
+  terpenuhi: {
+    label: "Terpenuhi",
+    pill: "bg-emerald-400/20 text-emerald-200",
+    ok: true,
+  },
+  peningkatan: {
+    label: "Perlu peningkatan",
+    pill: "bg-red-400/20 text-red-200",
+    ok: false,
+  },
+  belum: {
+    label: "Belum dimiliki",
+    pill: "bg-red-400/20 text-red-200",
+    ok: false,
+  },
 };
 
 /**
@@ -21,11 +41,15 @@ const SKILL_STATUS = {
  */
 export function MatchSkillGapCard({ job, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const applied = hasApplied(job.id);
 
   const missing = job.skills.filter((s) => s.status !== "terpenuhi");
 
   return (
-    <section aria-labelledby="match-title" className="rounded-xl bg-brand p-5 text-white shadow-sm lg:sticky lg:top-24">
+    <section
+      aria-labelledby="match-title"
+      className="rounded-xl bg-brand p-5 text-white shadow-sm lg:sticky lg:top-24"
+    >
       <div className="flex items-center justify-between">
         <h2 id="match-title" className="text-[13px] font-bold">
           Kecocokan Profil
@@ -41,9 +65,14 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
         aria-valuemax={100}
         aria-label="Kecocokan profil"
       >
-        <div className="h-full rounded-full bg-white" style={{ width: `${job.matchPercent}%` }} />
+        <div
+          className="h-full rounded-full bg-white"
+          style={{ width: `${job.matchPercent}%` }}
+        />
       </div>
-      <p className="mt-2 text-[11px] text-white/80">Profil Anda cocok dengan {job.matchPercent}% persyaratan posisi ini.</p>
+      <p className="mt-2 text-[11px] text-white/80">
+        Profil Anda cocok dengan {job.matchPercent}% persyaratan posisi ini.
+      </p>
 
       <button
         type="button"
@@ -68,12 +97,26 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
               return (
                 <li key={s.id} className="flex items-center gap-2 text-[12px]">
                   <span
-                    className={cn("grid size-4 shrink-0 place-items-center rounded-full", st.ok ? "bg-emerald-500" : "bg-red-500")}
+                    className={cn(
+                      "grid size-4 shrink-0 place-items-center rounded-full",
+                      st.ok ? "bg-emerald-500" : "bg-red-500",
+                    )}
                   >
-                    {st.ok ? <Check className="size-2.5" aria-hidden="true" /> : <X className="size-2.5" aria-hidden="true" />}
+                    {st.ok ? (
+                      <Check className="size-2.5" aria-hidden="true" />
+                    ) : (
+                      <X className="size-2.5" aria-hidden="true" />
+                    )}
                   </span>
                   <span className="min-w-0 flex-1">{s.name}</span>
-                  <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold", st.pill)}>{st.label}</span>
+                  <span
+                    className={cn(
+                      "whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      st.pill,
+                    )}
+                  >
+                    {st.label}
+                  </span>
                 </li>
               );
             })}
@@ -89,7 +132,19 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
         </div>
       )}
 
-      {job.isOpen ? (
+      {applied ? (
+        <div className="mt-3 space-y-2">
+          <p className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white/15 text-[13px] font-bold">
+            <CheckCircle2 className="size-4" aria-hidden="true" /> Sudah Dilamar
+          </p>
+          <Link
+            href="/applications"
+            className="flex min-h-11 w-full items-center justify-center rounded-lg border border-white/60 text-[13px] font-semibold transition-colors hover:bg-white/10"
+          >
+            Lihat Lamaran Saya
+          </Link>
+        </div>
+      ) : job.isOpen ? (
         <Link
           href={`/applications/prepare?job=${job.id}`}
           className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-brand transition-colors hover:bg-brand-light"

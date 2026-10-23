@@ -44,17 +44,6 @@ function Meta({ job }) {
   );
 }
 
-function StatusChip({ status }) {
-  const open = status === "dibuka";
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${open ? "bg-brand-light text-brand" : "bg-red-50 text-red-700"}`}
-    >
-      {open ? "Masih Dibuka" : "Ditutup"}
-    </span>
-  );
-}
-
 export function FeaturedJobCard({ job }) {
   return (
     <section
@@ -115,13 +104,14 @@ export function JobCard({ job }) {
       <Meta job={job} />
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-5">
-        <StatusChip status={job.status} />
-        <Link
-          href={`/recommended-jobs/${job.id}`}
-          className="text-xs font-semibold text-brand hover:underline"
-        >
-          Lihat Detail
-        </Link>
+        <div className="mt-auto flex justify-end pt-5">
+          <Link
+            href={`/recommended_jobs/${job.id}`}
+            className="text-xs font-semibold text-brand hover:underline"
+          >
+            Lihat Detail
+          </Link>
+        </div>
       </div>
     </article>
   );
