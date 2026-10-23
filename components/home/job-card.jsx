@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { CheckCircle2, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-
 import { hasApplied } from "@/lib/applications-data";
 import { AppliedBadge } from "@/components/ui/applied-badge";
 
@@ -11,7 +10,7 @@ export function JobCard({ job }) {
   const { id, title, company, sector, matchPercent, workMode, salary, isOpen } = job;
   
   // Cek apakah lowongan ini sudah dilamar oleh user
-  const alreadyApplied = hasApplied(id);
+  const applied = hasApplied(id);
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
@@ -38,11 +37,13 @@ export function JobCard({ job }) {
           <>
             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">Masih Dibuka</span>
             
-            {/* Percabangan: Jika sudah dilamar, tampilkan AppliedBadge. Jika belum, tampilkan tombol Lamar */}
-            {alreadyApplied ? (
-              <AppliedBadge />
+            {/* Jika sudah dilamar, tampilkan tautan ke daftar lamaran. */}
+            {applied ? (
+              <Link href="/applications" className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-emerald-700 hover:underline md:min-h-0">
+                <CheckCircle2 className="size-3.5" aria-hidden="true" /> Sudah Dilamar
+              </Link>
             ) : (
-              <Link href={`/recommended-jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
+              <Link href={`/recommended_jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
                 Lamar Sekarang
               </Link>
             )}
