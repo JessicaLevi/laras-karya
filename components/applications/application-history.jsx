@@ -38,7 +38,7 @@ function ApplicationRow({ application: a }) {
           <StatusBadge status={a.status} />
         </span>
         <Link
-          href={`/jobs/${a.jobId}`}
+          href={`/recommended_jobs/${a.jobId}`}
           className="ml-auto inline-flex min-h-11 items-center text-xs font-bold text-brand underline underline-offset-2 md:ml-0 md:min-h-0 md:w-[80px] md:justify-end"
         >
           Lihat Detail
