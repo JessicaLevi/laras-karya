@@ -8,8 +8,6 @@ import { DocumentPrepBanner } from "@/components/applications/document-prep-bann
 import { StatCard } from "@/components/ui/stat-card";
 import {
   MOCK_APPLICATIONS,
-  MOCK_DOCUMENT_CHECKLIST,
-  MOCK_PROFILE_COMPLETENESS,
   STAT_CARDS,
 } from "@/lib/applications-data";
 
@@ -54,7 +52,7 @@ export default function ApplicationsPage() {
           ))}
         </section>
 
-        <DocumentPrepBanner checklist={MOCK_DOCUMENT_CHECKLIST} profileCompleteness={MOCK_PROFILE_COMPLETENESS} />
+        {/*<DocumentPrepBanner checklist={MOCK_DOCUMENT_CHECKLIST} profileCompleteness={MOCK_PROFILE_COMPLETENESS} />*/}
         <ApplicationHistory applications={MOCK_APPLICATIONS} />
       </main>
 

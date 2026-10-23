@@ -68,7 +68,7 @@ async function JobDetailContent({ params }) {
 */
 export default function JobDetailPage({ params }) {
   return (
-    <div className="flex min-h-screen flex-col bg-mint">
+    <div className="flex min-h-screen flex-col bg-surface">
       {/* <Navbar /> */}
 
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-4 py-6 md:px-6 md:py-8">
