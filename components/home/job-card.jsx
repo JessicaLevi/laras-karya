@@ -3,9 +3,15 @@ import { Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+import { hasApplied } from "@/lib/applications-data";
+import { AppliedBadge } from "@/components/ui/applied-badge";
+
 /** @param {{ job: import("@/lib/home-data").JobItem }} props */
 export function JobCard({ job }) {
   const { id, title, company, sector, matchPercent, workMode, salary, isOpen } = job;
+  
+  // Cek apakah lowongan ini sudah dilamar oleh user
+  const alreadyApplied = hasApplied(id);
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
@@ -31,9 +37,15 @@ export function JobCard({ job }) {
         {isOpen ? (
           <>
             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">Masih Dibuka</span>
-            <Link href={`/recommended_jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
-              Lamar Sekarang
-            </Link>
+            
+            {/* Percabangan: Jika sudah dilamar, tampilkan AppliedBadge. Jika belum, tampilkan tombol Lamar */}
+            {alreadyApplied ? (
+              <AppliedBadge />
+            ) : (
+              <Link href={`/recommended_jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
+                Lamar Sekarang
+              </Link>
+            )}
           </>
         ) : (
           <>

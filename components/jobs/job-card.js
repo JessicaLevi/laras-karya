@@ -5,15 +5,21 @@ import Link from "next/link";
 import { ArrowRight, Gift, MapPin, Star, Wallet } from "lucide-react";
 import MatchPanel from "./match-panel";
 
+import { hasApplied } from "@/lib/applications-data";
+import { AppliedBadge } from "@/components/ui/applied-badge";
+
 function TopRow({ job }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
         {job.sector}
       </span>
-      <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
-        {job.match}% Cocok
-      </span>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {hasApplied(job.id) && <AppliedBadge />}
+        <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
+          {job.match}% Cocok
+        </span>
+      </div>
     </div>
   );
 }
@@ -84,7 +90,6 @@ export function FeaturedJobCard({ job }) {
           </ul>
 
           <div className="mt-auto pt-8">
-
             <Link
               href={`/recommended_jobs/${job.id}`}
               className="flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand/90"
@@ -108,8 +113,13 @@ export function JobCard({ job }) {
       <h3 className="mt-4 text-xl font-bold text-ink">{job.title}</h3>
       <p className="text-slate-600">{job.company}</p>
       <Meta job={job} />
-      <div className="mt-auto flex justify-end pt-5">
-        <Link href={`/recommended_jobs/${job.id}`} className="text-xs font-semibold text-brand hover:underline">
+
+      <div className="mt-auto flex items-center justify-between gap-2 pt-5">
+        <StatusChip status={job.status} />
+        <Link
+          href={`/recommended_jobs/${job.id}`}
+          className="text-xs font-semibold text-brand hover:underline"
+        >
           Lihat Detail
         </Link>
       </div>
