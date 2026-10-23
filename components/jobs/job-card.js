@@ -58,7 +58,7 @@ export function FeaturedJobCard({ job }) {
           <div className="mt-auto pt-8">
             <StatusChip status={job.status} />
             <Link
-              href={`/jobs/${job.id}`}
+              href={`/recommended_jobs/${job.id}`}
               className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand/90"
             >
               Lihat Detail Lowongan <ArrowRight className="h-4 w-4" aria-hidden />
@@ -96,7 +96,7 @@ export function JobCard({ job }) {
             Skill Gap
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
           </button>
-          <Link href={`/jobs/${job.id}`} className="text-xs font-semibold text-brand hover:underline">
+          <Link href={`/recommended_jobs/${job.id}`} className="text-xs font-semibold text-brand hover:underline">
             Lihat Detail
           </Link>
         </div>

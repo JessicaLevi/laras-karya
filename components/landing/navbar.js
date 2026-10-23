@@ -4,7 +4,7 @@ import Link from "next/link";
 // Menu navbar publik (landing, Employer, dan halaman publik lain).
 export const PUBLIC_NAV_ITEMS = [
   { label: "Tentang", href: "/#tentang" },
-  { label: "Karier Hijau", href: "/jobs" },
+  { label: "Karier Hijau", href: "/recommended_jobs" },
   { label: "Employer", href: "/employer" },
 ];
 

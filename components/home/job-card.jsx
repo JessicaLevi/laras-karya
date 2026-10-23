@@ -31,7 +31,7 @@ export function JobCard({ job }) {
         {isOpen ? (
           <>
             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">Masih Dibuka</span>
-            <Link href={`/jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
+            <Link href={`/recommended_jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
               Lamar Sekarang
             </Link>
           </>
