@@ -21,7 +21,7 @@ export function ToastProvider({ children }) {
   /**
    * showToast({
    *   message: "Teks notifikasi",
-   *   action:  { label: "Lihat ...", href: "/jobs" },   // opsional (atau onClick)
+   *   action:  { label: "Lihat ...", href: "/recommended_jobs" },   // opsional (atau onClick)
    *   tone:    "light" | "dark",                          // default "light"
    *   icon:    "check" | "sparkles" | "alert",            // default: check (light), sparkles (dark)
    *   duration: 5000,                                     // ms, 0 = tidak hilang sendiri

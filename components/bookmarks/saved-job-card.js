@@ -43,7 +43,7 @@ export default function SavedJobCard({ job, onRemove }) {
           {open ? "Masih Dibuka" : "Ditutup"}
         </span>
         <Link
-          href={`/jobs/${job.id}`}
+          href={`/recommended_jobs/${job.id}`}
           className={`inline-flex items-center gap-1.5 rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand-light ${fade}`}
         >
           Lihat Detail <ArrowRight className="h-4 w-4" aria-hidden />

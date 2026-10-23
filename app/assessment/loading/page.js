@@ -21,7 +21,7 @@ const STAGES = [
   "Menghitung kecocokan dengan lowongan",
 ];
 const STAGE_DURATION_MS = 1800;
-const RESULT_PAGE = "/jobs";
+const RESULT_PAGE = "/recommended_jobs";
 
 const subscribeNothing = () => () => {};
 const useHydrated = () => useSyncExternalStore(subscribeNothing, () => true, () => false);
