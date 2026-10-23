@@ -32,7 +32,7 @@ export function RecommendedJobs({ jobs }) {
             <RefreshCw className={cn("size-3.5", isUpdating && "animate-spin")} aria-hidden="true" />
             {isUpdating ? "Memperbarui…" : "Update Rekomendasi"}
           </button>
-          <Link href="/jobs" className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0">
+          <Link href="/recommended-jobs" className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0">
             Lihat Semua <ArrowRight className="size-3.5" aria-hidden="true" />
           </Link>
         </div>

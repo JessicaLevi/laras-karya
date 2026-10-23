@@ -28,7 +28,7 @@ export function FitReasonBanner({ job, missingCount }) {
   ];
 
   return (
-    <section aria-labelledby="fit-title" className="rounded-xl border border-mint-line bg-gradient-to-br from-mint to-white p-5">
+    <section aria-labelledby="fit-title" className="rounded-xl border border-mint-line bg-brand-light from-mint to-white p-5">
       <div className="flex items-center gap-2">
         <span className="grid size-6 place-items-center rounded-full bg-brand text-white">
           <Sparkles className="size-3.5" aria-hidden="true" />
