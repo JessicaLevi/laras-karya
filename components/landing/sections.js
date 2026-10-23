@@ -66,7 +66,7 @@ export function Jobs() {
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
         <div className="flex items-end justify-between">
           <h2 className="text-3xl font-bold text-ink">Peluang Karier Hijau untuk Anda</h2>
-          <Link href="/recommended_jobs" className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline">
+          <Link href="/jobs" className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline">
             Lihat Semua <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
@@ -74,7 +74,7 @@ export function Jobs() {
           {jobs.map((j) => (
             <Link
               key={j.title}
-              href="/recommended_jobs"
+              href="/jobs"
               className={`block rounded-2xl border border-slate-200 p-5 transition hover:border-brand ${j.open ? "" : "opacity-60"}`}
             >
               <div className="flex items-center justify-between">
