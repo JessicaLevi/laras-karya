@@ -1,37 +1,63 @@
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
-import { GAP_LEVELS, DEFAULT_REASONS } from "@/lib/mock-jobs";
+import { buildReasons } from "@/lib/match-reasons";
 
-function matchSummary(match) {
-  if (match >= 90) return "Profil Anda sangat ideal untuk kualifikasi ini";
-  if (match >= 75) return "Profil Anda cukup sesuai dengan kualifikasi ini";
-  return "Beberapa keterampilan perlu dikembangkan";
+export function splitSkills(job) {
+  const missing = (job.gaps ?? []).map((g) => (Array.isArray(g) ? g[0] : g));
+  const owned = job.skills.filter((s) => !missing.includes(s));
+  return { owned, missing };
 }
 
-export function SkillGapList({ gaps }) {
+export function SkillGapList({ owned, missing }) {
   return (
-    <ul className="space-y-4">
-      {gaps.map(([skill, level]) => {
-        const l = GAP_LEVELS[level];
-        return (
-          <li key={skill}>
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium text-ink">{skill}</span>
-              <span className={`text-xs ${l.text}`}>{l.label}</span>
-            </div>
-            <div className="mt-1.5 h-1.5 rounded-full bg-slate-200" role="img" aria-label={`${skill}: ${l.label}`}>
-              <div className={`h-full rounded-full ${l.bar}`} style={{ width: `${l.pct}%` }} />
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="space-y-4">
+      {owned.length > 0 && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+            Sudah Anda miliki
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {owned.map((s) => (
+              <li
+                key={s}
+                className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
+              >
+                <Check className="h-3 w-3" aria-hidden /> {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {missing.length > 0 ? (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+            Belum dimiliki
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {missing.map((s) => (
+              <li
+                key={s}
+                className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700"
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-600">
+          Semua keterampilan yang diminta sudah Anda miliki.
+        </p>
+      )}
+    </div>
   );
 }
 
 export default function MatchPanel({ job }) {
   const r = 26;
   const c = 2 * Math.PI * r;
+  const { owned, missing } = splitSkills(job);
+  const reasons = job.reasons ?? buildReasons(job, owned);
 
   return (
     <aside aria-label="Alasan kecocokan" className="rounded-2xl bg-white p-6">
@@ -42,10 +68,24 @@ export default function MatchPanel({ job }) {
       <div className="mt-5 flex items-center gap-4">
         <div className="relative h-16 w-16 shrink-0">
           <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90" aria-hidden>
-            <circle cx="32" cy="32" r={r} fill="none" strokeWidth="5" className="stroke-slate-200" />
             <circle
-              cx="32" cy="32" r={r} fill="none" strokeWidth="5" strokeLinecap="round"
-              className="stroke-brand" strokeDasharray={c} strokeDashoffset={c * (1 - job.match / 100)}
+              cx="32"
+              cy="32"
+              r={r}
+              fill="none"
+              strokeWidth="5"
+              className="stroke-slate-200"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              r={r}
+              fill="none"
+              strokeWidth="5"
+              strokeLinecap="round"
+              className="stroke-brand"
+              strokeDasharray={c}
+              strokeDashoffset={c * (1 - job.match / 100)}
             />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-brand">
@@ -54,12 +94,15 @@ export default function MatchPanel({ job }) {
         </div>
         <div>
           <p className="font-bold text-ink">Tingkat Kecocokan</p>
-          <p className="text-xs text-slate-600">{matchSummary(job.match)}</p>
+          <p className="text-xs text-slate-600">
+            Dihitung dari keahlian, sektor, pola kerja, lokasi, pengalaman, dan
+            pendidikan.
+          </p>
         </div>
       </div>
 
       <ul className="mt-5 space-y-2 text-sm text-slate-800">
-        {DEFAULT_REASONS.map((t) => (
+        {reasons.map((t) => (
           <li key={t} className="flex items-center gap-2">
             <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden /> {t}
           </li>
@@ -68,8 +111,11 @@ export default function MatchPanel({ job }) {
 
       <div className="mt-6 border-t border-slate-200 pt-5">
         <h4 className="mb-4 font-bold text-ink">Skill Gap</h4>
-        <SkillGapList gaps={job.gaps} />
-        <Link href="/learning-path" className="mt-5 inline-block text-sm font-semibold text-brand hover:underline">
+        <SkillGapList owned={owned} missing={missing} />
+        <Link
+          href="/learning-path"
+          className="mt-5 inline-block text-sm font-semibold text-brand hover:underline"
+        >
           Lihat Pelatihan Terkait
         </Link>
       </div>

@@ -8,7 +8,7 @@ export const metadata = {
   description: "Pekerjaan sektor hijau yang paling cocok dengan profil Anda, berdasarkan hasil asesmen.",
 };
 
-export default function JobsPage() {
+export default function RecommendedJobsPage() {
   return (
     <main className="flex-1 bg-surface">
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 pb-16 pt-8">
@@ -19,7 +19,7 @@ export default function JobsPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-bold text-brand md:text-4xl">Rekomendasi Karier Hijau Anda</h1>
           <span className="inline-flex items-center gap-1 rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
-            <Sparkles className="h-3 w-3" aria-hidden /> Dicocokkan oleh AI
+            <Sparkles className="h-3 w-3" aria-hidden /> Berdasarkan hasil asesmen
           </span>
         </div>
         <p className="mt-3 text-slate-800">
