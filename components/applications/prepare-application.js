@@ -103,8 +103,8 @@ function PrepareForm({ job }) {
   return (
     <>
       <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
-        <Link href="/recommended_jobs" className="hover:underline">Lowongan</Link> /{" "}
-        <Link href={`/recommended_jobs/${job.id}`} className="hover:underline">{job.title}</Link> /{" "}
+        <Link href="/recommended-jobs" className="hover:underline">Lowongan</Link> /{" "}
+        <Link href={`/recommended-jobs/${job.id}`} className="hover:underline">{job.title}</Link> /{" "}
         <span aria-current="page">Persiapan Lamaran</span>
       </nav>
 
@@ -133,7 +133,7 @@ function PrepareForm({ job }) {
       {!isOpen && (
         <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
           Lowongan ini sudah ditutup, jadi lamaran tidak bisa dilanjutkan.{" "}
-          <Link href="/recommended_jobs" className="font-semibold underline">Lihat rekomendasi lainnya</Link>.
+          <Link href="/recommended-jobs" className="font-semibold underline">Lihat rekomendasi lainnya</Link>.
         </p>
       )}
 
@@ -239,7 +239,7 @@ export default function PrepareApplication() {
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="font-bold text-ink">Lowongan tidak ditemukan</p>
           <p className="mt-1 text-sm text-slate-600">Pilih lowongan dari daftar rekomendasi untuk mulai menyiapkan lamaran.</p>
-          <Link href="/recommended_jobs" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand/90">
+          <Link href="" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand/90">
             Lihat rekomendasi lowongan
           </Link>
         </div>

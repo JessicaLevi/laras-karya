@@ -13,7 +13,7 @@ export default function BookmarksPage() {
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 pb-16 pt-8">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
           <Link href="/home" className="hover:underline">Beranda</Link> /{" "}
-          <Link href="/recommended_jobs" className="hover:underline">Lowongan</Link> /{" "}
+          <Link href="/recommended-jobs" className="hover:underline">Lowongan</Link> /{" "}
           <span aria-current="page">Tersimpan</span>
         </nav>
 

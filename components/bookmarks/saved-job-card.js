@@ -68,7 +68,7 @@ export default function SavedJobCard({ job, onRemove }) {
           {alreadyApplied && <AppliedBadge />}
         </div>
         <Link
-          href={`/recommended_jobs/${job.id}`}
+          href={`/recommended-jobs/${job.id}`}
           className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand-light ${fade}`}
         >
           Lihat Detail <ArrowRight className="h-4 w-4" aria-hidden />

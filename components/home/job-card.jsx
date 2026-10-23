@@ -42,7 +42,7 @@ export function JobCard({ job }) {
             {alreadyApplied ? (
               <AppliedBadge />
             ) : (
-              <Link href={`/recommended_jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
+              <Link href={`/recommended-jobs/${id}`} className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0">
                 Lamar Sekarang
               </Link>
             )}
