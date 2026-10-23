@@ -62,7 +62,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/recommended_jobs" className="hover:text-white">
+                <Link href="/jobs" className="hover:text-white">
                   Karier Hijau
                 </Link>
               </li>
