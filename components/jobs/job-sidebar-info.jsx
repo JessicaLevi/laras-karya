@@ -51,7 +51,7 @@ export function JobSidebarInfo({ job }) {
             </div>
           ) : isOpen !== false ? (
             <Link
-              href={`/recommended_jobs/${job.id}/apply`}
+              href={`/recommended-jobs/${job.id}/apply`}
               className="flex w-full items-center justify-center rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
             >
               Lamar Sekarang

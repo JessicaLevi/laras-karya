@@ -99,7 +99,7 @@ export default function SavedJobs() {
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="font-bold text-ink">Belum ada lowongan tersimpan</p>
           <p className="mt-1 text-sm text-slate-600">Tandai lowongan dengan ikon penanda, dan lowongan itu akan muncul di sini.</p>
-          <Link href="/recommended_jobs" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90">
+          <Link href="/recommended-jobs" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90">
             Lihat rekomendasi lowongan
           </Link>
         </div>

@@ -73,7 +73,7 @@ export default function JobDetailPage({ params }) {
 
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-4 py-6 md:px-6 md:py-8">
         <Link
-          href="/recommended_jobs"
+          href="/recommended-jobs"
           className="mb-4 inline-flex min-h-11 items-center gap-1 text-xs text-ink/75 hover:text-brand hover:underline md:min-h-0"
         >
           <ChevronLeft className="size-3.5" aria-hidden="true" />
