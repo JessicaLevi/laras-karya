@@ -7,6 +7,7 @@ import MatchPanel from "./match-panel";
 
 import { hasApplied } from "@/lib/applications-data";
 import { AppliedBadge } from "@/components/ui/applied-badge";
+import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 function TopRow({ job }) {
   return (
@@ -57,8 +58,17 @@ export function FeaturedJobCard({ job }) {
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
         <article className="flex flex-col rounded-2xl bg-white p-6">
           <TopRow job={job} />
-          <h3 className="mt-5 text-3xl font-bold text-ink">{job.title}</h3>
-          <p className="mt-1 text-slate-600">{job.company}</p>
+          <div className="mt-5 flex items-center gap-4">
+            <CompanyAvatar
+              company={job.company}
+              sector={job.sector}
+              className="h-16 w-16 text-xl"
+            />
+            <div className="min-w-0">
+              <h3 className="text-3xl font-bold text-ink">{job.title}</h3>
+              <p className="mt-1 text-slate-600">{job.company}</p>
+            </div>
+          </div>
           <p className="mt-4 leading-relaxed text-slate-700">
             {job.description}
           </p>
@@ -99,8 +109,13 @@ export function JobCard({ job }) {
   return (
     <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6">
       <TopRow job={job} />
-      <h3 className="mt-4 text-xl font-bold text-ink">{job.title}</h3>
-      <p className="text-slate-600">{job.company}</p>
+      <div className="mt-4 flex items-center gap-3">
+        <CompanyAvatar company={job.company} sector={job.sector} />
+        <div className="min-w-0">
+          <h3 className="text-xl font-bold text-ink">{job.title}</h3>
+          <p className="text-slate-600">{job.company}</p>
+        </div>
+      </div>
       <Meta job={job} />
 
       <div className="mt-auto flex justify-end pt-5">

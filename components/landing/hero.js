@@ -1,5 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, Check, Sun, TreePine, Sprout, Building2, Recycle } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Sun,
+  TreePine,
+  Sprout,
+  Building2,
+  Recycle,
+  Users,
+  RefreshCw,
+} from "lucide-react";
 
 const sectors = [
   { icon: Sun, label: "Energi Terbarukan" },
@@ -7,6 +17,21 @@ const sectors = [
   { icon: Sprout, label: "Agroforestri" },
   { icon: Building2, label: "Bangunan Hijau" },
   { icon: Recycle, label: "Ekonomi Hijau" },
+];
+
+const stats = [
+  {
+    icon: Users,
+    from: "4 juta",
+    to: "5,3 juta+",
+    label: "Tenaga kerja hijau di Indonesia, 2025 ke 2029",
+  },
+  {
+    icon: RefreshCw,
+    from: "56 juta",
+    to: "72 juta",
+    label: "Pekerjaan berpotensi ditransformasikan, hingga 2029",
+  },
 ];
 
 export default function Hero() {
@@ -22,17 +47,22 @@ export default function Hero() {
               Wujudkan Karier Bermakna di Sektor Green Jobs
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
-              Temukan peluang karier di sektor lingkungan dan keberlanjutan yang sesuai dengan
-              keahlian Anda. Platform khusus perempuan yang ingin bertumbuh di ekonomi hijau.
+              Temukan peluang karier di sektor lingkungan dan keberlanjutan yang
+              sesuai dengan keahlian Anda. Platform khusus perempuan yang ingin
+              bertumbuh di ekonomi hijau.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
                 href="/assessment"
                 className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
               >
-                Mulai Asesmen Singkat <ArrowRight className="h-4 w-4" aria-hidden />
+                Mulai Asesmen Singkat{" "}
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
-              <Link href="/login" className="text-sm font-medium text-brand underline underline-offset-4">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-brand underline underline-offset-4"
+              >
                 Sudah punya akun? Masuk
               </Link>
             </div>
@@ -46,15 +76,21 @@ export default function Hero() {
           </div>
 
           <div className="relative mx-auto w-full max-w-md md:max-w-none">
-            <div className="absolute -right-6 -top-8 h-64 w-64 rounded-full bg-brand-light" aria-hidden />
-            <div className="absolute -bottom-10 -left-8 h-72 w-72 rounded-full bg-secondary-light" aria-hidden />
+            <div
+              className="absolute -right-6 -top-8 h-64 w-64 rounded-full bg-brand-light"
+              aria-hidden
+            />
+            <div
+              className="absolute -bottom-10 -left-8 h-72 w-72 rounded-full bg-secondary-light"
+              aria-hidden
+            />
             <div className="relative aspect-[1.09/1] overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-200 to-emerald-500">
               {/* Taruh foto di public/images/hero-green-jobs.jpg */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/hero-green-jobs.jpg"
                 alt="Perempuan profesional bekerja di bidang lingkungan dan energi hijau"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-[60%_center]"
                 fetchPriority="high"
               />
             </div>
@@ -65,11 +101,15 @@ export default function Hero() {
       <section className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-6 text-center">
           <p className="text-sm font-medium text-slate-700">
-            Peluang green jobs untuk perempuan yang berpindah karier, belajar dari pengalaman praktik, atau baru memulai
+            Peluang green jobs untuk perempuan yang berpindah karier, belajar
+            dari pengalaman praktik, atau baru memulai
           </p>
           <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-500">
             {sectors.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2 text-sm font-semibold">
+              <li
+                key={label}
+                className="flex items-center gap-2 text-sm font-semibold"
+              >
                 <Icon className="h-4 w-4" aria-hidden /> {label}
               </li>
             ))}
@@ -78,18 +118,29 @@ export default function Hero() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-4xl px-5 py-12 text-center">
-          <div className="grid gap-8 sm:grid-cols-2">
-            <div>
-              <p className="text-3xl font-bold text-brand">4 juta → lebih dari 5,3 juta</p>
-              <p className="mt-1 text-sm text-slate-700">Tenaga kerja hijau di Indonesia, 2025 ke 2029</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-brand">56 juta → 72 juta</p>
-              <p className="mt-1 text-sm text-slate-700">Pekerjaan berpotensi ditransformasikan, hingga 2029</p>
-            </div>
+        <div className="mx-auto max-w-4xl px-5 py-12">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {stats.map(({ icon: Icon, from, to, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-4 rounded-2xl bg-brand-light p-6"
+              >
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white text-brand">
+                  <Icon className="h-7 w-7" aria-hidden />
+                </span>
+                <div>
+                  <p className="text-xs text-slate-600">Dari {from} menjadi</p>
+                  <p className="text-3xl font-bold leading-tight text-brand">
+                    {to}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">{label}</p>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="mt-8 text-xs text-slate-500">Sumber: Bappenas, Green Jobs Roadmap</p>
+          <p className="mt-6 text-center text-xs text-slate-500">
+            Sumber: Bappenas, Green Jobs Roadmap
+          </p>
         </div>
       </section>
     </>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Lock, MapPin, Star, Wallet } from "lucide-react";
 import { JOBS } from "@/lib/mock-jobs";
 import { LOGIN_PATH, REGISTER_PATH, loginTo } from "@/lib/routes";
+import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 const OPEN_JOBS = JOBS.filter((j) => j.status === "dibuka");
 const BLURRED_COUNT = 3;
@@ -21,8 +22,17 @@ function VisibleCard({ job }) {
         <span className="self-start rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
           {job.sector}
         </span>
-        <h3 className="mt-4 text-3xl font-bold text-ink">{job.title}</h3>
-        <p className="mt-1 text-slate-600">{job.company}</p>
+        <div className="mt-4 flex items-center gap-4">
+          <CompanyAvatar
+            company={job.company}
+            sector={job.sector}
+            className="h-16 w-16 text-xl"
+          />
+          <div className="min-w-0">
+            <h3 className="text-3xl font-bold text-ink">{job.title}</h3>
+            <p className="mt-1 text-slate-600">{job.company}</p>
+          </div>
+        </div>
         <p className="mt-4 max-w-3xl leading-relaxed text-slate-700">
           {job.description}
         </p>
@@ -66,10 +76,18 @@ function PlaceholderCard() {
         <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
           Sektor Hijau
         </span>
-        <h3 className="mt-4 text-xl font-bold text-ink">
-          Posisi Lowongan Hijau
-        </h3>
-        <p className="text-slate-600">Nama Perusahaan</p>
+        <div className="mt-4 flex items-center gap-3">
+          <span
+            className="h-12 w-12 shrink-0 rounded-xl bg-slate-200"
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <h3 className="text-xl font-bold text-ink">
+              Posisi Lowongan Hijau
+            </h3>
+            <p className="text-slate-600">Nama Perusahaan</p>
+          </div>
+        </div>
         <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden /> Kota • Pola kerja
         </p>
