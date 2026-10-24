@@ -15,15 +15,10 @@ import { cn } from "@/lib/utils";
 import { hasApplied } from "@/lib/applications-data";
 
 const SKILL_STATUS = {
-  terpenuhi: {
-    label: "Terpenuhi",
+  dimiliki: {
+    label: "Sudah dimiliki",
     pill: "bg-emerald-400/20 text-emerald-200",
     ok: true,
-  },
-  peningkatan: {
-    label: "Perlu peningkatan",
-    pill: "bg-red-400/20 text-red-200",
-    ok: false,
   },
   belum: {
     label: "Belum dimiliki",
@@ -43,7 +38,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const applied = hasApplied(job.id);
 
-  const missing = job.skills.filter((s) => s.status !== "terpenuhi");
+  const missing = job.skills.filter((s) => s.status !== "dimiliki");
 
   return (
     <section
