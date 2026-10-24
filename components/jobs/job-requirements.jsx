@@ -34,7 +34,7 @@ export function JobRequirements({ job }) {
       <Section id="benefits-title" title="Benefit & Fasilitas">
         <ul className="flex flex-wrap gap-2">
           {job.benefits.map((b) => (
-            <li key={b.id} className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[11px] text-ink/80 ring-1 ring-inset ring-line">
+            <li key={b.id} className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs text-ink/80 ring-1 ring-inset ring-line">
               <Check className="size-3 text-brand" aria-hidden="true" />
               {b.label}
             </li>
