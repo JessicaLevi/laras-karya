@@ -128,7 +128,7 @@ export function Questions() {
               </div>
               {i < steps.length - 1 && (
                 <ArrowRight
-                  className="hidden h-4 w-4 shrink-0 text-slate-500 md:block"
+                  className="hidden h-4 w-4 shrink-0 text-slate-600 md:block"
                   aria-hidden
                 />
               )}
@@ -166,12 +166,12 @@ export function Jobs() {
                 <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
                   {j.tag}
                 </span>
-                <ArrowRight className="h-4 w-4 text-slate-500" aria-hidden />
+                <ArrowRight className="h-4 w-4 text-slate-600" aria-hidden />
               </div>
               <h3 className="mt-4 text-lg font-bold text-ink">{j.title}</h3>
-              <p className="text-sm text-slate-500">{j.company}</p>
+              <p className="text-sm text-slate-600">{j.company}</p>
               <div className="mt-4 flex gap-2 text-xs">
-                <span className="rounded-full px-3 py-1 text-slate-500">
+                <span className="rounded-full px-3 py-1 text-slate-600">
                   {j.mode}
                 </span>
                 <span
