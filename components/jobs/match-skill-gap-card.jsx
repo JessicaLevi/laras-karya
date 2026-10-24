@@ -17,7 +17,7 @@ import { hasApplied } from "@/lib/applications-data";
 const SKILL_STATUS = {
   dimiliki: {
     label: "Sudah dimiliki",
-    pill: "bg-emerald-400/20 text-emerald-200",
+    pill: "bg-emerald-400/20 text-emerald-100",
     ok: true,
   },
   belum: {
@@ -65,7 +65,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
           style={{ width: `${job.matchPercent}%` }}
         />
       </div>
-      <p className="mt-2 text-[11px] text-white/80">
+      <p className="mt-2 text-xs text-white/80">
         Profil Anda cocok dengan {job.matchPercent}% persyaratan posisi ini.
       </p>
 
@@ -82,7 +82,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
 
       {isOpen && (
         <div id="skill-gap-panel" className="mt-3 rounded-lg bg-white/10 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">
+          <p className="text-xs font-bold uppercase tracking-wide text-white/80">
             {missing.length} keterampilan perlu dilengkapi
           </p>
 
@@ -106,7 +106,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
                   <span className="min-w-0 flex-1">{s.name}</span>
                   <span
                     className={cn(
-                      "whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold",
                       st.pill,
                     )}
                   >

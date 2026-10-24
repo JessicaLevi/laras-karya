@@ -194,7 +194,7 @@ export function CtaBanner() {
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-10">
         <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand p-8 md:flex-row md:items-center md:p-14">
           <div className="max-w-xl">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-ai">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-ai">
               <Star className="h-3 w-3" aria-hidden /> ASESMEN SINGKAT
             </span>
             <h2 className="mt-4 text-3xl font-bold text-white">

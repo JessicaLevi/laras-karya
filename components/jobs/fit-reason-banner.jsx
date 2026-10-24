@@ -37,7 +37,7 @@ export function FitReasonBanner({ job, missingCount }) {
           Mengapa lamaran ini cocok untuk Anda
         </h2>
       </div>
-      <p className="mt-2 text-[11px] text-ink/70">Berdasarkan profil dan asesmen Anda, posisi ini direkomendasikan karena:</p>
+      <p className="mt-2 text-xs text-ink/70">Berdasarkan profil dan asesmen Anda, posisi ini direkomendasikan karena:</p>
 
       <ul className="mt-3 space-y-2.5">
         {reasons.map(({ id, icon: Icon, color, text }) => (
