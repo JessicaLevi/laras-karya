@@ -121,9 +121,10 @@ export function JobCard({ job }) {
       <div className="mt-auto flex justify-end pt-5">
         <Link
           href={`/recommended-jobs/${job.id}`}
-          className="text-xs font-semibold text-brand hover:underline"
+          aria-label={`Lihat detail ${job.title} di ${job.company}`}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand px-5 text-sm font-semibold text-brand transition hover:bg-brand-light"
         >
-          Lihat Detail
+          Lihat Detail <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>
     </article>
