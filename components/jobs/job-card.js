@@ -103,15 +103,13 @@ export function JobCard({ job }) {
       <p className="text-slate-600">{job.company}</p>
       <Meta job={job} />
 
-      <div className="mt-auto flex items-center justify-between gap-2 pt-5">
-        <div className="mt-auto flex justify-end pt-5">
-          <Link
-            href={`/recommended-jobs/${job.id}`}
-            className="text-xs font-semibold text-brand hover:underline"
-          >
-            Lihat Detail
-          </Link>
-        </div>
+      <div className="mt-auto flex justify-end pt-5">
+        <Link
+          href={`/recommended-jobs/${job.id}`}
+          className="text-xs font-semibold text-brand hover:underline"
+        >
+          Lihat Detail
+        </Link>
       </div>
     </article>
   );
