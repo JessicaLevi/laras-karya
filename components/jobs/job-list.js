@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { SearchX, Sparkles } from "lucide-react";
 import { JOBS } from "@/lib/mock-jobs";
+import { hasApplied } from "@/lib/applications-data";
 import { FeaturedJobCard, JobCard } from "./job-card";
 import Pagination from "./pagination";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const PAGE_SIZE = 6; // jumlah kartu "Rekomendasi lainnya" per halaman
 
@@ -16,7 +18,11 @@ const MODES = [
 ];
 
 // Sementara. Nanti recommended_jobs() di database yang menyaring ini.
-const OPEN_JOBS = JOBS.filter((j) => j.status === "dibuka");
+// Hanya yang dibuka. Yang sudah dilamar dipindah ke belakang, supaya slot "Paling cocok"
+// selalu berisi lowongan yang belum dilamar. (Urutan skor tetap terjaga di tiap kelompok.)
+const OPEN_JOBS = JOBS.filter((j) => j.status === "dibuka")
+//  .filter(() => false)
+  .sort((a, b) => Number(hasApplied(a.id)) - Number(hasApplied(b.id)));
 
 function FilterGroup({ label, options, value, onChange }) {
   return (
@@ -136,21 +142,19 @@ export default function JobList() {
           )}
         </>
       ) : (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="font-bold text-ink">
-            Belum ada lowongan yang cocok dengan filter ini
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            Coba ganti pola kerja untuk melihat rekomendasi lain.
-          </p>
+        <EmptyState
+          icon={SearchX}
+          title="Belum ada lowongan yang cocok dengan filter ini"
+          text="Coba ganti pola kerja untuk melihat rekomendasi lain."
+        >
           <button
             type="button"
             onClick={resetFilters}
-            className="mt-4 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+            className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
           >
             Reset filter
           </button>
-        </div>
+        </EmptyState>
       )}
     </div>
   );

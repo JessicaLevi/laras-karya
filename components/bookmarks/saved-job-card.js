@@ -12,6 +12,7 @@ import {
 
 import { hasApplied } from "@/lib/applications-data";
 import { AppliedBadge } from "@/components/ui/applied-badge";
+import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 export default function SavedJobCard({ job, onRemove }) {
   const open = job.status === "dibuka";
@@ -43,8 +44,13 @@ export default function SavedJobCard({ job, onRemove }) {
       </div>
 
       <div className={`mb-6 ${fade}`}>
-        <h3 className="mt-4 text-xl font-bold text-ink">{job.title}</h3>
-        <p className="text-slate-600">{job.company}</p>
+        <div className="mt-4 flex items-center gap-3">
+          <CompanyAvatar company={job.company} sector={job.sector} />
+          <div className="min-w-0">
+            <h3 className="text-xl font-bold text-ink">{job.title}</h3>
+            <p className="text-slate-600">{job.company}</p>
+          </div>
+        </div>
         <ul className="mt-4 space-y-1.5 text-sm text-slate-600">
           <li className="flex items-center gap-2">
             <Briefcase className="h-4 w-4 shrink-0" aria-hidden /> {job.sector}
