@@ -109,7 +109,7 @@ export default function JobList() {
           <span className="h-2 w-2 rounded-full bg-brand" aria-hidden />
           Hanya menampilkan lowongan yang masih dibuka
         </p>
-        <p aria-live="polite" className="text-sm text-slate-500">
+        <p aria-live="polite" className="text-sm text-slate-600">
           Menampilkan {shown} dari {filtered.length} rekomendasi
         </p>
       </div>

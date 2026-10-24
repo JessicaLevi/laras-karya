@@ -55,8 +55,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #055c45;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -144,7 +144,7 @@
   --color-mint: #e8f4f0;
   --color-mint-line: #c8e6dc;
   --color-line: #e2e8f0;
-  --color-subtle: #64748b;
+  --color-subtle: #55657a;
   --color-warn: #b45309;
   --color-teal: #39786c;
   --color-ai: #be185d; /* aksen AI untuk teks, kontras ±6:1 */
