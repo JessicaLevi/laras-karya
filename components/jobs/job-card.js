@@ -106,7 +106,7 @@ export function JobCard({ job }) {
       <div className="mt-auto flex items-center justify-between gap-2 pt-5">
         <div className="mt-auto flex justify-end pt-5">
           <Link
-            href={`/recommended_jobs/${job.id}`}
+            href={`/recommended-jobs/${job.id}`}
             className="text-xs font-semibold text-brand hover:underline"
           >
             Lihat Detail
