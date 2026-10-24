@@ -7,6 +7,7 @@ import { JobHeader } from "@/components/jobs/job-header";
 import { JobRequirements } from "@/components/jobs/job-requirements";
 import { JobSidebarInfo } from "@/components/jobs/job-sidebar-info";
 import { MatchSkillGapCard } from "@/components/jobs/match-skill-gap-card";
+import { MobileApplyBar } from "@/components/jobs/mobile-apply-bar";
 //import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { countMissingSkills, getJobDetail } from "@/lib/job-detail-data";
@@ -22,7 +23,11 @@ export const metadata = {
 /** Placeholder saat konten lowongan dimuat. */
 function JobDetailSkeleton() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3" role="status" aria-label="Memuat detail lowongan">
+    <div
+      className="grid gap-4 lg:grid-cols-3"
+      role="status"
+      aria-label="Memuat detail lowongan"
+    >
       <div className="space-y-4 lg:col-span-2">
         <div className="h-40 animate-pulse rounded-xl bg-white/80" />
         <div className="h-48 animate-pulse rounded-xl bg-white/80" />
@@ -46,18 +51,24 @@ async function JobDetailContent({ params }) {
   const job = getJobDetail(id);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <div className="space-y-4 lg:col-span-2">
-        <JobHeader job={job} />
-        <FitReasonBanner job={job} missingCount={countMissingSkills(job.skills)} />
-        <JobRequirements job={job} />
-      </div>
+    <>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <JobHeader job={job} />
+          <FitReasonBanner
+            job={job}
+            missingCount={countMissingSkills(job.skills)}
+          />
+          <JobRequirements job={job} />
+        </div>
 
-      <aside aria-label="Informasi lowongan" className="space-y-4">
-        <JobSidebarInfo job={job} />
-        <MatchSkillGapCard job={job} />
-      </aside>
-    </div>
+        <aside aria-label="Informasi lowongan" className="space-y-4">
+          <JobSidebarInfo job={job} />
+          <MatchSkillGapCard job={job} />
+        </aside>
+      </div>
+      <MobileApplyBar job={job} />
+    </>
   );
 }
 
@@ -68,7 +79,7 @@ async function JobDetailContent({ params }) {
 */
 export default function JobDetailPage({ params }) {
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div className="flex min-h-screen flex-col bg-surface pb-20 lg:pb-0">
       {/* <Navbar /> */}
 
       <main className="mx-auto w-full max-w-[1040px] flex-1 px-4 py-6 md:px-6 md:py-8">
