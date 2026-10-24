@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, Leaf } from "lucide-react";
+import { Bookmark } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { hasApplied } from "@/lib/applications-data";
 import { AppliedBadge } from "@/components/ui/applied-badge";
+import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 /** Cincin persentase kecil (sisi kanan header). */
 function MatchRing({ value, size = 44, strokeWidth = 3 }) {
@@ -57,9 +58,11 @@ export function JobHeader({ job }) {
   return (
     <header className="rounded-xl bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand text-white md:size-14">
-          <Leaf className="size-6" aria-hidden="true" />
-        </span>
+        <CompanyAvatar
+          company={job.company}
+          sector={job.sector}
+          className="size-12 text-base md:size-14 md:text-lg"
+        />
 
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold leading-tight text-ink md:text-[22px]">

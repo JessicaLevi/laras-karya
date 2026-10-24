@@ -1,3 +1,5 @@
+import { Check } from "lucide-react";
+
 /**
  * Dua kartu sidebar: Informasi Lowongan dan Skill yang Dibutuhkan.
  * Aksi melamar ada di MatchSkillGapCard, jadi sidebar ini hanya menampilkan informasi.
@@ -45,14 +47,25 @@ export function JobSidebarInfo({ job }) {
           Skill yang Dibutuhkan
         </h2>
         <ul className="mt-3 flex flex-wrap gap-2">
-          {job.skills.map((s) => (
-            <li
-              key={s.id}
-              className="rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
-            >
-              {s.name}
-            </li>
-          ))}
+          {job.skills.map((s) =>
+            s.status === "dimiliki" ? (
+              <li
+                key={s.id}
+                className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
+              >
+                <Check className="size-3" aria-hidden="true" /> {s.name}
+                <span className="sr-only"> (sudah dimiliki)</span>
+              </li>
+            ) : (
+              <li
+                key={s.id}
+                className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700"
+              >
+                {s.name}
+                <span className="sr-only"> (belum dimiliki)</span>
+              </li>
+            ),
+          )}
         </ul>
       </section>
     </>
