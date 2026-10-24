@@ -1,16 +1,9 @@
-import { hasApplied } from "@/lib/applications-data";
-import { AppliedBadge } from "@/components/ui/applied-badge";
-import Link from "next/link";
-
 /**
  * Dua kartu sidebar: Informasi Lowongan dan Skill yang Dibutuhkan.
+ * Aksi melamar ada di MatchSkillGapCard, jadi sidebar ini hanya menampilkan informasi.
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function JobSidebarInfo({ job }) {
-  // Cek apakah lowongan ini sudah dilamar oleh pengguna
-  const alreadyApplied = hasApplied(job.id);
-  const isOpen = job.isOpen; // Menyesuaikan jika ada status pembukaan lowongan
-
   const rows = [
     { label: "Alamat Perusahaan", value: job.address },
     { label: "Gaji", value: job.salary },
@@ -42,26 +35,6 @@ export function JobSidebarInfo({ job }) {
             </dd>
           </div>
         </dl>
-
-        {/* Bagian Aksi / Tombol Lamar / AppliedBadge di Sidebar */}
-        <div className="mt-5 pt-4 border-t border-line">
-          {alreadyApplied ? (
-            <div className="flex justify-center">
-              <AppliedBadge />
-            </div>
-          ) : isOpen !== false ? (
-            <Link
-              href={`/recommended-jobs/${job.id}/apply`}
-              className="flex w-full items-center justify-center rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
-            >
-              Lamar Sekarang
-            </Link>
-          ) : (
-            <span className="block text-center text-xs font-medium text-ink/70">
-              Lowongan Ditutup
-            </span>
-          )}
-        </div>
       </section>
 
       <section
