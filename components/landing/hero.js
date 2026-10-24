@@ -66,7 +66,7 @@ export default function Hero() {
                 Sudah punya akun? Masuk
               </Link>
             </div>
-            <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
               {["Gratis", "5 menit", "Rekomendasi AI personal"].map((t) => (
                 <li key={t} className="flex items-center gap-1">
                   <Check className="h-3 w-3" aria-hidden /> {t}
@@ -104,7 +104,7 @@ export default function Hero() {
             Peluang green jobs untuk perempuan yang berpindah karier, belajar
             dari pengalaman praktik, atau baru memulai
           </p>
-          <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-500">
+          <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600">
             {sectors.map(({ icon: Icon, label }) => (
               <li
                 key={label}
@@ -138,7 +138,7 @@ export default function Hero() {
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-slate-500">
+          <p className="mt-6 text-center text-xs text-slate-600">
             Sumber: Bappenas, Green Jobs Roadmap
           </p>
         </div>

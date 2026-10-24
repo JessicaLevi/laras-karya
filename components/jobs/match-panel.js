@@ -13,7 +13,7 @@ export function SkillGapList({ owned, missing }) {
     <div className="space-y-4">
       {owned.length > 0 && (
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
             Sudah Anda miliki
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
@@ -30,7 +30,7 @@ export function SkillGapList({ owned, missing }) {
       )}
       {missing.length > 0 ? (
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
             Belum dimiliki
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
