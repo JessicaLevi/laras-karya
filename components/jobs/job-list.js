@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { SearchX, Sparkles } from "lucide-react";
 import { JOBS } from "@/lib/mock-jobs";
-import { hasApplied } from "@/lib/applications-data";
+import { getOpenJobsAppliedLast } from "@/lib/job-ordering";
 import { FeaturedJobCard, JobCard } from "./job-card";
 import Pagination from "./pagination";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,11 +18,8 @@ const MODES = [
 ];
 
 // Sementara. Nanti recommended_jobs() di database yang menyaring ini.
-// Hanya yang dibuka. Yang sudah dilamar dipindah ke belakang, supaya slot "Paling cocok"
-// selalu berisi lowongan yang belum dilamar. (Urutan skor tetap terjaga di tiap kelompok.)
-const OPEN_JOBS = JOBS.filter((j) => j.status === "dibuka")
-//  .filter(() => false)
-  .sort((a, b) => Number(hasApplied(a.id)) - Number(hasApplied(b.id)));
+// Aturan urutan ada di lib/job-ordering.js (sama dengan Beranda).
+const OPEN_JOBS = getOpenJobsAppliedLast(JOBS);
 
 function FilterGroup({ label, options, value, onChange }) {
   return (
