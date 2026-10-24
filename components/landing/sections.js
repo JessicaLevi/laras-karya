@@ -1,44 +1,119 @@
 import Link from "next/link";
-import { ArrowRight, Search, Lightbulb, TrendingUp, CircleCheck, Star } from "lucide-react";
+import {
+  ArrowRight,
+  Search,
+  Lightbulb,
+  TrendingUp,
+  CircleCheck,
+  Star,
+} from "lucide-react";
 
 const questions = [
-  { icon: Search, title: "Apa yang cocok untuk saya?", text: "Jawab pertanyaan singkat tentang pengalaman dan minat Anda. Kami carikan pekerjaan hijau yang sesuai." },
-  { icon: Lightbulb, title: "Mengapa ini cocok?", text: "Setiap rekomendasi disertai alasan: keterampilan Anda yang sudah sesuai dan yang belum." },
-  { icon: TrendingUp, title: "Apa yang masih kurang?", text: "Lihat keterampilan yang perlu dilengkapi untuk pekerjaan yang Anda tuju." },
-  { icon: CircleCheck, title: "Apa langkah selanjutnya?", text: "Temukan pelatihan yang tepat, siapkan CV, lalu lanjutkan melamar dan pantau statusnya." },
+  {
+    icon: Search,
+    title: "Apa yang cocok untuk saya?",
+    text: "Jawab pertanyaan singkat, kami carikan pekerjaan hijau yang sesuai.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Mengapa ini cocok?",
+    text: "Setiap rekomendasi disertai alasan yang jelas.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Apa yang masih kurang?",
+    text: "Lihat keterampilan yang perlu dilengkapi.",
+  },
+  {
+    icon: CircleCheck,
+    title: "Apa langkah selanjutnya?",
+    text: "Temukan pelatihan, siapkan CV, lalu lamar.",
+  },
 ];
 
 const steps = [
   { title: "Temukan", text: "Pekerjaan hijau yang cocok untuk Anda" },
   { title: "Siapkan", text: "Tutup kekurangan keterampilan dan lengkapi CV" },
-  { title: "Melangkah", text: "Lamar di situs perusahaan dan pantau statusnya" },
+  {
+    title: "Melangkah",
+    text: "Lamar di situs perusahaan dan pantau statusnya",
+  },
 ];
 
 const jobs = [
-  { tag: "Energi Terbarukan", title: "Solar Panel Technician", company: "SuryaTerang Energi", mode: "Remote", open: true },
-  { tag: "Konservasi", title: "Sustainability Officer", company: "Nusantara Hijau Group", mode: "Hybrid", open: true },
-  { tag: "Pertanian Berkelanjutan", title: "Waste Management Analyst", company: "Daur Ulang Nusantara", mode: "On-site", open: true },
-  { tag: "Ekonomi Hijau", title: "Bioeconomy Consultant", company: "Lestari Hijau Consult", mode: "Remote", open: true },
-  { tag: "Pertanian Berkelanjutan", title: "Agroforestry Specialist", company: "Rimba Karya", mode: "On-site", open: true },
-  { tag: "Konstruksi Hijau", title: "Green Building Architect", company: "Arsitektur Lestari", mode: "Hybrid", open: false },
+  {
+    tag: "Energi Terbarukan",
+    title: "Solar Panel Technician",
+    company: "SuryaTerang Energi",
+    mode: "Remote",
+    open: true,
+  },
+  {
+    tag: "Konservasi",
+    title: "Sustainability Officer",
+    company: "Nusantara Hijau Group",
+    mode: "Hybrid",
+    open: true,
+  },
+  {
+    tag: "Pertanian Berkelanjutan",
+    title: "Waste Management Analyst",
+    company: "Daur Ulang Nusantara",
+    mode: "On-site",
+    open: true,
+  },
+  {
+    tag: "Ekonomi Hijau",
+    title: "Bioeconomy Consultant",
+    company: "Lestari Hijau Consult",
+    mode: "Remote",
+    open: true,
+  },
+  {
+    tag: "Pertanian Berkelanjutan",
+    title: "Agroforestry Specialist",
+    company: "Rimba Karya",
+    mode: "On-site",
+    open: true,
+  },
+  {
+    tag: "Konstruksi Hijau",
+    title: "Green Building Architect",
+    company: "Arsitektur Lestari",
+    mode: "Hybrid",
+    open: false,
+  },
 ];
 
 export function Questions() {
   return (
     <section className="bg-brand-light">
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
-        <h2 className="text-center text-3xl font-bold text-brand">Empat pertanyaan yang kami bantu jawab</h2>
+        <h2 className="text-center text-3xl font-bold text-brand">
+          Empat pertanyaan yang kami bantu jawab
+        </h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {questions.map(({ icon: Icon, title, text }) => (
-            <article key={title} className="rounded-2xl bg-white p-6">
-              <Icon className="h-5 w-5 text-brand" aria-hidden />
-              <h3 className="mt-5 text-lg font-bold leading-snug text-ink">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">{text}</p>
+            <article
+              key={title}
+              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-mint-line transition hover:-translate-y-1 hover:shadow-md"
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-light text-brand">
+                <Icon className="h-6 w-6" aria-hidden />
+              </span>
+              <h3 className="mt-5 text-lg font-bold leading-snug text-ink">
+                {title}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                {text}
+              </p>
             </article>
           ))}
         </div>
 
-        <p className="mt-12 text-center text-sm font-semibold text-slate-700">Perjalanan Anda bersama Laras Karya</p>
+        <p className="mt-12 text-center text-sm font-semibold text-slate-700">
+          Perjalanan Anda bersama Laras Karya
+        </p>
         <ol className="mx-auto mt-4 flex max-w-4xl flex-col items-stretch gap-3 md:flex-row md:items-center">
           {steps.map((s, i) => (
             <li key={s.title} className="flex flex-1 items-center gap-3">
@@ -51,7 +126,12 @@ export function Questions() {
                   <p className="text-xs text-slate-600">{s.text}</p>
                 </div>
               </div>
-              {i < steps.length - 1 && <ArrowRight className="hidden h-4 w-4 shrink-0 text-slate-500 md:block" aria-hidden />}
+              {i < steps.length - 1 && (
+                <ArrowRight
+                  className="hidden h-4 w-4 shrink-0 text-slate-500 md:block"
+                  aria-hidden
+                />
+              )}
             </li>
           ))}
         </ol>
@@ -65,8 +145,13 @@ export function Jobs() {
     <section className="bg-white">
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
         <div className="flex items-end justify-between">
-          <h2 className="text-3xl font-bold text-ink">Peluang Karier Hijau untuk Anda</h2>
-          <Link href="/jobs" className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline">
+          <h2 className="text-3xl font-bold text-ink">
+            Peluang Karier Hijau untuk Anda
+          </h2>
+          <Link
+            href="/jobs"
+            className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
+          >
             Lihat Semua <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
@@ -78,14 +163,20 @@ export function Jobs() {
               className={`block rounded-2xl border border-slate-200 p-5 transition hover:border-brand ${j.open ? "" : "opacity-60"}`}
             >
               <div className="flex items-center justify-between">
-                <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">{j.tag}</span>
+                <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
+                  {j.tag}
+                </span>
                 <ArrowRight className="h-4 w-4 text-slate-500" aria-hidden />
               </div>
               <h3 className="mt-4 text-lg font-bold text-ink">{j.title}</h3>
               <p className="text-sm text-slate-500">{j.company}</p>
               <div className="mt-4 flex gap-2 text-xs">
-                <span className="rounded-full px-3 py-1 text-slate-500">{j.mode}</span>
-                <span className={`rounded-full px-3 py-1 ${j.open ? "bg-brand-light text-brand" : "bg-slate-100 text-slate-600"}`}>
+                <span className="rounded-full px-3 py-1 text-slate-500">
+                  {j.mode}
+                </span>
+                <span
+                  className={`rounded-full px-3 py-1 ${j.open ? "bg-brand-light text-brand" : "bg-slate-100 text-slate-600"}`}
+                >
                   {j.open ? "Dibuka" : "Ditutup"}
                 </span>
               </div>
@@ -106,9 +197,12 @@ export function CtaBanner() {
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-ai">
               <Star className="h-3 w-3" aria-hidden /> ASESMEN SINGKAT
             </span>
-            <h2 className="mt-4 text-3xl font-bold text-white">Temukan Kecocokan Karier Anda</h2>
+            <h2 className="mt-4 text-3xl font-bold text-white">
+              Temukan Kecocokan Karier Anda
+            </h2>
             <p className="mt-4 leading-relaxed text-emerald-100/80">
-              Jawab beberapa pertanyaan singkat dan dapatkan rekomendasi karier hijau yang sesuai dengan pengalaman Anda.
+              Jawab beberapa pertanyaan singkat dan dapatkan rekomendasi karier
+              hijau yang sesuai dengan pengalaman Anda.
             </p>
           </div>
           <Link

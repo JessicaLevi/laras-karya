@@ -16,15 +16,16 @@ import { JOBS } from "@/lib/mock-jobs";
 import { MOCK_APPLICANT, buildCoverLetter } from "@/lib/mock-applicant";
 import ReadinessChecklist from "./readiness-checklist";
 import SubmissionDialog from "./submission-dialog";
+import ApplySteps from "./apply-steps";
 import { hasApplied } from "@/lib/applications-data";
 
 // GANTI: URL lowongan asli dari data/API (halaman sumber lowongan di situs perusahaan).
 const PLACEHOLDER_APPLY_URL = "https://example.com/";
 const MAX_FILE_MB = 5;
 
-function Field({ label, value }) {
+function Field({ label, value, className = "" }) {
   return (
-    <div>
+    <div className={className}>
       <dt className="text-sm text-slate-600">{label}</dt>
       <dd className="mt-1.5 rounded-xl bg-surface px-4 py-3 text-ink">
         {value}
@@ -51,6 +52,7 @@ function PrepareForm({ job }) {
 
   const [letter, setLetter] = useState(() => buildCoverLetter(job, a));
   const [editing, setEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [portfolio, setPortfolio] = useState(""); // nama file (file belum dikirim ke mana pun)
   const [uploadError, setUploadError] = useState("");
   const [consent, setConsent] = useState(false);
@@ -155,6 +157,7 @@ function PrepareForm({ job }) {
       <p className="mt-2 text-slate-800">
         Lengkapi dan periksa dokumen Anda sebelum melamar di situs perusahaan.
       </p>
+      <ApplySteps current={2} />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center gap-4">
@@ -208,18 +211,22 @@ function PrepareForm({ job }) {
               <CircleCheck className="h-4 w-4 shrink-0" aria-hidden />
               Data CV diambil dari profil Anda — terhubung otomatis
             </p>
-            <dl className="mt-5 space-y-4">
+
+            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
               <Field label="Nama Lengkap" value={a.name} />
               <Field label="Telepon" value={a.phone} />
               <Field
+                className="sm:col-span-2"
                 label="Pengalaman Terakhir"
                 value={`${a.lastJob.title} — ${a.lastJob.company} (${a.lastJob.years} tahun)`}
               />
               <Field
+                className="sm:col-span-2"
                 label="Pendidikan"
                 value={`${a.education.degree} — ${a.education.school}`}
               />
             </dl>
+
             <Link
               href="/profile"
               className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
@@ -259,9 +266,27 @@ function PrepareForm({ job }) {
                 />
               </>
             ) : (
-              <p className="mt-4 whitespace-pre-line rounded-xl bg-surface p-5 leading-relaxed text-slate-700">
-                {letter}
-              </p>
+              <>
+                <div className="mt-4 rounded-xl bg-surface p-5">
+                  <p
+                    className={`whitespace-pre-line leading-relaxed text-slate-700 ${
+                      expanded ? "" : "line-clamp-6"
+                    }`}
+                  >
+                    {letter}
+                  </p>
+                </div>
+                {letter.length > 400 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((v) => !v)}
+                    aria-expanded={expanded}
+                    className="mr-5 mt-5 inline-flex items-center text-sm font-semibold text-brand hover:underline"
+                  >
+                    {expanded ? "Ringkas" : "Lihat selengkapnya"}
+                  </button>
+                )}
+              </>
             )}
 
             <button
@@ -331,14 +356,39 @@ export default function PrepareApplication() {
 
   if (job && hasApplied(job.id)) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-        <p className="font-bold text-ink">Anda sudah melamar lowongan ini</p>
-        <Link
-          href="/applications"
-          className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white"
-        >
-          Lihat Lamaran Saya
-        </Link>
+      <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-8 md:px-6 xl:px-8">
+        <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
+          <Link href="/recommended-jobs" className="hover:underline">
+            Lowongan
+          </Link>{" "}
+          / <span aria-current="page">Persiapan Lamaran</span>
+        </nav>
+
+        <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-light text-brand">
+            <CircleCheck className="h-8 w-8" aria-hidden />
+          </span>
+          <p className="mt-5 text-lg font-bold text-ink">
+            Anda sudah melamar lowongan ini
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {job.title} · {job.company}
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/applications"
+              className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+            >
+              Lihat Lamaran Saya
+            </Link>
+            <Link
+              href="/recommended-jobs"
+              className="rounded-full border border-brand px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand-light"
+            >
+              Cari lowongan lain
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -355,7 +405,7 @@ export default function PrepareApplication() {
             lamaran.
           </p>
           <Link
-            href=""
+            href="/recommended-jobs"
             className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand/90"
           >
             Lihat rekomendasi lowongan
@@ -365,4 +415,3 @@ export default function PrepareApplication() {
     </div>
   );
 }
-
