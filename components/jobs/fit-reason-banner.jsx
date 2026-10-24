@@ -12,23 +12,45 @@ function matchLevel(p) {
  * @param {{ job: import("@/lib/job-detail-data").JobDetail, missingCount: number }} props
  */
 export function FitReasonBanner({ job, missingCount }) {
+  const total = job.skills.length;
+  const owned = total - missingCount;
   const reasons = [
-    { id: "match", icon: Target, color: "text-red-500", text: `Kecocokan profil ${job.matchPercent}%, ${matchLevel(job.matchPercent)} untuk posisi ini` },
+    {
+      id: "match",
+      icon: Target,
+      color: "text-red-500",
+      text: `Kecocokan profil ${job.matchPercent}%, ${matchLevel(job.matchPercent)} untuk posisi ini`,
+    },
     {
       id: "skills",
       icon: Wrench,
       color: "text-ink/70",
       text:
-        missingCount > 0
-          ? `Keterampilan inti Anda sudah sesuai, tersisa ${missingCount} yang perlu dilengkapi`
-          : "Seluruh keterampilan inti Anda sudah sesuai",
+        missingCount === 0
+          ? "Seluruh keterampilan yang dibutuhkan sudah Anda miliki"
+          : owned === 0
+            ? `Belum ada keterampilan yang dibutuhkan yang Anda miliki, ${missingCount} perlu dilengkapi`
+            : `Anda sudah memiliki ${owned} dari ${total} keterampilan yang dibutuhkan, ${missingCount} perlu dilengkapi`,
     },
-    { id: "sector", icon: Leaf, color: "text-emerald-600", text: `Sektor ${job.sector} selaras dengan minat dan pengalaman sektor Anda` },
-    { id: "location", icon: MapPin, color: "text-red-500", text: `Lokasi dan pola kerja ${job.workMode.toLowerCase()} sesuai dengan preferensi Anda` },
+    {
+      id: "sector",
+      icon: Leaf,
+      color: "text-emerald-600",
+      text: `Sektor ${job.sector} selaras dengan minat dan pengalaman sektor Anda`,
+    },
+    {
+      id: "location",
+      icon: MapPin,
+      color: "text-red-500",
+      text: `Lokasi dan pola kerja ${job.workMode.toLowerCase()} sesuai dengan preferensi Anda`,
+    },
   ];
 
   return (
-    <section aria-labelledby="fit-title" className="rounded-xl border border-mint-line bg-brand-light from-mint to-white p-5">
+    <section
+      aria-labelledby="fit-title"
+      className="rounded-xl border border-mint-line bg-brand-light from-mint to-white p-5"
+    >
       <div className="flex items-center gap-2">
         <span className="grid size-6 place-items-center rounded-full bg-brand text-white">
           <Sparkles className="size-3.5" aria-hidden="true" />
@@ -37,12 +59,20 @@ export function FitReasonBanner({ job, missingCount }) {
           Mengapa lamaran ini cocok untuk Anda
         </h2>
       </div>
-      <p className="mt-2 text-xs text-ink/70">Berdasarkan profil dan asesmen Anda, posisi ini direkomendasikan karena:</p>
+      <p className="mt-2 text-xs text-ink/70">
+        Berdasarkan profil dan asesmen Anda, posisi ini direkomendasikan karena:
+      </p>
 
       <ul className="mt-3 space-y-2.5">
         {reasons.map(({ id, icon: Icon, color, text }) => (
-          <li key={id} className="flex items-start gap-2.5 text-[13px] text-ink">
-            <Icon className={`mt-0.5 size-4 shrink-0 ${color}`} aria-hidden="true" />
+          <li
+            key={id}
+            className="flex items-start gap-2.5 text-[13px] text-ink"
+          >
+            <Icon
+              className={`mt-0.5 size-4 shrink-0 ${color}`}
+              aria-hidden="true"
+            />
             {text}
           </li>
         ))}
