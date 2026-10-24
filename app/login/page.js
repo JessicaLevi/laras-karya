@@ -96,7 +96,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" formAction={login} className="mt-4 h-12 w-full lg:h-[clamp(2.25rem,5.4vh,3rem)] rounded-xl text-base font-semibold">
+          <Button type="submit" formAction={login} className="mt-4 h-12 w-full lg:h-[clamp(2.25rem,5.4vh,3rem)] bg-brand hover:bg-brand/90 rounded-xl text-white font-semibold">
             Masuk
           </Button>
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="h-12 w-full gap-3 lg:h-[clamp(2.25rem,5.4vh,3rem)] rounded-xl border-line bg-white text-base font-semibold text-ink"
+            className="h-12 w-full gap-3 lg:h-[clamp(2.25rem,5.4vh,3rem)] rounded-xl border-line text-base font-semibold text-ink"
           >
             <GoogleIcon className="size-5" />
             Masuk dengan Google
