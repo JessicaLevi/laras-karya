@@ -131,7 +131,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-3">
-            <Button type="submit" formAction={signup} className="h-12 w-full lg:h-[clamp(2.25rem,5.4vh,3rem)] rounded-xl text-base font-semibold">
+            <Button type="submit" formAction={signup} className="h-12 w-full lg:h-[clamp(2.25rem,5.4vh,3rem)] bg-brand hover:bg-brand/90 rounded-xl text-white font-semibold">
               Daftar Sekarang
             </Button>
             <p className="flex items-center justify-center gap-2 rounded-xl bg-accent-light py-2 text-sm font-bold text-accent">
