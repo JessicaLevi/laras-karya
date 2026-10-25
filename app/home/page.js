@@ -11,12 +11,19 @@ import { ArrowRight } from "lucide-react";
 
 import { AlertBanner } from "@/components/home/alert-banner";
 import { CourseCard } from "@/components/home/course-card";
+import { RecentApplications } from "@/components/home/recent-applications";
 import { RecommendedJobs } from "@/components/home/recommended-jobs";
 import { WelcomeBanner } from "@/components/home/welcome-banner";
 //import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { StatCard } from "@/components/ui/stat-card";
-import { HOME_ALERT, HOME_STATS, HOME_USER, MOCK_COURSES, MOCK_JOBS } from "@/lib/home-data";
+import {
+  HOME_ALERT,
+  HOME_STATS,
+  HOME_USER,
+  MOCK_COURSES,
+  MOCK_JOBS,
+} from "@/lib/home-data";
 
 export const metadata = {
   title: "Beranda | Laras Karya",
@@ -33,13 +40,18 @@ export default function HomePage() {
           <WelcomeBanner {...HOME_USER} />
 
           {/* Mobile: 2 kolom · Tablet & desktop: 4 kolom */}
-          <section aria-label="Ringkasan" className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <section
+            aria-label="Ringkasan"
+            className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4"
+          >
             {HOME_STATS.map(({ id, ...stat }) => (
               <StatCard key={id} {...stat} />
             ))}
           </section>
 
           <RecommendedJobs jobs={MOCK_JOBS} />
+
+          <RecentApplications />
         </div>
 
         {/* Pita hijau lembut selebar layar */}
@@ -47,17 +59,28 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-[1200px] space-y-4 px-4 py-8 md:px-6 xl:px-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 id="courses-title" className="text-base font-bold text-ink md:text-lg">
+                <h2
+                  id="courses-title"
+                  className="text-base font-bold text-ink md:text-lg"
+                >
                   Pelatihan untuk Menutup Skill Gap Anda
                 </h2>
                 <p className="mt-0.5 text-xs text-ink/75">
-                  Rekomendasi program pelatihan terkurasi AI untuk meningkatkan peluang lolos lamaran impian.
+                  Rekomendasi program pelatihan terkurasi AI untuk meningkatkan
+                  peluang lolos seleksi.
                 </p>
               </div>
-              <Link href="/learning-path" className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0">
-                Lihat Semua <ArrowRight className="size-3.5" aria-hidden="true" />
+              <Link
+                href="/learning-path"
+                className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0"
+              >
+                Lihat Semua Pelatihan{" "}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
+
+            {/* Saran AI tepat di atas kursus yang menjawabnya */}
+            <AlertBanner {...HOME_ALERT} />
 
             <div className="grid gap-4 md:grid-cols-3">
               {MOCK_COURSES.map((c) => (
@@ -66,14 +89,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6 xl:px-8">
-          <AlertBanner {...HOME_ALERT} />
-        </div>
       </main>
 
       <Footer />
     </div>
   );
 }
-

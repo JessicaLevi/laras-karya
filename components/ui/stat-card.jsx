@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { cn } from "@/lib/utils";
 
 /* value = warna angka, icon = warna ikon. Dipakai di F05 (Lamaran) dan Beranda. */
@@ -24,19 +26,57 @@ const ICON = {
 };
 
 /**
+ * Jika `href` diisi, seluruh kartu menjadi tautan. Tanpa `href`, tampil seperti biasa.
  * @param {{ label: string, value: number|string, icon: import("lucide-react").LucideIcon,
- *           tone?: keyof typeof VALUE, iconTone?: keyof typeof ICON, iconClassName?: string, className?: string }} props
+ *           tone?: keyof typeof VALUE, iconTone?: keyof typeof ICON, iconClassName?: string,
+ *           className?: string, href?: string }} props
  */
-export function StatCard({ label, value, icon: Icon, tone = "green", iconTone, iconClassName, className }) {
-  return (
-    <div className={cn("flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm", className)}>
+export function StatCard({
+  label,
+  value,
+  icon: Icon,
+  tone = "green",
+  iconTone,
+  iconClassName,
+  className,
+  href,
+}) {
+  const classes = cn(
+    "flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm",
+    href &&
+      "transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+    className,
+  );
+
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <span className="text-[13px] font-medium text-ink/75">{label}</span>
-        <span className={cn("grid size-6 shrink-0 place-items-center rounded-md", ICON[iconTone ?? tone])}>
+        <span
+          className={cn(
+            "grid size-6 shrink-0 place-items-center rounded-md",
+            ICON[iconTone ?? tone],
+          )}
+        >
           <Icon className={cn("size-3.5", iconClassName)} aria-hidden="true" />
         </span>
       </div>
-      <span className={cn("text-[32px] font-bold leading-none", VALUE[tone] ?? VALUE.green)}>{value}</span>
-    </div>
+      <span
+        className={cn(
+          "text-[32px] font-bold leading-none",
+          VALUE[tone] ?? VALUE.green,
+        )}
+      >
+        {value}
+      </span>
+    </>
+  );
+
+  return href ? (
+    <Link href={href} className={classes}>
+      {content}
+    </Link>
+  ) : (
+    <div className={classes}>{content}</div>
   );
 }

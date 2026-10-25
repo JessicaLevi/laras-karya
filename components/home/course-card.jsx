@@ -27,7 +27,7 @@ export function CourseCard({ course }) {
   return (
     <article className="relative flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
       {image && (
-        <div className="relative -mx-4 -mt-4 h-36 overflow-hidden rounded-t-xl bg-mint">
+        <div className="relative -mx-4 -mt-4 h-28 overflow-hidden rounded-t-xl bg-mint">
           <Image
             src={image}
             alt=""
@@ -69,7 +69,7 @@ export function CourseCard({ course }) {
 
       <div>
         <p className="text-[10px] font-bold uppercase tracking-wide text-ink/70">
-          Fokus skill gampang dikejar:
+          Fokus skill:
         </p>
         <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-ai">
           <Star className="size-3 fill-current" aria-hidden="true" />
