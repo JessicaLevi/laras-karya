@@ -15,9 +15,9 @@ export function AlertBanner({ skill, targetMatch }) {
       />
       <div className="text-xs leading-relaxed text-ink">
         <p>
-          Berdasarkan profil Anda, kami merekomendasikan menyelesaikan pelatihan{" "}
-          <strong className="font-bold text-ai">{skill}</strong> untuk
-          meningkatkan kecocokan Anda di lowongan teratas hingga{" "}
+          Selesaikan pelatihan{" "}
+          <strong className="font-bold text-ai">{skill}</strong> untuk menaikkan
+          kecocokan di lowongan teratas hingga{" "}
           <strong className="font-bold text-ai">{targetMatch}</strong>.
         </p>
         <Link
