@@ -35,7 +35,7 @@ function FilterGroup({ label, options, value, onChange }) {
           type="button"
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded-full border px-5 py-2 text-sm font-semibold transition ${
+          className={`min-h-11 rounded-full border px-5 text-sm font-semibold transition ${
             value === o.value
               ? "border-brand bg-brand text-white"
               : "border-slate-200 bg-white text-ink hover:border-brand"
@@ -95,22 +95,17 @@ export default function JobList() {
   }
 
   return (
-    <div className="mt-10">
-      <SectionTitle>Rekomendasi Teratas untuk Anda</SectionTitle>
-
-      <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3">
+    <div className="mt-6">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
         <FilterGroup
           label="Pola kerja"
           options={MODES}
           value={mode}
           onChange={changeMode}
         />
-        <p className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
-          <span className="h-2 w-2 rounded-full bg-brand" aria-hidden />
-          Hanya menampilkan lowongan yang masih dibuka
-        </p>
+
         <p aria-live="polite" className="text-sm text-slate-600">
-          Menampilkan {shown} dari {filtered.length} rekomendasi
+          Menampilkan {shown} dari {filtered.length} lowongan yang masih dibuka
         </p>
       </div>
 
