@@ -8,11 +8,13 @@ import {
   Star,
 } from "lucide-react";
 
+import { CompanyAvatar } from "@/components/ui/company-avatar";
+
 const questions = [
   {
     icon: Search,
     title: "Apa yang cocok untuk saya?",
-    text: "Jawab pertanyaan singkat, kami carikan pekerjaan hijau yang sesuai.",
+    text: "Kami carikan pekerjaan hijau yang sesuai dengan pengalaman Anda.",
   },
   {
     icon: Lightbulb,
@@ -79,8 +81,8 @@ const jobs = [
 export function Questions() {
   return (
     <section className="bg-brand-light">
-      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
-        <h2 className="text-center text-3xl font-bold text-brand">
+      <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 xl:px-8">
+        <h2 className="text-3xl font-bold text-ink">
           Empat pertanyaan yang kami bantu jawab
         </h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -92,7 +94,7 @@ export function Questions() {
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-light text-brand">
                 <Icon className="h-6 w-6" aria-hidden />
               </span>
-              <h3 className="mt-5 text-lg font-bold leading-snug text-ink">
+              <h3 className="mt-5 text-lg font-bold leading-snug text-ink lg:min-h-[3.25rem]">
                 {title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">
@@ -109,8 +111,8 @@ export function Questions() {
 export function Jobs() {
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
-        <div className="flex items-end justify-between gap-4">
+      <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 xl:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
             <h2 className="text-3xl font-bold text-ink">
               Contoh Peluang Karier Hijau
@@ -132,19 +134,22 @@ export function Jobs() {
             <Link
               key={j.title}
               href="/jobs"
-              className="block rounded-2xl border border-slate-200 p-5 transition hover:border-brand"
+              className="flex items-start gap-3 rounded-2xl border border-slate-200 p-5 transition hover:border-brand"
             >
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
-                  {j.tag}
-                </span>
-                <ArrowRight className="h-4 w-4 text-slate-600" aria-hidden />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-ink">{j.title}</h3>
-              <p className="text-sm text-slate-600">{j.company}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                <span className="text-slate-600">{j.place}</span>
-                <span className="font-semibold text-brand">{j.salary}</span>
+              <CompanyAvatar
+                company={j.company}
+                sector={j.tag}
+                className="h-10 w-10 text-sm"
+              />
+              <div className="min-w-0">
+                <h3 className="text-lg font-bold leading-snug text-ink">
+                  {j.title}
+                </h3>
+                <p className="text-sm text-slate-600">{j.company}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="text-slate-600">{j.place}</span>
+                  <span className="font-semibold text-brand">{j.salary}</span>
+                </div>
               </div>
             </Link>
           ))}
@@ -157,7 +162,7 @@ export function Jobs() {
 export function CtaBanner() {
   return (
     <section className="bg-surface">
-      <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-10">
+      <div className="mx-auto max-w-[1200px] px-4 py-10 md:px-6 xl:px-8">
         <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand p-8 md:flex-row md:items-center md:p-14">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-ai">
@@ -166,9 +171,9 @@ export function CtaBanner() {
             <h2 className="mt-4 text-3xl font-bold text-white">
               Temukan Kecocokan Karier Anda
             </h2>
-            <p className="mt-4 leading-relaxed text-emerald-100/80">
-              Jawab beberapa pertanyaan dan dapatkan rekomendasi karier hijau
-              sesuai pengalaman Anda.
+            <p className="mt-4 text-balance leading-relaxed text-emerald-100/80">
+              Lima menit untuk rekomendasi karier hijau yang disusun dari
+              pengalaman Anda.
             </p>
           </div>
           <Link

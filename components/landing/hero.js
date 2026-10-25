@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,35 +20,37 @@ const sectors = [
   { icon: Recycle, label: "Ekonomi Hijau" },
 ];
 
+// Angka dari Bappenas, Peta Jalan Pengembangan Tenaga Kerja Hijau Indonesia (proyeksi).
 const stats = [
   {
     icon: Users,
-    from: "4 juta",
-    to: "5,3 juta+",
-    label: "Tenaga kerja hijau di Indonesia, 2025 ke 2029",
+    label: "Tenaga kerja hijau di Indonesia",
+    value: "5,3 juta+",
+    text: "Proyeksi 2029, naik dari 4 juta pada 2025.",
   },
   {
     icon: RefreshCw,
-    from: "56 juta",
-    to: "72 juta",
-    label: "Pekerjaan berpotensi ditransformasikan, hingga 2029",
+    label: "Pekerjaan yang berpotensi menjadi hijau",
+    value: "72 juta",
+    text: "Proyeksi 2029, naik dari 56 juta pada 2025.",
   },
 ];
 
 export default function Hero() {
   return (
     <>
-      <section id="tentang" className="bg-surface">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 md:px-6 xl:px-8 py-16 md:grid-cols-2 md:py-24">
+      <section id="tentang" className="overflow-clip bg-surface">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 py-16 md:grid-cols-[7fr_5fr] md:px-6 md:py-12 xl:px-8">
           <div>
             <span className="inline-block rounded-full bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand">
               Platform Karier Hijau untuk Perempuan
             </span>
-            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-brand md:text-5xl">
+            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
               Wujudkan Karier Bermakna di Sektor Hijau
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
-              Jawab beberapa pertanyaan, lalu temukan lowongan hijau yang cocok, lengkap dengan alasannya dan pelatihan untuk menutup skill gap.
+              Jawab beberapa pertanyaan, lalu dapatkan lowongan hijau yang cocok
+              beserta alasan dan pelatihannya.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
@@ -73,22 +76,25 @@ export default function Hero() {
             </ul>
           </div>
 
-          <div className="relative mx-auto w-full max-w-md md:max-w-none">
+          <div className="relative mx-auto w-full max-w-md md:ml-auto md:mr-0 md:max-w-[400px] xl:max-w-[440px]">
+            {/* Lingkaran dekoratif di belakang foto; dipotong di batas section oleh overflow-clip */}
             <div
-              className="absolute -right-6 -top-8 h-64 w-64 rounded-full bg-brand-light"
+              className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-brand-light"
               aria-hidden
             />
             <div
-              className="absolute -bottom-10 -left-8 h-72 w-72 rounded-full bg-secondary-light"
+              className="absolute -bottom-10 -left-12 h-72 w-72 rounded-full bg-secondary-light"
               aria-hidden
             />
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-200 to-emerald-500">
-              {/* Taruh foto di public/images/hero-green-jobs.jpg */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+
+            {/* Bingkai persegi 1:1; fotonya juga 1:1 (public/images/hero-green-jobs.jpg) */}
+            <div className="relative aspect-square overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-200 to-emerald-500">
+              <Image
                 src="/images/hero-green-jobs.jpg"
                 alt="Tiga perempuan profesional di sektor hijau: menanam bibit, membawa laptop, dan memegang tablet"
-                className="h-full w-full object-cover object-[62%_center]"
+                fill
+                sizes="(min-width: 1280px) 440px, (min-width: 768px) 400px, 100vw"
+                className="object-cover object-center"
                 fetchPriority="high"
               />
             </div>
@@ -97,9 +103,10 @@ export default function Hero() {
       </section>
 
       <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-6 text-center">
+        <div className="mx-auto max-w-[1200px] px-4 py-6 text-center md:px-6 xl:px-8">
           <p className="text-sm font-medium text-slate-700">
-            Untuk yang berpindah karier, belajar dari pengalaman praktik, atau baru memulai
+            Untuk yang berpindah karier, belajar dari pengalaman praktik, atau
+            baru memulai
           </p>
           <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600">
             {sectors.map(({ icon: Icon, label }) => (
@@ -115,28 +122,28 @@ export default function Hero() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-4xl px-5 py-12">
-          <div className="grid gap-5 sm:grid-cols-2">
-            {stats.map(({ icon: Icon, from, to, label }) => (
+        <div className="mx-auto max-w-[1200px] px-4 py-14 md:px-6 xl:px-8">
+          <div className="grid gap-10 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-slate-200">
+            {stats.map(({ icon: Icon, label, value, text }) => (
               <div
                 key={label}
-                className="flex items-center gap-4 rounded-2xl bg-brand-light p-6"
+                className="flex flex-col items-center px-4 text-center md:px-10"
               >
-                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white text-brand">
-                  <Icon className="h-7 w-7" aria-hidden />
-                </span>
-                <div>
-                  <p className="text-xs text-slate-600">Dari {from} menjadi</p>
-                  <p className="text-3xl font-bold leading-tight text-brand">
-                    {to}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-700">{label}</p>
-                </div>
+                <Icon className="h-6 w-6 text-brand" aria-hidden />
+                <p className="mt-3 text-sm font-semibold text-slate-700">
+                  {label}
+                </p>
+                <p className="mt-1 text-4xl font-bold leading-tight text-brand md:text-5xl">
+                  {value}
+                </p>
+                <p className="mt-2 text-sm text-slate-600">{text}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-slate-600">
-            Sumber: Bappenas, Green Jobs Roadmap
+          <p className="mx-auto mt-10 max-w-2xl text-center text-xs text-slate-600">
+            Sumber: Bappenas, Peta Jalan Pengembangan Tenaga Kerja Hijau
+            Indonesia. Angka 5,3 juta berlaku untuk skenario pertumbuhan ekonomi
+            tinggi.
           </p>
         </div>
       </section>
