@@ -127,6 +127,11 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
 }
 
 /*
@@ -160,5 +165,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

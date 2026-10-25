@@ -44,19 +44,17 @@ export default function Hero() {
               Platform Karier Hijau untuk Perempuan
             </span>
             <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-brand md:text-5xl">
-              Wujudkan Karier Bermakna di Sektor Green Jobs
+              Wujudkan Karier Bermakna di Sektor Hijau
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
-              Temukan peluang karier di sektor lingkungan dan keberlanjutan yang
-              sesuai dengan keahlian Anda. Platform khusus perempuan yang ingin
-              bertumbuh di ekonomi hijau.
+              Jawab beberapa pertanyaan, lalu temukan lowongan hijau yang cocok, lengkap dengan alasannya dan pelatihan untuk menutup skill gap.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
                 href="/assessment"
                 className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
               >
-                Mulai Asesmen Singkat{" "}
+                Mulai Asesmen Gratis{" "}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <Link
@@ -67,7 +65,7 @@ export default function Hero() {
               </Link>
             </div>
             <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-              {["Gratis", "5 menit", "Rekomendasi AI personal"].map((t) => (
+              {["5 menit", "Rekomendasi AI personal"].map((t) => (
                 <li key={t} className="flex items-center gap-1">
                   <Check className="h-3 w-3" aria-hidden /> {t}
                 </li>
@@ -84,13 +82,13 @@ export default function Hero() {
               className="absolute -bottom-10 -left-8 h-72 w-72 rounded-full bg-secondary-light"
               aria-hidden
             />
-            <div className="relative aspect-[1.09/1] overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-200 to-emerald-500">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-200 to-emerald-500">
               {/* Taruh foto di public/images/hero-green-jobs.jpg */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/hero-green-jobs.jpg"
-                alt="Perempuan profesional bekerja di bidang lingkungan dan energi hijau"
-                className="h-full w-full object-cover object-[60%_center]"
+                alt="Tiga perempuan profesional di sektor hijau: menanam bibit, membawa laptop, dan memegang tablet"
+                className="h-full w-full object-cover object-[62%_center]"
                 fetchPriority="high"
               />
             </div>
@@ -101,8 +99,7 @@ export default function Hero() {
       <section className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-6 text-center">
           <p className="text-sm font-medium text-slate-700">
-            Peluang green jobs untuk perempuan yang berpindah karier, belajar
-            dari pengalaman praktik, atau baru memulai
+            Untuk yang berpindah karier, belajar dari pengalaman praktik, atau baru memulai
           </p>
           <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600">
             {sectors.map(({ icon: Icon, label }) => (

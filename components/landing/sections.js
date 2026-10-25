@@ -27,16 +27,7 @@ const questions = [
   {
     icon: CircleCheck,
     title: "Apa langkah selanjutnya?",
-    text: "Temukan pelatihan, siapkan CV, lalu lamar.",
-  },
-];
-
-const steps = [
-  { title: "Temukan", text: "Pekerjaan hijau yang cocok untuk Anda" },
-  { title: "Siapkan", text: "Tutup kekurangan keterampilan dan lengkapi CV" },
-  {
-    title: "Melangkah",
-    text: "Lamar di situs perusahaan dan pantau statusnya",
+    text: "Temukan pelatihan, siapkan CV, lalu lamar dan pantau statusnya.",
   },
 ];
 
@@ -45,43 +36,43 @@ const jobs = [
     tag: "Energi Terbarukan",
     title: "Solar Panel Technician",
     company: "SuryaTerang Energi",
-    mode: "Remote",
-    open: true,
+    place: "Surabaya · On-site",
+    salary: "Rp 6–8 juta/bln",
   },
   {
     tag: "Konservasi",
     title: "Sustainability Officer",
     company: "Nusantara Hijau Group",
-    mode: "Hybrid",
-    open: true,
+    place: "Jakarta · Hybrid",
+    salary: "Rp 8–12 juta/bln",
   },
   {
-    tag: "Pertanian Berkelanjutan",
+    tag: "Ekonomi Hijau",
     title: "Waste Management Analyst",
     company: "Daur Ulang Nusantara",
-    mode: "On-site",
-    open: true,
+    place: "Semarang · Hybrid",
+    salary: "Rp 7–10 juta/bln",
   },
   {
     tag: "Ekonomi Hijau",
     title: "Bioeconomy Consultant",
     company: "Lestari Hijau Consult",
-    mode: "Remote",
-    open: true,
+    place: "Remote",
+    salary: "Rp 9–13 juta/bln",
   },
   {
-    tag: "Pertanian Berkelanjutan",
+    tag: "Agroforestri",
     title: "Agroforestry Specialist",
     company: "Rimba Karya",
-    mode: "On-site",
-    open: true,
+    place: "Bogor · On-site",
+    salary: "Rp 7–9 juta/bln",
   },
   {
-    tag: "Konstruksi Hijau",
+    tag: "Bangunan Hijau",
     title: "Green Building Architect",
     company: "Arsitektur Lestari",
-    mode: "Hybrid",
-    open: false,
+    place: "Bandung · Hybrid",
+    salary: "Rp 9–14 juta/bln",
   },
 ];
 
@@ -110,31 +101,6 @@ export function Questions() {
             </article>
           ))}
         </div>
-
-        <p className="mt-12 text-center text-sm font-semibold text-slate-700">
-          Perjalanan Anda bersama Laras Karya
-        </p>
-        <ol className="mx-auto mt-4 flex max-w-4xl flex-col items-stretch gap-3 md:flex-row md:items-center">
-          {steps.map((s, i) => (
-            <li key={s.title} className="flex flex-1 items-center gap-3">
-              <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="font-bold text-brand">{s.title}</p>
-                  <p className="text-xs text-slate-600">{s.text}</p>
-                </div>
-              </div>
-              {i < steps.length - 1 && (
-                <ArrowRight
-                  className="hidden h-4 w-4 shrink-0 text-slate-600 md:block"
-                  aria-hidden
-                />
-              )}
-            </li>
-          ))}
-        </ol>
       </div>
     </section>
   );
@@ -144,13 +110,19 @@ export function Jobs() {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 py-16">
-        <div className="flex items-end justify-between">
-          <h2 className="text-3xl font-bold text-ink">
-            Peluang Karier Hijau untuk Anda
-          </h2>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-ink">
+              Contoh Peluang Karier Hijau
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Selesaikan asesmen untuk melihat lowongan yang cocok dengan profil
+              Anda.
+            </p>
+          </div>
           <Link
             href="/jobs"
-            className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
+            className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-brand hover:underline"
           >
             Lihat Semua <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
@@ -160,7 +132,7 @@ export function Jobs() {
             <Link
               key={j.title}
               href="/jobs"
-              className={`block rounded-2xl border border-slate-200 p-5 transition hover:border-brand ${j.open ? "" : "opacity-60"}`}
+              className="block rounded-2xl border border-slate-200 p-5 transition hover:border-brand"
             >
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
@@ -170,15 +142,9 @@ export function Jobs() {
               </div>
               <h3 className="mt-4 text-lg font-bold text-ink">{j.title}</h3>
               <p className="text-sm text-slate-600">{j.company}</p>
-              <div className="mt-4 flex gap-2 text-xs">
-                <span className="rounded-full px-3 py-1 text-slate-600">
-                  {j.mode}
-                </span>
-                <span
-                  className={`rounded-full px-3 py-1 ${j.open ? "bg-brand-light text-brand" : "bg-slate-100 text-slate-600"}`}
-                >
-                  {j.open ? "Dibuka" : "Ditutup"}
-                </span>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span className="text-slate-600">{j.place}</span>
+                <span className="font-semibold text-brand">{j.salary}</span>
               </div>
             </Link>
           ))}
@@ -195,14 +161,14 @@ export function CtaBanner() {
         <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand p-8 md:flex-row md:items-center md:p-14">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-ai">
-              <Star className="h-3 w-3" aria-hidden /> ASESMEN SINGKAT
+              <Star className="h-3 w-3" aria-hidden /> ASESMEN 5 MENIT
             </span>
             <h2 className="mt-4 text-3xl font-bold text-white">
               Temukan Kecocokan Karier Anda
             </h2>
             <p className="mt-4 leading-relaxed text-emerald-100/80">
-              Jawab beberapa pertanyaan singkat dan dapatkan rekomendasi karier
-              hijau yang sesuai dengan pengalaman Anda.
+              Jawab beberapa pertanyaan dan dapatkan rekomendasi karier hijau
+              sesuai pengalaman Anda.
             </p>
           </div>
           <Link
