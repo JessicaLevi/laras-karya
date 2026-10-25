@@ -16,6 +16,13 @@ export function RecommendedJobs({ jobs }) {
     setTimeout(() => setIsUpdating(false), 900); // ganti dengan fetch rekomendasi saat back-end siap
   }
 
+  const topId = jobs
+    .filter((j) => j.isOpen)
+    .reduce(
+      (best, j) => (best && best.matchPercent >= j.matchPercent ? best : j),
+      null,
+    )?.id;
+
   return (
     <section aria-labelledby="jobs-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -24,7 +31,7 @@ export function RecommendedJobs({ jobs }) {
             id="jobs-title"
             className="text-base font-bold text-ink md:text-lg"
           >
-            Rekomendasi Green Jobs untuk Anda
+            Rekomendasi Lowongan Hijau untuk Anda
           </h2>
         </div>
         <div className="flex items-center gap-4">
@@ -58,7 +65,9 @@ export function RecommendedJobs({ jobs }) {
                 className="h-[176px] animate-pulse rounded-xl bg-white/80"
               />
             ))
-          : jobs.map((j) => <JobCard key={j.id} job={j} />)}
+          : jobs.map((j) => (
+              <JobCard key={j.id} job={j} featured={j.id === topId} />
+            ))}
       </div>
     </section>
   );

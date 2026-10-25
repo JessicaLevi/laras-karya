@@ -15,7 +15,7 @@ export default function EmployerPage() {
       <ComingSoon
         icon={Building2}
         title="Halaman Perusahaan sedang dikembangkan"
-        description="Kami sedang menyiapkan fitur untuk HR perusahaan swasta dan instansi pemerintah: memasang lowongan green jobs, mengelola pelamar, dan menemukan talenta perempuan yang sesuai."
+        description="Kami sedang menyiapkan fitur untuk HR perusahaan swasta dan instansi pemerintah: memasang lowongan hijau, mengelola pelamar, dan menemukan talenta perempuan yang cocok."
       />
     </PublicShell>
   );

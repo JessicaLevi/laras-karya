@@ -29,7 +29,7 @@ export default function HomePage() {
         </div>
 
         {/* Pita hijau lembut selebar layar */}
-        <section aria-labelledby="courses-title" className="mt-12 bg-mint">
+        <section aria-labelledby="courses-title" className="mt-4 bg-mint">
           <div className="mx-auto w-full max-w-[1200px] space-y-5 px-4 py-10 md:px-6 xl:px-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
