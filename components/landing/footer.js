@@ -94,7 +94,15 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 flex flex-col justify-between gap-2 border-t border-emerald-100/20 py-6 text-xs sm:flex-row">
-          <p>© 2026 Laras Karya. Hak cipta dilindungi.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <p>© 2026 Laras Karya. Hak cipta dilindungi.</p>
+            <Link href="/privacy" className="hover:text-white">
+              Kebijakan Privasi
+            </Link>
+            <Link href="/terms" className="hover:text-white">
+              Syarat &amp; Ketentuan
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
