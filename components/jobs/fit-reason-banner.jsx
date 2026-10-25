@@ -36,7 +36,7 @@ export function FitReasonBanner({ job, missingCount }) {
       id: "sector",
       icon: Leaf,
       color: "text-emerald-600",
-      text: `Sektor ${job.sector} selaras dengan minat dan pengalaman Anda`,
+      text: `Sektor ${job.sector} cocok dengan minat dan pengalaman Anda`,
     },
     {
       id: "location",

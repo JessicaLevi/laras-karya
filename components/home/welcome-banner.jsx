@@ -26,14 +26,16 @@ export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
       />
 
       <div className="relative flex min-h-[240px] max-w-xl flex-col items-start justify-center gap-4 px-6 py-7 md:min-h-[280px] md:px-10 xl:min-h-[300px] xl:px-12">
-        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-brand">
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand">
           Selamat datang kembali, {firstName}
         </span>
         <h1
           id="welcome-title"
           className="text-[26px] font-bold leading-tight text-white md:text-3xl"
         >
-          Ada {matchedJobs} lowongan hijau yang cocok untuk Anda
+          {matchedJobs > 0
+            ? `Ada ${matchedJobs} lowongan hijau yang cocok untuk Anda`
+            : "Selesaikan asesmen untuk melihat lowongan yang cocok"}
         </h1>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <Link
@@ -44,7 +46,7 @@ export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
           </Link>
           <Link
             href="/profile"
-            className="inline-flex min-h-11 items-center text-sm font-semibold text-white underline-offset-4 hover:underline md:min-h-10"
+            className="inline-flex min-h-11 items-center rounded-full border border-white/70 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10 md:min-h-10"
           >
             Lengkapi Profil ({profileCompleteness}%)
           </Link>

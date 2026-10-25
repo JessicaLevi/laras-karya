@@ -6,7 +6,7 @@ import { hasApplied } from "@/lib/applications-data";
 import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 /** @param {{ job: import("@/lib/home-data").JobItem }} props */
-export function JobCard({ job }) {
+export function JobCard({ job, featured = false }) {
   const {
     id,
     title,
@@ -46,7 +46,7 @@ export function JobCard({ job }) {
           <p className="text-lg font-bold leading-none text-ai">
             {matchPercent}%
           </p>
-          <p className="mt-0.5 text-[10px] font-semibold text-ai">Cocok</p>
+          <p className="mt-0.5 text-xs font-semibold text-ai">Cocok</p>
         </div>
       </div>
 
@@ -62,12 +62,12 @@ export function JobCard({ job }) {
         {isOpen ? (
           <>
             {benefit ? (
-              <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+              <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
                 <Heart className="size-3 shrink-0" aria-hidden="true" />
                 <span className="truncate">{benefit}</span>
               </span>
             ) : (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
                 Masih Dibuka
               </span>
             )}
@@ -83,7 +83,12 @@ export function JobCard({ job }) {
             ) : (
               <Link
                 href={`/recommended-jobs/${id}`}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-brand bg-brand px-4 text-xs font-bold text-white transition-colors hover:bg-brand/90 md:min-h-9"
+                className={cn(
+                  "inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-brand px-4 text-xs font-bold transition-colors md:min-h-9",
+                  featured
+                    ? "bg-brand text-white hover:bg-brand/90"
+                    : "bg-white text-brand hover:bg-brand-light",
+                )}
               >
                 Lamar Sekarang
               </Link>
@@ -91,7 +96,7 @@ export function JobCard({ job }) {
           </>
         ) : (
           <>
-            <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
+            <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
               Ditutup
             </span>
             <span className="text-xs font-medium text-ink/70">
