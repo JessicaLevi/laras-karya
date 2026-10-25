@@ -25,9 +25,10 @@ export function CourseCard({ course }) {
   } = course;
 
   return (
-    <article className="relative flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
+    <article className="relative flex flex-col gap-4 rounded-xl border border-line bg-white p-5 shadow-sm">
       {image && (
-        <div className="relative -mx-4 -mt-4 h-28 overflow-hidden rounded-t-xl bg-mint">
+        /* Rasio tetap 5:2 supaya bentuknya sama di semua lebar layar */
+        <div className="relative -mx-5 -mt-5 aspect-[5/2] overflow-hidden rounded-t-xl bg-mint">
           <Image
             src={image}
             alt=""
@@ -67,27 +68,23 @@ export function CourseCard({ course }) {
         </span>
       </div>
 
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink/70">
-          Fokus skill:
-        </p>
-        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-ai">
-          <Star className="size-3 fill-current" aria-hidden="true" />
-          {focusSkill}
+      <div className="mt-auto flex items-center justify-between gap-2">
+        <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-ai">
+          <Star className="size-3 shrink-0 fill-current" aria-hidden="true" />
+          <span className="truncate">{focusSkill}</span>
         </span>
+        <Link
+          href="/learning-path"
+          className={cn(
+            "inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border px-4 text-xs font-bold transition-colors md:min-h-9",
+            isPrimary
+              ? "border-brand bg-brand text-white hover:bg-brand/90"
+              : "border-brand bg-white text-brand hover:bg-brand-light",
+          )}
+        >
+          {isPrimary ? "Mulai Belajar" : "Lihat Pelatihan"}
+        </Link>
       </div>
-
-      <Link
-        href="/learning-path"
-        className={cn(
-          "mt-auto inline-flex min-h-11 items-center justify-center rounded-full border text-sm font-bold transition-colors md:min-h-10",
-          isPrimary
-            ? "border-brand bg-brand text-white hover:bg-brand/90"
-            : "border-brand bg-white text-brand hover:bg-brand-light",
-        )}
-      >
-        {isPrimary ? "Mulai Belajar" : "Lihat Pelatihan"}
-      </Link>
     </article>
   );
 }

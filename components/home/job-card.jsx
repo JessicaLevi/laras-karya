@@ -17,7 +17,6 @@ export function JobCard({ job }) {
     salary,
     isOpen,
     benefit,
-    skills = [],
   } = job;
 
   // Cek apakah lowongan ini sudah dilamar oleh user
@@ -25,7 +24,7 @@ export function JobCard({ job }) {
   const MetaIcon = workMode.startsWith("Remote") ? Laptop : MapPin;
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
+    <article className="flex flex-col gap-4 rounded-xl border border-line bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <CompanyAvatar
           company={company}
@@ -33,9 +32,6 @@ export function JobCard({ job }) {
           className="h-10 w-10 text-sm"
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">
-            {sector}
-          </p>
           <h3
             className={cn(
               "text-[15px] font-bold leading-snug",
@@ -54,17 +50,6 @@ export function JobCard({ job }) {
         </div>
       </div>
 
-      {/* Bar kecocokan (angkanya sudah tertulis di atas, jadi bar ini dekoratif) */}
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-pink-100"
-        aria-hidden="true"
-      >
-        <div
-          className="h-full rounded-full bg-ai"
-          style={{ width: `${matchPercent}%` }}
-        />
-      </div>
-
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="inline-flex items-center gap-1 text-xs text-ink/75">
           <MetaIcon className="size-3.5 shrink-0" aria-hidden="true" />
@@ -73,23 +58,9 @@ export function JobCard({ job }) {
         <span className="text-sm font-bold text-brand">{salary}</span>
       </div>
 
-      {skills.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label="Skill yang dicari">
-          {skills.map((s) => (
-            <li
-              key={s}
-              className="rounded-full border border-line px-2 py-0.5 text-[11px] text-ink/75"
-            >
-              {s}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+      <div className="mt-auto flex items-center justify-between gap-2">
         {isOpen ? (
           <>
-            {/* Fasilitas ramah perempuan; tanpa data fasilitas, tampil "Masih Dibuka". */}
             {benefit ? (
               <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
                 <Heart className="size-3 shrink-0" aria-hidden="true" />
@@ -101,11 +72,10 @@ export function JobCard({ job }) {
               </span>
             )}
 
-            {/* Jika sudah dilamar, tampilkan tautan ke daftar lamaran. */}
             {applied ? (
               <Link
                 href="/applications"
-                className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs font-bold text-emerald-700 hover:underline md:min-h-0"
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs font-bold text-emerald-700 hover:underline md:min-h-9"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden="true" /> Sudah
                 Dilamar
@@ -113,7 +83,7 @@ export function JobCard({ job }) {
             ) : (
               <Link
                 href={`/recommended-jobs/${id}`}
-                className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-brand px-4 text-xs font-bold text-white transition-colors hover:bg-brand/90 md:min-h-9"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-brand bg-brand px-4 text-xs font-bold text-white transition-colors hover:bg-brand/90 md:min-h-9"
               >
                 Lamar Sekarang
               </Link>

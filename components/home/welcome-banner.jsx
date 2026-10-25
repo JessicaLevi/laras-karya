@@ -8,15 +8,7 @@ import Link from "next/link";
   - Y kecil = bagian atas foto lebih terlihat (kepala), Y besar = bagian bawah lebih terlihat
   - X besar = fokus ke sisi kanan foto
 */
-export function WelcomeBanner({
-  firstName,
-  profileCompleteness,
-  matchedJobs,
-  notAppliedJobs,
-}) {
-  // Sebagian rekomendasi mungkin sudah dilamar; beri tahu sisanya supaya angka di judul tidak menyesatkan.
-  const showNotApplied = notAppliedJobs > 0 && notAppliedJobs < matchedJobs;
-
+export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
   return (
     <section
       aria-labelledby="welcome-title"
@@ -33,7 +25,7 @@ export function WelcomeBanner({
         className="absolute inset-0 bg-gradient-to-r from-brand/95 via-brand/85 to-brand/60 md:from-brand/95 md:via-brand/75 md:via-45% md:to-brand/0 md:to-75%"
       />
 
-      <div className="relative flex min-h-[240px] max-w-xl flex-col items-start justify-center gap-3 px-6 py-7 md:min-h-[280px] md:px-10 xl:min-h-[300px] xl:px-12">
+      <div className="relative flex min-h-[240px] max-w-xl flex-col items-start justify-center gap-4 px-6 py-7 md:min-h-[280px] md:px-10 xl:min-h-[300px] xl:px-12">
         <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-brand">
           Selamat datang kembali, {firstName}
         </span>
@@ -43,11 +35,6 @@ export function WelcomeBanner({
         >
           Ada {matchedJobs} lowongan hijau yang cocok untuk Anda
         </h1>
-        <p className="max-w-md text-sm text-white/90">
-          Dipilih berdasarkan profil dan minat Anda.
-          {showNotApplied &&
-            ` ${notAppliedJobs} di antaranya belum Anda lamar.`}
-        </p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <Link
             href="/recommended-jobs"
