@@ -8,7 +8,7 @@ function matchLevel(p) {
 }
 
 /**
- * Banner "Mengapa lamaran ini cocok untuk Anda". Poin dibuat dari data lowongan.
+ * Banner "Mengapa lowongan ini cocok untuk Anda". Poin dibuat dari data lowongan.
  * @param {{ job: import("@/lib/job-detail-data").JobDetail, missingCount: number }} props
  */
 export function FitReasonBanner({ job, missingCount }) {
@@ -19,7 +19,7 @@ export function FitReasonBanner({ job, missingCount }) {
       id: "match",
       icon: Target,
       color: "text-red-500",
-      text: `Kecocokan profil ${job.matchPercent}%, ${matchLevel(job.matchPercent)} untuk posisi ini`,
+      text: `Tingkat kecocokan Anda ${matchLevel(job.matchPercent)} untuk posisi ini`,
     },
     {
       id: "skills",
@@ -27,22 +27,22 @@ export function FitReasonBanner({ job, missingCount }) {
       color: "text-ink/70",
       text:
         missingCount === 0
-          ? "Seluruh keterampilan yang dibutuhkan sudah Anda miliki"
+          ? "Anda sudah memiliki seluruh keterampilan yang dibutuhkan"
           : owned === 0
-            ? `Belum ada keterampilan yang dibutuhkan yang Anda miliki, ${missingCount} perlu dilengkapi`
-            : `Anda sudah memiliki ${owned} dari ${total} keterampilan yang dibutuhkan, ${missingCount} perlu dilengkapi`,
+            ? "Anda belum memiliki keterampilan yang dibutuhkan"
+            : `Anda memiliki ${owned} dari ${total} keterampilan yang dibutuhkan`,
     },
     {
       id: "sector",
       icon: Leaf,
       color: "text-emerald-600",
-      text: `Sektor ${job.sector} selaras dengan minat dan pengalaman sektor Anda`,
+      text: `Sektor ${job.sector} selaras dengan minat dan pengalaman Anda`,
     },
     {
       id: "location",
       icon: MapPin,
       color: "text-red-500",
-      text: `Lokasi dan pola kerja ${job.workMode.toLowerCase()} sesuai dengan preferensi Anda`,
+      text: `Lokasi dan pola kerja ${job.workMode.toLowerCase()} sesuai preferensi Anda`,
     },
   ];
 
@@ -56,11 +56,11 @@ export function FitReasonBanner({ job, missingCount }) {
           <Sparkles className="size-3.5" aria-hidden="true" />
         </span>
         <h2 id="fit-title" className="text-[15px] font-bold text-ink">
-          Mengapa lamaran ini cocok untuk Anda
+          Mengapa lowongan ini cocok untuk Anda
         </h2>
       </div>
       <p className="mt-2 text-xs text-ink/70">
-        Berdasarkan profil dan asesmen Anda, posisi ini direkomendasikan karena:
+        Berdasarkan profil dan hasil asesmen Anda.
       </p>
 
       <ul className="mt-3 space-y-2.5">

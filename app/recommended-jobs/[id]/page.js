@@ -59,11 +59,11 @@ async function JobDetailContent({ params }) {
             job={job}
             missingCount={countMissingSkills(job.skills)}
           />
+          <JobSidebarInfo job={job} />
           <JobRequirements job={job} />
         </div>
 
-        <aside aria-label="Informasi lowongan" className="space-y-4">
-          <JobSidebarInfo job={job} />
+        <aside aria-label="Kecocokan profil dan aksi melamar">
           <MatchSkillGapCard job={job} />
         </aside>
       </div>
