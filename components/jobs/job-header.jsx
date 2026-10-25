@@ -69,9 +69,11 @@ export function JobHeader({ job }) {
             {job.title}
           </h1>
           <p className="mt-0.5 text-sm font-bold text-brand">{job.company}</p>
+
           <p className="text-xs text-ink/70">
             {job.city} · {job.workMode}
           </p>
+          <p className="mt-1.5 text-sm font-bold text-ink">{job.salary}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-3">

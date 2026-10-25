@@ -33,7 +33,7 @@ export function CourseCard({ course }) {
             alt=""
             fill
             sizes="(min-width: 1200px) 370px, (min-width: 768px) 33vw, 100vw"
-            className="object-cover object-[75%_30%]"
+            className="object-cover object-center"
           />
         </div>
       )}
