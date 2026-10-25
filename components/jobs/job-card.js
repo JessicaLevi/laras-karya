@@ -2,24 +2,35 @@
 
 import Link from "next/link";
 
-import { ArrowRight, Gift, MapPin, Star, Wallet } from "lucide-react";
-import MatchPanel from "./match-panel";
+import {
+  ArrowRight,
+  Gift,
+  ListChecks,
+  MapPin,
+  Star,
+  Wallet,
+} from "lucide-react";
+import MatchPanel, { splitSkills } from "./match-panel";
 
 import { hasApplied } from "@/lib/applications-data";
 import { AppliedBadge } from "@/components/ui/applied-badge";
-import { CompanyAvatar } from "@/components/ui/company-avatar";
+import { CompanyAvatar, sectorTone } from "@/components/ui/company-avatar";
 
-function TopRow({ job }) {
+function TopRow({ job, showMatch = true }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand">
+      <span
+        className={`rounded-full px-3 py-1 text-xs font-medium ${sectorTone(job.sector)}`}
+      >
         {job.sector}
       </span>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {hasApplied(job.id) && <AppliedBadge />}
-        <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
-          {job.match}% Cocok
-        </span>
+        {showMatch && (
+          <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
+            {job.match}% Cocok
+          </span>
+        )}
       </div>
     </div>
   );
@@ -32,7 +43,7 @@ function Meta({ job }) {
       <li className="flex items-center gap-2">
         <MapPin className="h-4 w-4 shrink-0" aria-hidden /> {place}
       </li>
-      <li className="flex items-center gap-2">
+      <li className="flex items-center gap-2 font-bold text-brand">
         <Wallet className="h-4 w-4 shrink-0" aria-hidden /> {job.salary}
       </li>
       {job.benefits?.length > 0 && (
@@ -42,6 +53,20 @@ function Meta({ job }) {
         </li>
       )}
     </ul>
+  );
+}
+
+function SkillSummary({ job }) {
+  const { owned } = splitSkills(job);
+  const total = job.skills.length;
+  if (total === 0) return <span />;
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-slate-600">
+      <ListChecks className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+      {owned.length === total
+        ? "Semua keterampilan dimiliki"
+        : `${owned.length} dari ${total} keterampilan dimiliki`}
+    </p>
   );
 }
 
@@ -57,7 +82,7 @@ export function FeaturedJobCard({ job }) {
 
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
         <article className="flex flex-col rounded-2xl bg-white p-6">
-          <TopRow job={job} />
+          <TopRow job={job} showMatch={false} />
           <div className="mt-5 flex items-center gap-4">
             <CompanyAvatar
               company={job.company}
@@ -65,7 +90,7 @@ export function FeaturedJobCard({ job }) {
               className="h-16 w-16 text-xl"
             />
             <div className="min-w-0">
-              <h3 className="text-3xl font-bold text-ink">{job.title}</h3>
+              <h2 className="text-3xl font-bold text-ink">{job.title}</h2>
               <p className="mt-1 text-slate-600">{job.company}</p>
             </div>
           </div>
@@ -107,7 +132,7 @@ export function FeaturedJobCard({ job }) {
 
 export function JobCard({ job }) {
   return (
-    <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6">
+    <article className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-sm">
       <TopRow job={job} />
       <div className="mt-4 flex items-center gap-3">
         <CompanyAvatar company={job.company} sector={job.sector} />
@@ -118,7 +143,8 @@ export function JobCard({ job }) {
       </div>
       <Meta job={job} />
 
-      <div className="mt-auto flex justify-end pt-5">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+        <SkillSummary job={job} />
         <Link
           href={`/recommended-jobs/${job.id}`}
           aria-label={`Lihat detail ${job.title} di ${job.company}`}

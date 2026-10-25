@@ -1,14 +1,17 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const base =
-  "flex h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40";
+  "flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40";
 
 export default function Pagination({ page, totalPages, onChange }) {
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
-    <nav aria-label="Halaman rekomendasi" className="mt-8 flex flex-wrap items-center justify-center gap-2">
+    <nav
+      aria-label="Halaman rekomendasi"
+      className="mt-8 flex flex-wrap items-center justify-center gap-2"
+    >
       <button
         type="button"
         aria-label="Halaman sebelumnya"
@@ -27,7 +30,9 @@ export default function Pagination({ page, totalPages, onChange }) {
           aria-current={p === page ? "page" : undefined}
           onClick={() => onChange(p)}
           className={`${base} ${
-            p === page ? "border-brand bg-brand text-white" : "border-slate-200 bg-white text-ink hover:border-brand"
+            p === page
+              ? "border-brand bg-brand text-white"
+              : "border-slate-200 bg-white text-ink hover:border-brand"
           }`}
         >
           {p}
