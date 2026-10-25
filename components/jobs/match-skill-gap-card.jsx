@@ -66,7 +66,8 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
         />
       </div>
       <p className="mt-2 text-xs text-white/80">
-        Profil Anda cocok dengan {job.matchPercent}% persyaratan posisi ini.
+        Dihitung dari keahlian, sektor, pola kerja, lokasi, pengalaman, dan
+        pendidikan.
       </p>
 
       <button
@@ -128,24 +129,25 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
       )}
 
       {applied ? (
-        <div className="mt-3 space-y-2">
-          <p className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white/15 text-[13px] font-bold">
-            <CheckCircle2 className="size-4" aria-hidden="true" /> Sudah Dilamar
-          </p>
-          <Link
-            href="/applications"
-            className="flex min-h-11 w-full items-center justify-center rounded-lg border border-white/60 text-[13px] font-semibold transition-colors hover:bg-white/10"
-          >
-            Lihat Lamaran Saya
-          </Link>
-        </div>
-      ) : job.isOpen ? (
         <Link
-          href={`/applications/prepare?job=${job.id}`}
-          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-brand transition-colors hover:bg-brand-light"
+          href="/applications"
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/60 text-[13px] font-semibold transition-colors hover:bg-white/10"
         >
-          Lamar Sekarang <ArrowRight className="size-4" aria-hidden="true" />
+          <CheckCircle2 className="size-4" aria-hidden="true" /> Lihat Lamaran
+          Saya
         </Link>
+      ) : job.isOpen ? (
+        <>
+          <Link
+            href={`/applications/prepare?job=${job.id}`}
+            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-brand transition-colors hover:bg-brand-light"
+          >
+            Lamar Sekarang <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+          <p className="mt-2 text-center text-xs text-white/80">
+            Periksa dokumen dulu, lalu lamar di situs perusahaan.
+          </p>
+        </>
       ) : (
         <button
           type="button"

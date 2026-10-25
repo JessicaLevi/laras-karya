@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, MapPin } from "lucide-react";
 
 /** Kartu putih bergaya seragam untuk tiap seksi konten. */
 function Section({ id, title, children }) {
@@ -13,14 +13,16 @@ function Section({ id, title, children }) {
 }
 
 /**
- * Tiga seksi: Detail Pekerjaan, Persyaratan Pekerjaan, Benefit & Fasilitas.
+ * Empat seksi: Detail Pekerjaan, Persyaratan Pekerjaan, Benefit & Fasilitas, Lokasi Perusahaan.
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function JobRequirements({ job }) {
   return (
     <>
       <Section id="detail-title" title="Detail Pekerjaan">
-        <p className="text-[13px] leading-relaxed text-ink/80">{job.description}</p>
+        <p className="text-[13px] leading-relaxed text-ink/80">
+          {job.description}
+        </p>
       </Section>
 
       <Section id="requirements-title" title="Persyaratan Pekerjaan">
@@ -34,12 +36,25 @@ export function JobRequirements({ job }) {
       <Section id="benefits-title" title="Benefit & Fasilitas">
         <ul className="flex flex-wrap gap-2">
           {job.benefits.map((b) => (
-            <li key={b.id} className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs text-ink/80 ring-1 ring-inset ring-line">
+            <li
+              key={b.id}
+              className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-xs text-ink/80 ring-1 ring-inset ring-line"
+            >
               <Check className="size-3 text-brand" aria-hidden="true" />
               {b.label}
             </li>
           ))}
         </ul>
+      </Section>
+
+      <Section id="location-title" title="Lokasi Perusahaan">
+        <p className="flex items-start gap-2 text-[13px] leading-relaxed text-ink/80">
+          <MapPin
+            className="mt-0.5 size-4 shrink-0 text-brand"
+            aria-hidden="true"
+          />
+          {job.address}
+        </p>
       </Section>
     </>
   );
