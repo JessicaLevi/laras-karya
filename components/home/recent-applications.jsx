@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 
 import { CompanyAvatar } from "@/components/ui/company-avatar";
 import { MOCK_APPLICATIONS, STATUS_CONFIG } from "@/lib/applications-data";
@@ -68,11 +68,15 @@ export function RecentApplications() {
                   </p>
                 </div>
                 <span
-                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_TONE[a.status]}`}
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_TONE[a.status]}`}
                 >
                   <Icon className="size-3" aria-hidden="true" />
                   {label}
                 </span>
+                <ChevronRight
+                  className="size-4 shrink-0 text-ink/40"
+                  aria-hidden="true"
+                />
               </Link>
             </li>
           );

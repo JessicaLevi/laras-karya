@@ -62,7 +62,7 @@ export default function MatchPanel({ job }) {
   return (
     <aside aria-label="Alasan kecocokan" className="rounded-2xl bg-white p-6">
       <h3 className="flex items-center gap-2 font-bold text-ai">
-        <Sparkles className="h-4 w-4" aria-hidden /> Mengapa Cocok untuk Anda
+        <Sparkles className="h-4 w-4" aria-hidden /> Mengapa cocok untuk Anda
       </h3>
 
       <div className="mt-5 flex items-center gap-4">
@@ -93,7 +93,7 @@ export default function MatchPanel({ job }) {
           </span>
         </div>
         <div>
-          <p className="font-bold text-ink">Tingkat Kecocokan</p>
+          <p className="font-bold text-ink">Tingkat kecocokan</p>
           <p className="text-xs text-slate-600">
             Dihitung dari keahlian, sektor, pola kerja, lokasi, pengalaman, dan
             pendidikan.
@@ -114,7 +114,7 @@ export default function MatchPanel({ job }) {
         <SkillGapList owned={owned} missing={missing} />
         <Link
           href="/learning-path"
-          className="mt-5 inline-block text-sm font-semibold text-brand hover:underline"
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand hover:underline"
         >
           Lihat Pelatihan Terkait
         </Link>

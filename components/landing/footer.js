@@ -66,7 +66,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/employer" className="hover:text-white">
-                  Employer
+                  Perusahaan
                 </Link>
               </li>
             </ul>

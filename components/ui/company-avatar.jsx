@@ -10,6 +10,11 @@ const TONES = {
   "Pengelolaan Limbah": "bg-orange-100 text-orange-800",
 };
 
+// Warna sektor yang sama dengan avatar, dipakai juga untuk chip sektor di kartu.
+export function sectorTone(sector) {
+  return TONES[sector] ?? "bg-brand-light text-brand";
+}
+
 function initials(name = "") {
   return name
     .replace(/^(PT|CV|Yayasan)\s+/i, "")
@@ -20,8 +25,12 @@ function initials(name = "") {
     .join("");
 }
 
-export function CompanyAvatar({ company, sector, className = "h-12 w-12 text-base" }) {
-  const tone = TONES[sector] ?? "bg-brand-light text-brand";
+export function CompanyAvatar({
+  company,
+  sector,
+  className = "h-12 w-12 text-base",
+}) {
+  const tone = sectorTone(sector);
   return (
     <span
       aria-hidden="true"

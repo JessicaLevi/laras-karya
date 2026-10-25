@@ -40,13 +40,13 @@ export function CourseCard({ course }) {
       )}
 
       {isPopular && (
-        <span className="absolute right-0 top-0 rounded-bl-lg rounded-tr-xl bg-ai px-2.5 py-1 text-[10px] font-bold tracking-wide text-white">
+        <span className="absolute right-0 top-0 rounded-bl-lg rounded-tr-xl bg-ai px-2.5 py-1 text-xs font-bold tracking-wide text-white">
           PALING POPULER
         </span>
       )}
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-brand">
+        <p className="text-xs font-bold uppercase tracking-wide text-brand">
           {provider}
         </p>
         <h3 className="mt-1 text-[15px] font-bold leading-snug text-ink">
@@ -57,22 +57,25 @@ export function CourseCard({ course }) {
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+            "rounded-full px-2.5 py-0.5 text-xs font-semibold",
             LEVEL_STYLES[level],
           )}
         >
           {level}
         </span>
-        <span className="text-[11px] text-ink/75">
+        <span className="text-xs text-ink/75">
           {duration} • {mode}
         </span>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2">
-        <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-ai">
-          <Star className="size-3 shrink-0 fill-current" aria-hidden="true" />
-          <span className="truncate">{focusSkill}</span>
-        </span>
+      <div className="mt-auto flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="mb-1 text-xs text-ink/75">Menutup skill gap:</p>
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-pink-50 px-2.5 py-0.5 text-xs font-semibold text-ai">
+            <Star className="size-3 shrink-0 fill-current" aria-hidden="true" />
+            <span className="truncate">{focusSkill}</span>
+          </span>
+        </div>
         <Link
           href="/learning-path"
           className={cn(
