@@ -2,11 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { CompanyAvatar } from "@/components/ui/company-avatar";
-import {
-  MOCK_APPLICATIONS,
-  STATUS_CONFIG,
-  formatDate,
-} from "@/lib/applications-data";
+import { MOCK_APPLICATIONS, STATUS_CONFIG } from "@/lib/applications-data";
 
 /* Warna chip status mengikuti kartu statistik di halaman Lamaran. */
 const STATUS_TONE = {
@@ -14,6 +10,14 @@ const STATUS_TONE = {
   interview: "bg-violet-50 text-violet-700",
   diterima: "bg-emerald-50 text-emerald-700",
   ditolak: "bg-red-50 text-red-700",
+};
+
+/* Satu kalimat "apa yang perlu dilakukan" per status. */
+const NEXT_STEP = {
+  diproses: "Menunggu kabar dari perusahaan",
+  interview: "Siapkan diri untuk interview",
+  diterima: "Tinjau penawaran kerja",
+  ditolak: "Coba lowongan lain yang cocok",
 };
 
 // Tiga lamaran terbaru, diurutkan dari tanggal paling baru.
@@ -26,17 +30,12 @@ export function RecentApplications() {
   return (
     <section aria-labelledby="applications-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2
-            id="applications-title"
-            className="text-base font-bold text-ink md:text-lg"
-          >
-            Status Lamaran Terbaru
-          </h2>
-          <p className="mt-0.5 text-xs text-ink/75">
-            Pantau perkembangan lamaran yang sudah Anda kirim.
-          </p>
-        </div>
+        <h2
+          id="applications-title"
+          className="text-base font-bold text-ink md:text-lg"
+        >
+          Status Lamaran Terbaru
+        </h2>
         <Link
           href="/applications"
           className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0"
@@ -65,7 +64,7 @@ export function RecentApplications() {
                     {a.title}
                   </p>
                   <p className="truncate text-xs text-ink/70">
-                    {a.company} • Dilamar {formatDate(a.appliedAt)}
+                    {a.company} • {NEXT_STEP[a.status]}
                   </p>
                 </div>
                 <span

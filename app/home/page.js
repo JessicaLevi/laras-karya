@@ -1,25 +1,13 @@
-/*export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Beranda</h1>
-    </main>
-  );
-}*/
-
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { AlertBanner } from "@/components/home/alert-banner";
 import { CourseCard } from "@/components/home/course-card";
 import { RecentApplications } from "@/components/home/recent-applications";
 import { RecommendedJobs } from "@/components/home/recommended-jobs";
 import { WelcomeBanner } from "@/components/home/welcome-banner";
-//import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { StatCard } from "@/components/ui/stat-card";
 import {
   HOME_ALERT,
-  HOME_STATS,
   HOME_USER,
   MOCK_COURSES,
   MOCK_JOBS,
@@ -29,34 +17,20 @@ export const metadata = {
   title: "Beranda | Laras Karya",
 };
 
-/* Beranda / dashboard. Server component; hanya RecommendedJobs yang client (tombol update). */
+/* Beranda / dashboard. Server component; hanya RecommendedJobs yang client (tombol perbarui). */
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-surface">
-      {/* <Navbar /> */}
-
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-[1200px] space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
+        <div className="mx-auto w-full max-w-[1200px] space-y-10 px-4 py-6 md:space-y-12 md:px-6 md:py-8 xl:px-8">
           <WelcomeBanner {...HOME_USER} />
-
-          {/* Mobile: 2 kolom · Tablet & desktop: 4 kolom */}
-          <section
-            aria-label="Ringkasan"
-            className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4"
-          >
-            {HOME_STATS.map(({ id, ...stat }) => (
-              <StatCard key={id} {...stat} />
-            ))}
-          </section>
-
           <RecommendedJobs jobs={MOCK_JOBS} />
-
           <RecentApplications />
         </div>
 
         {/* Pita hijau lembut selebar layar */}
-        <section aria-labelledby="courses-title" className="mt-4 bg-mint">
-          <div className="mx-auto w-full max-w-[1200px] space-y-4 px-4 py-8 md:px-6 xl:px-8">
+        <section aria-labelledby="courses-title" className="mt-12 bg-mint">
+          <div className="mx-auto w-full max-w-[1200px] space-y-5 px-4 py-10 md:px-6 xl:px-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2
@@ -66,8 +40,16 @@ export default function HomePage() {
                   Pelatihan untuk Menutup Skill Gap Anda
                 </h2>
                 <p className="mt-0.5 text-xs text-ink/75">
-                  Rekomendasi program pelatihan terkurasi AI untuk meningkatkan
-                  peluang lolos seleksi.
+                  <span className="font-bold text-ai">Saran AI:</span>{" "}
+                  selesaikan{" "}
+                  <strong className="font-bold text-ai">
+                    {HOME_ALERT.skill}
+                  </strong>{" "}
+                  untuk menaikkan kecocokan di lowongan teratas hingga{" "}
+                  <strong className="font-bold text-ai">
+                    {HOME_ALERT.targetMatch}
+                  </strong>
+                  .
                 </p>
               </div>
               <Link
@@ -78,9 +60,6 @@ export default function HomePage() {
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
-
-            {/* Saran AI tepat di atas kursus yang menjawabnya */}
-            <AlertBanner {...HOME_ALERT} />
 
             <div className="grid gap-4 md:grid-cols-3">
               {MOCK_COURSES.map((c) => (

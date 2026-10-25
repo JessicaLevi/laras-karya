@@ -26,9 +26,6 @@ export function RecommendedJobs({ jobs }) {
           >
             Rekomendasi Green Jobs untuk Anda
           </h2>
-          <p className="mt-0.5 text-xs text-ink/75">
-            Dari lowongan yang masih dibuka, diurutkan berdasarkan kecocokan.
-          </p>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -58,7 +55,7 @@ export function RecommendedJobs({ jobs }) {
           ? jobs.map((j) => (
               <div
                 key={j.id}
-                className="h-[260px] animate-pulse rounded-xl bg-white/80"
+                className="h-[176px] animate-pulse rounded-xl bg-white/80"
               />
             ))
           : jobs.map((j) => <JobCard key={j.id} job={j} />)}
