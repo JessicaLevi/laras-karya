@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Menu navbar publik (landing, Employer, dan halaman publik lain).
+// Menu navbar publik (landing, Perusahaan, dan halaman publik lain).
 export const PUBLIC_NAV_ITEMS = [
   { label: "Tentang", href: "/#tentang" },
   { label: "Karier Hijau", href: "/jobs" },
-  { label: "Employer", href: "/employer" },
+  { label: "Perusahaan", href: "/employer" },
 ];
 
 // Logo yang sama dengan navbar global (public/logo-laras-karya.png)
