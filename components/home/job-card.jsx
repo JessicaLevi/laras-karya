@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Star } from "lucide-react";
+import { CheckCircle2, Heart, Laptop, MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { hasApplied } from "@/lib/applications-data";
@@ -7,34 +7,38 @@ import { CompanyAvatar } from "@/components/ui/company-avatar";
 
 /** @param {{ job: import("@/lib/home-data").JobItem }} props */
 export function JobCard({ job }) {
-  const { id, title, company, sector, matchPercent, workMode, salary, isOpen } =
-    job;
+  const {
+    id,
+    title,
+    company,
+    sector,
+    matchPercent,
+    workMode,
+    salary,
+    isOpen,
+    benefit,
+    skills = [],
+  } = job;
 
   // Cek apakah lowongan ini sudah dilamar oleh user
   const applied = hasApplied(id);
+  const MetaIcon = workMode.startsWith("Remote") ? Laptop : MapPin;
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <span className="rounded-full bg-mint px-2.5 py-0.5 text-[11px] font-semibold text-brand">
-          {sector}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-ai">
-          <Star className="size-3 fill-current" aria-hidden="true" />
-          {matchPercent}% Cocok
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <CompanyAvatar
           company={company}
           sector={sector}
           className="h-10 w-10 text-sm"
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-brand">
+            {sector}
+          </p>
           <h3
             className={cn(
-              "text-[15px] font-bold",
+              "text-[15px] font-bold leading-snug",
               isOpen ? "text-ink" : "text-ink/70",
             )}
           >
@@ -42,29 +46,66 @@ export function JobCard({ job }) {
           </h3>
           <p className="text-xs text-ink/70">{company}</p>
         </div>
+        <div className="shrink-0 text-right">
+          <p className="text-lg font-bold leading-none text-ai">
+            {matchPercent}%
+          </p>
+          <p className="mt-0.5 text-[10px] font-semibold text-ai">Cocok</p>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <span className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-ink/75">
+      {/* Bar kecocokan (angkanya sudah tertulis di atas, jadi bar ini dekoratif) */}
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-pink-100"
+        aria-hidden="true"
+      >
+        <div
+          className="h-full rounded-full bg-ai"
+          style={{ width: `${matchPercent}%` }}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1 text-xs text-ink/75">
+          <MetaIcon className="size-3.5 shrink-0" aria-hidden="true" />
           {workMode}
         </span>
-        <span className="rounded-full bg-mint px-2.5 py-0.5 text-[11px] font-semibold text-brand">
-          {salary}
-        </span>
+        <span className="text-sm font-bold text-brand">{salary}</span>
       </div>
+
+      {skills.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5" aria-label="Skill yang dicari">
+          {skills.map((s) => (
+            <li
+              key={s}
+              className="rounded-full border border-line px-2 py-0.5 text-[11px] text-ink/75"
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         {isOpen ? (
           <>
-            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-              Masih Dibuka
-            </span>
+            {/* Fasilitas ramah perempuan; tanpa data fasilitas, tampil "Masih Dibuka". */}
+            {benefit ? (
+              <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                <Heart className="size-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{benefit}</span>
+              </span>
+            ) : (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                Masih Dibuka
+              </span>
+            )}
 
             {/* Jika sudah dilamar, tampilkan tautan ke daftar lamaran. */}
             {applied ? (
               <Link
                 href="/applications"
-                className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-emerald-700 hover:underline md:min-h-0"
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs font-bold text-emerald-700 hover:underline md:min-h-0"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden="true" /> Sudah
                 Dilamar
@@ -72,7 +113,7 @@ export function JobCard({ job }) {
             ) : (
               <Link
                 href={`/recommended-jobs/${id}`}
-                className="inline-flex min-h-11 items-center text-xs font-bold text-brand hover:underline md:min-h-0"
+                className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-brand px-4 text-xs font-bold text-white transition-colors hover:bg-brand/90 md:min-h-9"
               >
                 Lamar Sekarang
               </Link>
