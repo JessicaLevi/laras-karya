@@ -46,9 +46,7 @@ export default function Footer() {
           <div>
             <Logo light />
             <p className="mt-4 max-w-sm text-sm leading-relaxed">
-              Membangun jembatan bagi perempuan Indonesia untuk berkontribusi
-              aktif dan sukses di sektor pekerjaan ramah lingkungan demi masa
-              depan bumi yang berkelanjutan.
+              Menjembatani perempuan Indonesia menuju karier di sektor hijau.
             </p>
           </div>
           <nav aria-label="Navigasi footer">
@@ -96,11 +94,15 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 flex flex-col justify-between gap-2 border-t border-emerald-100/20 py-6 text-xs sm:flex-row">
-          <p>
-            © 2026 Laras Karya. Platform Karier Sektor Hijau untuk Perempuan
-            Indonesia.
-          </p>
-          <p>Hak Cipta Dilindungi</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <p>© 2026 Laras Karya. Hak cipta dilindungi.</p>
+            <Link href="/privacy" className="hover:text-white">
+              Kebijakan Privasi
+            </Link>
+            <Link href="/terms" className="hover:text-white">
+              Syarat &amp; Ketentuan
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
