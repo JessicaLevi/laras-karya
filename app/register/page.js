@@ -48,7 +48,7 @@ export default function RegisterPage() {
         <h2 className="text-3xl font-bold tracking-tight text-brand md:text-[2.5rem] md:leading-tight lg:text-[length:clamp(1.5rem,4.2vh,2.5rem)]">
           Buat Akun Laras Karya
         </h2>
-        <p className="mt-2 text-base text-ink">Mulai temukan green jobs yang selaras dengan dirimu.</p>
+        <p className="mt-2 text-base text-ink">Mulai temukan lowongan hijau yang selaras dengan Anda.</p>
 
         <form className="mt-6 space-y-4 lg:mt-[clamp(1rem,3vh,1.5rem)] lg:space-y-[clamp(0.5rem,1.8vh,1rem)]">
           <div>
@@ -61,9 +61,9 @@ export default function RegisterPage() {
                 id="name"
                 name="name"
                 type="text"
-                autoComplete="name"
+                autoComplete="name" required
                 placeholder="Masukkan nama lengkap"
-                className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle/80"
+                className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle"
               />
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function RegisterPage() {
                 id="identifier"
                 name="identifier"
                 type="text"
-                autoComplete="username"
+                autoComplete="username" required
                 placeholder="contoh@email.com"
                 className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle/80"
               />
@@ -95,19 +95,19 @@ export default function RegisterPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
-                placeholder="Minimal 8 karakter"
+                autoComplete="new-password" required minLength={8} aria-describedby="password-hint"
+                placeholder="Buat kata sandi"
                 className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle/80"
               />
             </div>
-            <p className="mt-1.5 text-sm text-subtle">Kata sandi harus terdiri dari kombinasi huruf dan angka</p>
+            <p id="password-hint" className="mt-1.5 text-sm text-subtle">Minimal 8 karakter, kombinasi huruf dan angka.</p>
           </div>
 
           <div className="flex items-start gap-3 text-sm text-ink/80">
             <span className="relative mt-0.5 grid size-5 shrink-0 place-items-center">
               <input
                 id="agree"
-                name="agree"
+                name="agree" required
                 type="checkbox"
                 className="peer size-5 cursor-pointer appearance-none rounded-md border-2 border-brand bg-white checked:bg-brand-light focus-visible:ring-3 focus-visible:ring-brand/30 focus-visible:outline-none"
               />
@@ -136,7 +136,7 @@ export default function RegisterPage() {
             </Button>
             <p className="flex items-center justify-center gap-2 rounded-xl bg-accent-light py-2 text-sm font-bold text-accent">
               <Sparkle className="size-3.5 fill-current" aria-hidden="true" />
-              Langsung mulai asesmen AI setelah daftar
+              Setelah daftar, lanjut ke asesmen 5 menit
             </p>
           </div>
 

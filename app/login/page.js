@@ -67,7 +67,7 @@ export default function LoginPage() {
                 id="identifier"
                 name="identifier"
                 type="text"
-                autoComplete="username"
+                autoComplete="username" required
                 placeholder="contoh@email.com"
                 className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle/80"
               />
@@ -84,9 +84,9 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="current-password" required
                 placeholder="Masukkan kata sandi Anda"
-                className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle/80"
+                className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-subtle"
               />
             </div>
             <div className="mt-1.5 flex justify-end text-sm">
