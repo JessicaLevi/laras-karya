@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import JobList from "@/components/jobs/job-list";
+import JobList, { JobListFromUrl } from "@/components/jobs/job-list";
 import { Footer } from "@/components/layout/footer";
 import { PageBanner } from "@/components/ui/page-banner";
 
@@ -36,7 +37,10 @@ export default function RecommendedJobsPage() {
           </PageBanner>
         </div>
 
-        <JobList />
+        {/* JobListFromUrl membaca ?q= dari URL; selama itu, daftar tanpa pencarian tampil lebih dulu */}
+        <Suspense fallback={<JobList />}>
+          <JobListFromUrl />
+        </Suspense>
       </div>
 
       <Footer />
