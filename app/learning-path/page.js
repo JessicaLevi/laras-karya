@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
@@ -10,12 +11,16 @@ import {
   Compass,
   ExternalLink,
   Lock,
+  SearchX,
   Sparkle,
   Sparkles,
   Upload,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SearchBar } from "@/components/ui/search-bar";
+import { courseSearchFields, matchesQuery, replaceQueryParam } from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 import { completeCourse, getLearningPath, startCourse } from "./actions";
@@ -44,7 +49,32 @@ const LEVEL_BADGE = {
   Advanced: "bg-red-100 text-red-700",
 };
 
+function LoadingView() {
+  return (
+    <main className="flex min-h-[70vh] items-center justify-center px-6">
+      <p className="animate-pulse text-muted-foreground">Memuat jalur belajar...</p>
+    </main>
+  );
+}
+
+/** ?q= dibaca dari URL (mis. dari pencarian di Beranda); useSearchParams wajib di dalam <Suspense>. */
+function LearningPathFromUrl() {
+  const initialQuery = useSearchParams().get("q") ?? "";
+  return <LearningPathContent initialQuery={initialQuery} />;
+}
+
 export default function LearningPathPage() {
+  return (
+    <Suspense fallback={<LoadingView />}>
+      <LearningPathFromUrl />
+    </Suspense>
+  );
+}
+
+function LearningPathContent({ initialQuery = "" }) {
+  const [query, setQuery] = useState(initialQuery);
+  const urlTimer = useRef(null);
+  useEffect(() => () => clearTimeout(urlTimer.current), []);
   const [target, setTarget] = useState(null);
   const [steps, setSteps] = useState([]);
   const [progress, setProgress] = useState({});
@@ -68,6 +98,22 @@ export default function LearningPathPage() {
 
     return { ...step, doneCount, state };
   });
+
+  // Pencarian hanya menyaring TAMPILAN; status langkah tetap dihitung dari semua course di atas.
+  const searching = query.trim().length > 0;
+  const visibleSteps = stepViews
+    .map((step) => ({
+      ...step,
+      shownCourses: step.courses.filter((course) => matchesQuery(courseSearchFields(course), query)),
+    }))
+    .filter((step) => !searching || step.shownCourses.length > 0);
+  const matchCount = visibleSteps.reduce((sum, step) => sum + step.shownCourses.length, 0);
+
+  const changeQuery = (value) => {
+    setQuery(value);
+    clearTimeout(urlTimer.current);
+    urlTimer.current = setTimeout(() => replaceQueryParam(value), 300);
+  };
 
   const totalCourses = steps.reduce((sum, step) => sum + step.courses.length, 0);
   const completedCourses = stepViews.reduce((sum, step) => sum + step.doneCount, 0);
@@ -122,13 +168,7 @@ const handleComplete = (courseId) => {
   }
 
   if (loading) {
-    return (
-      <main className="flex min-h-[70vh] items-center justify-center px-6">
-        <p className="animate-pulse text-muted-foreground">
-          Memuat jalur belajar...
-        </p>
-      </main>
-    );
+    return <LoadingView />;
   }
 
   return (
@@ -261,8 +301,39 @@ const handleComplete = (courseId) => {
               <p className="mt-4 text-sm text-destructive">{actionError}</p>
             )}
 
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <SearchBar
+                label="Cari pelatihan"
+                placeholder="Cari pelatihan, penyedia, atau skill"
+                value={query}
+                onChange={changeQuery}
+                className="w-full max-w-xl"
+              />
+              {searching && matchCount > 0 ? (
+                <p aria-live="polite" className="text-sm text-ink/70">
+                  {matchCount} pelatihan cocok dengan “{query.trim()}”
+                </p>
+              ) : null}
+            </div>
+
+            {searching && matchCount === 0 ? (
+              <EmptyState
+                icon={SearchX}
+                title={`Tidak ada pelatihan untuk “${query.trim()}”`}
+                text="Coba kata lain, misalnya nama skill seperti AMDAL, atau nama penyedia seperti Kemnaker."
+              >
+                <button
+                  type="button"
+                  onClick={() => changeQuery("")}
+                  className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+                >
+                  Hapus pencarian
+                </button>
+              </EmptyState>
+            ) : null}
+
             <ol className="mt-8 space-y-6">
-              {stepViews.map((step) => (
+              {visibleSteps.map((step) => (
                 <li
                   key={step.n}
                   aria-current={step.state === "active" ? "step" : undefined}
@@ -311,7 +382,7 @@ const handleComplete = (courseId) => {
                   </div>
 
                   <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    {step.courses.map((course) => {
+                    {step.shownCourses.map((course) => {
                       const status = progress[course.id]?.status;
                       const locked = step.state === "locked";
 

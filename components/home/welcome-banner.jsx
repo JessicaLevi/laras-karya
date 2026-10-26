@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { HomeSearch } from "@/components/home/home-search";
+
 /*
   Latar foto: taruh gambar di public/images/hero-home.jpg (export dari Figma).
   Jika file belum ada, banner tetap tampil dengan warna hijau.
@@ -37,6 +39,7 @@ export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
             ? `Ada ${matchedJobs} lowongan hijau yang cocok untuk Anda`
             : "Selesaikan asesmen untuk melihat lowongan yang cocok"}
         </h1>
+        <HomeSearch />
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <Link
             href="/recommended-jobs"
