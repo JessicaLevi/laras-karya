@@ -117,7 +117,17 @@ export default function AssessmentStep4Page() {
                     {skill}
                   </li>
                 ))}
+                {s3.custom_skills.map((skill) => (
+                  <li key={`custom-${skill}`} className="rounded-lg border-[1.5px] border-dashed border-brand bg-white px-2.5 py-1 text-[13px] font-semibold text-brand">
+                    {skill} <span className="font-normal text-ink/60">· di luar daftar</span>
+                  </li>
+                ))}
               </ul>
+              {s3.custom_skills.length > 0 ? (
+                <p className="mt-2 text-xs leading-relaxed text-ink/70">
+                  Keahlian di luar daftar tetap tercatat, tetapi belum dihitung dalam skor kecocokan karena namanya belum ada di data lowongan.
+                </p>
+              ) : null}
             </Item>
             <Item label="Tingkat pengalaman">
               <p className="text-[15px] font-bold text-ink">{labelOf(EXPERIENCE_LEVELS, s3.experience_level)}</p>

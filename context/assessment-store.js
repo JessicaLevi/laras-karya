@@ -23,7 +23,7 @@ export const INITIAL_ANSWERS = {
     certifications: [],
     experience_story: "",
   },
-  step_3: { work_arrangement: null, interest_sectors: [], skills: [], experience_level: "" },
+  step_3: { work_arrangement: null, interest_sectors: [], skills: [], custom_skills: [], experience_level: "" },
 };
 
 const listeners = new Set();
@@ -33,7 +33,16 @@ function read() {
   if (cache === undefined) {
     try {
       const saved = JSON.parse(window.sessionStorage.getItem(STORAGE_KEY));
-      cache = saved ? { ...INITIAL_ANSWERS, ...saved } : INITIAL_ANSWERS;
+      // Gabung per langkah, supaya kolom baru (mis. custom_skills) tetap ada untuk jawaban lama
+      cache = saved
+        ? {
+            ...INITIAL_ANSWERS,
+            ...saved,
+            step_1: { ...INITIAL_ANSWERS.step_1, ...saved.step_1 },
+            step_2: { ...INITIAL_ANSWERS.step_2, ...saved.step_2 },
+            step_3: { ...INITIAL_ANSWERS.step_3, ...saved.step_3 },
+          }
+        : INITIAL_ANSWERS;
     } catch {
       cache = INITIAL_ANSWERS;
     }
