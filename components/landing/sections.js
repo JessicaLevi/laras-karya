@@ -115,11 +115,11 @@ export function Jobs() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
             <h2 className="text-3xl font-bold text-ink">
-              Contoh Peluang Karier Hijau
+              Pratinjau lowongan hijau
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Selesaikan asesmen untuk melihat lowongan yang cocok dengan profil
-              Anda.
+              Sekilas pilihan di berbagai sektor. Selesaikan asesmen untuk
+              melihat yang cocok dengan profil Anda.
             </p>
           </div>
           <Link
