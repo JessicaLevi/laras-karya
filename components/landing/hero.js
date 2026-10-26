@@ -50,7 +50,7 @@ export default function Hero() {
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
               Jawab beberapa pertanyaan, lalu dapatkan lowongan hijau yang cocok
-              beserta alasan dan pelatihannya.
+              beserta penjelasan dan pelatihannya.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
@@ -105,7 +105,7 @@ export default function Hero() {
       <section className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-[1200px] px-4 py-6 text-center md:px-6 xl:px-8">
           <p className="text-sm font-medium text-slate-700">
-            Untuk yang berpindah karier, belajar dari pengalaman praktik, atau
+            Sesuai untuk Anda yang berpindah karier, belajar dari pengalaman praktik, atau
             baru memulai
           </p>
           <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600">

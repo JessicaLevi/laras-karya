@@ -14,7 +14,7 @@ const questions = [
   {
     icon: Search,
     title: "Apa yang cocok untuk saya?",
-    text: "Kami carikan pekerjaan hijau yang sesuai dengan pengalaman Anda.",
+    text: "Kami carikan lowongan hijau yang sesuai dengan pengalaman Anda.",
   },
   {
     icon: Lightbulb,
@@ -119,7 +119,7 @@ export function Jobs() {
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               Sekilas pilihan di berbagai sektor. Selesaikan asesmen untuk
-              melihat yang cocok dengan profil Anda.
+              melihat yang sesuai dengan profil Anda.
             </p>
           </div>
           <Link
@@ -172,8 +172,8 @@ export function CtaBanner() {
               Temukan Kecocokan Karier Anda
             </h2>
             <p className="mt-4 text-balance leading-relaxed text-emerald-100/80">
-              Lima menit untuk rekomendasi karier hijau yang disusun dari
-              pengalaman Anda.
+              Rekomendasi karier hijau yang disusun dari pengalaman Anda,
+              lengkap dengan penjelasannya.
             </p>
           </div>
           <Link
