@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SearchX, Sparkles } from "lucide-react";
 import { JOBS } from "@/lib/mock-jobs";
 import { getOpenJobsAppliedLast } from "@/lib/job-ordering";
 import { FeaturedJobCard, JobCard } from "./job-card";
 import Pagination from "./pagination";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SearchBar } from "@/components/ui/search-bar";
+import { jobSearchFields, matchesQuery, replaceQueryParam } from "@/lib/search";
 
 const PAGE_SIZE = 6; // jumlah kartu "Rekomendasi lainnya" per halaman
 
@@ -59,15 +62,28 @@ function SectionTitle({ children, titleRef }) {
   );
 }
 
-export default function JobList() {
+/** Membaca ?q= dari URL (mis. dari pencarian di Beranda). Dibungkus <Suspense> di halaman. */
+export function JobListFromUrl() {
+  const initialQuery = useSearchParams().get("q") ?? "";
+  return <JobList initialQuery={initialQuery} />;
+}
+
+export default function JobList({ initialQuery = "" }) {
   const [mode, setMode] = useState("semua");
+  const [query, setQuery] = useState(initialQuery);
   const [page, setPage] = useState(1);
   const othersRef = useRef(null);
+  const urlTimer = useRef(null);
+  useEffect(() => () => clearTimeout(urlTimer.current), []);
 
   const filtered = useMemo(
-    () => OPEN_JOBS.filter((j) => mode === "semua" || j.mode === mode),
-    [mode],
+    () =>
+      OPEN_JOBS.filter(
+        (j) => (mode === "semua" || j.mode === mode) && matchesQuery(jobSearchFields(j), query),
+      ),
+    [mode, query],
   );
+  const searching = query.trim().length > 0;
 
   const [top, ...rest] = filtered;
   const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
@@ -79,9 +95,16 @@ export default function JobList() {
     setMode(v);
     setPage(1);
   }
+  function changeQuery(v) {
+    setQuery(v);
+    setPage(1);
+    // Simpan ke URL (?q=) agar hasil tetap sama saat halaman dimuat ulang atau dibagikan
+    clearTimeout(urlTimer.current);
+    urlTimer.current = setTimeout(() => replaceQueryParam(v), 300);
+  }
   function resetFilters() {
     setMode("semua");
-    setPage(1);
+    changeQuery("");
   }
   function changePage(p) {
     setPage(p);
@@ -96,6 +119,13 @@ export default function JobList() {
 
   return (
     <div className="mt-6">
+      <SearchBar
+        label="Cari lowongan"
+        placeholder="Cari posisi, perusahaan, kota, atau skill"
+        value={query}
+        onChange={changeQuery}
+        className="mb-4 max-w-xl"
+      />
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
         <FilterGroup
           label="Pola kerja"
@@ -105,7 +135,8 @@ export default function JobList() {
         />
 
         <p aria-live="polite" className="text-sm text-slate-600">
-          Menampilkan {shown} dari {filtered.length} lowongan yang masih dibuka
+          Menampilkan {shown} dari {filtered.length} lowongan{" "}
+          {searching ? <>yang cocok dengan “{query.trim()}”</> : "yang masih dibuka"}
         </p>
       </div>
 
@@ -136,15 +167,23 @@ export default function JobList() {
       ) : (
         <EmptyState
           icon={SearchX}
-          title="Belum ada lowongan yang cocok dengan filter ini"
-          text="Coba ganti pola kerja untuk melihat rekomendasi lain."
+          title={
+            searching
+              ? `Tidak ada lowongan untuk “${query.trim()}”`
+              : "Belum ada lowongan yang cocok dengan filter ini"
+          }
+          text={
+            searching
+              ? "Coba kata lain, misalnya nama posisi, kota, atau skill, atau ganti pola kerja."
+              : "Coba ganti pola kerja untuk melihat rekomendasi lain."
+          }
         >
           <button
             type="button"
             onClick={resetFilters}
             className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
           >
-            Reset filter
+            {searching ? "Hapus pencarian & filter" : "Reset filter"}
           </button>
         </EmptyState>
       )}

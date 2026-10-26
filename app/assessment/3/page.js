@@ -86,11 +86,16 @@ export default function AssessmentStep3Page() {
         />
       </Field>
 
-      <Field as="fieldset" label="Keahlian utama Anda" required error={errorFor("skills")}>
+      <Field as="fieldset" label="Keahlian utama Anda" required error={errorFor("skills") ?? errorFor("custom_skills")}>
         <SkillPicker
           options={SKILL_OPTIONS}
           values={step.skills}
           onChange={(values) => update("skills", values)}
+          customValues={step.custom_skills}
+          onCustomChange={(values) => {
+            update("custom_skills", values);
+            touch("skills");
+          }}
           suggestions={suggestions}
         />
       </Field>

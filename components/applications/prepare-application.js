@@ -17,6 +17,7 @@ import { MOCK_APPLICANT, buildCoverLetter } from "@/lib/mock-applicant";
 import ReadinessChecklist from "./readiness-checklist";
 import SubmissionDialog from "./submission-dialog";
 import ApplySteps from "./apply-steps";
+import { CvUpload } from "./cv-upload";
 import { hasApplied } from "@/lib/applications-data";
 
 // GANTI: URL lowongan asli dari data/API (halaman sumber lowongan di situs perusahaan).
@@ -56,6 +57,9 @@ function PrepareForm({ job }) {
   const [portfolio, setPortfolio] = useState(""); // nama file (file belum dikirim ke mana pun)
   const [uploadError, setUploadError] = useState("");
   const [consent, setConsent] = useState(false);
+  // File CV yang dilampirkan untuk lamaran ini. BACKEND: unggah ke Storage -> applications.resume_url
+  const [cvFile, setCvFile] = useState(null);
+  const cvInputRef = useRef(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const fileRef = useRef(null);
 
@@ -109,7 +113,20 @@ function PrepareForm({ job }) {
 
   const items = [
     { key: "profil", label: "Profil lengkap", done: true },
-    { key: "cv", label: "CV terhubung", done: true },
+    {
+      key: "cv",
+      label: cvFile ? `CV terunggah: ${cvFile.name}` : "CV belum diunggah",
+      done: Boolean(cvFile),
+      action: cvFile ? null : (
+        <button
+          type="button"
+          onClick={() => cvInputRef.current?.click()}
+          className="rounded-full border border-brand px-3.5 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand-light"
+        >
+          Unggah CV
+        </button>
+      ),
+    },
     {
       key: "surat",
       label: hasLetter ? "Surat lamaran tersedia" : "Surat lamaran belum diisi",
@@ -136,6 +153,8 @@ function PrepareForm({ job }) {
     ? "Lowongan ini sudah ditutup."
     : !consent
       ? "Centang pernyataan di atas untuk melanjutkan."
+      : !cvFile
+        ? "Belum ada CV terlampir. Anda tetap bisa melanjutkan, tetapi sebagian perusahaan mewajibkan CV."
       : "Anda akan diarahkan ke situs sumber lowongan. Lamaran dicatat di Laras Karya.";
 
   return (
@@ -226,6 +245,8 @@ function PrepareForm({ job }) {
                 value={`${a.education.degree} — ${a.education.school}`}
               />
             </dl>
+
+            <CvUpload file={cvFile} onChange={setCvFile} inputRef={cvInputRef} maxMb={MAX_FILE_MB} />
 
             <Link
               href="/profile"
