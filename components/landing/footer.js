@@ -55,7 +55,7 @@ export default function Footer() {
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
-                <Link href="/#tentang" className="hover:text-white">
+                <Link href="/about" className="hover:text-white">
                   Tentang Kami
                 </Link>
               </li>
