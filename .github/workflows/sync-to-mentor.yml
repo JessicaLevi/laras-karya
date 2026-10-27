@@ -8,8 +8,6 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout source repo
@@ -17,6 +15,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: feature
+          persist-credentials: false
 
       - name: Check token is set
         env:
@@ -28,17 +27,8 @@ jobs:
           fi
           echo "Token is set"
 
-      - name: Test access to target repo
-        env:
-          MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
-        run: |
-          git ls-remote "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git" HEAD
-
       - name: Push to mentor feature branch
         env:
           MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
         run: |
-          set -e
-          git remote remove mentor || true
-          git remote add mentor "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git"
-          git push mentor HEAD:feature
+          git push "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git" HEAD:feature --force
