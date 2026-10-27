@@ -20,8 +20,7 @@ import ApplySteps from "./apply-steps";
 import { CvUpload } from "./cv-upload";
 import { hasApplied } from "@/lib/applications-data";
 
-// GANTI: URL lowongan asli dari data/API (halaman sumber lowongan di situs perusahaan).
-const PLACEHOLDER_APPLY_URL = "https://example.com/";
+// ⬇️ DIHAPUS: PLACEHOLDER_APPLY_URL (tidak dipakai lagi, lamaran sekarang dikirim lewat Laras Karya)
 const MAX_FILE_MB = 5;
 
 function Field({ label, value, className = "" }) {
@@ -48,7 +47,7 @@ function StatusChip({ open }) {
 function PrepareForm({ job }) {
   const a = MOCK_APPLICANT;
   const isOpen = job.status === "dibuka";
-  const applyUrl = job.applyUrl ?? PLACEHOLDER_APPLY_URL;
+  // ⬇️ DIHAPUS: const applyUrl (tidak dipakai lagi)
   const place = job.mode === "Remote" ? "Remote" : `${job.mode} — ${job.city}`;
 
   const [letter, setLetter] = useState(() => buildCoverLetter(job, a));
@@ -80,10 +79,11 @@ function PrepareForm({ job }) {
 
   function handleContinue() {
     if (!canContinue) return;
-    // Buka situs perusahaan di tab baru, sekaligus tampilkan konfirmasi di halaman ini.
-    window.open(applyUrl, "_blank", "noopener,noreferrer");
+    // ⬇️ DIUBAH: sebelumnya membuka situs perusahaan lewat window.open(applyUrl, ...).
+    // Sekarang hanya menampilkan pop-up "Lamaranmu berhasil dikirim".
     setDialogOpen(true);
-    // TODO (backend): simpan catatan lamaran (job id, waktu, status "belum dikonfirmasi") ke Supabase.
+    // TODO (backend): kirim lamaran (job id, CV, surat lamaran, portfolio) ke perusahaan
+    // dan simpan ke Supabase dengan status "dikirim".
   }
 
   const portfolioButton = (
@@ -155,7 +155,7 @@ function PrepareForm({ job }) {
       ? "Centang pernyataan di atas untuk melanjutkan."
       : !cvFile
         ? "Belum ada CV terlampir. Anda tetap bisa melanjutkan, tetapi sebagian perusahaan mewajibkan CV."
-      : "Anda akan diarahkan ke situs sumber lowongan. Lamaran dicatat di Laras Karya.";
+      : "Lamaran Anda akan dikirim ke perusahaan melalui Laras Karya.";
 
   return (
     <>
@@ -174,7 +174,7 @@ function PrepareForm({ job }) {
         Persiapan Lamaran Pekerjaan
       </h1>
       <p className="mt-2 text-slate-800">
-        Lengkapi dan periksa dokumen Anda sebelum melamar di situs perusahaan.
+        Lengkapi dan periksa dokumen Anda sebelum mengirim lamaran.
       </p>
       <ApplySteps current={2} />
 
@@ -347,7 +347,8 @@ function PrepareForm({ job }) {
               aria-describedby="continue-hint"
               className="mt-4 w-full rounded-full bg-brand px-6 py-4 font-semibold text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Lanjut Melamar di Situs Perusahaan
+              {/* ⬇️ DIUBAH: teks tombol (sebelumnya "Lanjut Melamar di Situs Perusahaan") */}
+              Kirim Lamaran
             </button>
             <p
               id="continue-hint"
@@ -363,7 +364,6 @@ function PrepareForm({ job }) {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         job={job}
-        applyUrl={applyUrl}
       />
     </>
   );
