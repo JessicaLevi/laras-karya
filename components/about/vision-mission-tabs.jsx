@@ -32,7 +32,7 @@ export function VisionMissionTabs() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div role="tablist" aria-label="Visi dan misi" className="mx-auto mb-8 flex max-w-md justify-center rounded-xl border border-line bg-surface p-1">
+      <div role="tablist" aria-label="Visi dan misi" className="mx-auto mb-8 flex max-w-md justify-center rounded-full border border-line bg-surface p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -43,7 +43,7 @@ export function VisionMissionTabs() {
             aria-controls={`panel-${t.id}`}
             onClick={() => setActive(t.id)}
             className={cn(
-              "min-h-11 w-1/2 rounded-lg py-2.5 text-sm font-bold transition-all",
+              "min-h-11 w-1/2 rounded-full py-2.5 text-sm font-semibold transition-all",
               active === t.id ? "bg-white text-brand shadow-sm" : "text-subtle hover:text-ink"
             )}
           >
