@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Check, ExternalLink, Mail, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react"; // ⬇️ DIUBAH: ExternalLink dan Mail dihapus (tidak dipakai lagi)
 
 /**
  * Dialog konfirmasi memakai elemen <dialog> bawaan browser:
  * fokus terkunci di dalam dialog, tombol Esc menutup, dan latar belakang otomatis tidak bisa diklik.
  */
-export default function SubmissionDialog({ open, onClose, job, applyUrl }) {
+// ⬇️ DIUBAH: prop applyUrl dihapus (tautan "Situs perusahaan belum terbuka?" sudah tidak ada)
+export default function SubmissionDialog({ open, onClose, job }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function SubmissionDialog({ open, onClose, job, applyUrl }) {
     <dialog
       ref={ref}
       aria-labelledby="dialog-title"
-      aria-describedby="dialog-desc"
+      // ⬇️ DIHAPUS: aria-describedby="dialog-desc" (paragraf deskripsi sudah dihapus)
       onClose={onClose}
       onClick={(e) => {
         // klik di area gelap (di luar kartu) menutup dialog
@@ -49,18 +50,13 @@ export default function SubmissionDialog({ open, onClose, job, applyUrl }) {
           </span>
         </div>
 
+        {/* ⬇️ DIUBAH: judul pop-up (sebelumnya "Lamaran Dicatat di Laras Karya") */}
         <h2 id="dialog-title" className="mt-4 text-2xl font-bold text-brand">
-          Lamaran Dicatat di Laras Karya
+          Lamaranmu berhasil dikirim ke {job.company}
         </h2>
-        <p id="dialog-desc" className="mt-3 leading-relaxed text-slate-800">
-          Lanjutkan melamar posisi {job.title} di {job.company} melalui situs perusahaan. Statusnya bisa Anda pantau di
-          halaman Lamaran.
-        </p>
 
-        <p className="mt-6 flex items-center gap-3 rounded-xl bg-brand-light px-4 py-3 text-left text-sm font-medium text-brand">
-          <Mail className="h-5 w-5 shrink-0" aria-hidden />
-          Laras Karya tidak mengirim lamaran Anda ke perusahaan.
-        </p>
+        {/* ⬇️ DIHAPUS: paragraf "Lanjutkan melamar posisi ... melalui situs perusahaan." */}
+        {/* ⬇️ DIHAPUS: kotak hijau "Laras Karya tidak mengirim lamaran Anda ke perusahaan." */}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
@@ -77,15 +73,7 @@ export default function SubmissionDialog({ open, onClose, job, applyUrl }) {
           </Link>
         </div>
 
-        {/* Cadangan kalau tab baru diblokir browser */}
-        <a
-          href={applyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-        >
-          Situs perusahaan belum terbuka? Buka di sini <ExternalLink className="h-4 w-4" aria-hidden />
-        </a>
+        {/* ⬇️ DIHAPUS: tautan "Situs perusahaan belum terbuka? Buka di sini" */}
       </div>
     </dialog>
   );
