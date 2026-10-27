@@ -3,19 +3,32 @@ name: Sync to Mentor Repo
 on:
   push:
     branches:
-      - feature  # Berjalan otomatis setiap ada push ke branch feature tim Anda
+      - feature
 
 jobs:
   git-sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: feature
 
       - name: Push to Mentor Repo
+        env:
+          MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
         run: |
-          git remote add mentor https://${{ secrets.MENTOR_REPO_TOKEN }}@github.com/blacurly/ratu-zaleha.git
-          git push mentor feature:main --force
+          set -e
 
+          if [ -z "${MENTOR_REPO_TOKEN}" ]; then
+            echo "MENTOR_REPO_TOKEN is empty"
+            exit 1
+          fi
+
+          git remote remove mentor || true
+          git remote add mentor "https://${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git"
+          git push mentor HEAD:main --force
