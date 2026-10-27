@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -70,8 +70,11 @@ export function JobHeader({ job }) {
           </h1>
           <p className="mt-0.5 text-sm font-bold text-brand">{job.company}</p>
 
-          <p className="text-xs text-ink/70">
-            {job.city} · {job.workMode}
+          <p className="mt-1 flex items-start gap-1.5 text-xs text-ink/75">
+            <MapPin className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden="true" />
+            <span>
+              {job.address ?? job.city} {job.workMode ? `(${job.workMode})` : ""}
+            </span>
           </p>
           <p className="mt-1.5 text-sm font-bold text-ink">{job.salary}</p>
         </div>
@@ -121,9 +124,7 @@ export function JobHeader({ job }) {
           </span>
         )}
         {hasApplied(job.id) && <AppliedBadge />}
-        <span>
-          Sumber: {job.source} • diperbarui {job.updatedAt}
-        </span>
+        <span>Diperbarui {job.updatedAt}</span>
       </p>
     </header>
   );
