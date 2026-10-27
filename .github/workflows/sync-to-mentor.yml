@@ -12,11 +12,16 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout source repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: feature
+
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
       - name: Push to Mentor Repo
         env:
@@ -30,5 +35,6 @@ jobs:
           fi
 
           git remote remove mentor || true
-          git remote add mentor "https://${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git"
-          git push mentor HEAD:main --force
+          git remote add mentor "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git"
+
+          git push mentor HEAD:feature
