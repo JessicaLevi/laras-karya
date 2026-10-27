@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/footer";
 
 export const metadata = {
   title: "Persiapan Lamaran | Laras Karya",
-  description: "Lengkapi dan periksa dokumen Anda sebelum melamar di situs perusahaan.",
+  description: "Lengkapi dan periksa dokumen Anda sebelum sebelum mengirim Lamaran.",
 };
 
 export default function PrepareApplicationPage() {

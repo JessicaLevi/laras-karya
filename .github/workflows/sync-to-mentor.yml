@@ -1,0 +1,44 @@
+name: Sync feature to Mentor Feature
+
+on:
+  push:
+    branches:
+      - feature
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feature
+
+      - name: Check token is set
+        env:
+          MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
+        run: |
+          if [ -z "${MENTOR_REPO_TOKEN}" ]; then
+            echo "MENTOR_REPO_TOKEN is empty"
+            exit 1
+          fi
+          echo "Token is set"
+
+      - name: Test access to target repo
+        env:
+          MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
+        run: |
+          git ls-remote "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git" HEAD
+
+      - name: Push to mentor feature branch
+        env:
+          MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
+        run: |
+          set -e
+          git remote remove mentor || true
+          git remote add mentor "https://x-access-token:${MENTOR_REPO_TOKEN}@github.com/blacurly/ratu-zaleha.git"
+          git push mentor HEAD:feature

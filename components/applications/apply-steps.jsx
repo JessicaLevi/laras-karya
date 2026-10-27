@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 
-const STEPS = ["Pilih lowongan", "Siapkan dokumen", "Lamar di situs perusahaan"];
+const STEPS = ["Pilih lowongan", "Siapkan dokumen", "Kirim Lamaran"];
 
 // current: 1–3. Di halaman persiapan, langkah aktifnya 2.
 export default function ApplySteps({ current = 2 }) {
