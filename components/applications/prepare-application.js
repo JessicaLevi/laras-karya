@@ -155,7 +155,7 @@ function PrepareForm({ job }) {
       ? "Centang pernyataan di atas untuk melanjutkan."
       : !cvFile
         ? "Belum ada CV terlampir. Anda tetap bisa melanjutkan, tetapi sebagian perusahaan mewajibkan CV."
-      : "Lamaran Anda akan dikirim ke perusahaan melalui Laras Karya."; // ⬇️ DIUBAH: sebelumnya "Anda akan diarahkan ke situs sumber lowongan..."
+      : "Lamaran Anda akan dikirim ke perusahaan melalui Laras Karya.";
 
   return (
     <>
@@ -173,7 +173,6 @@ function PrepareForm({ job }) {
       <h1 className="mt-3 text-3xl font-bold text-brand md:text-4xl">
         Persiapan Lamaran Pekerjaan
       </h1>
-      {/* ⬇️ DIUBAH: subjudul (sebelumnya "...sebelum melamar di situs perusahaan.") */}
       <p className="mt-2 text-slate-800">
         Lengkapi dan periksa dokumen Anda sebelum mengirim lamaran.
       </p>
@@ -365,7 +364,6 @@ function PrepareForm({ job }) {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         job={job}
-        // ⬇️ DIHAPUS: applyUrl={applyUrl} (pop-up tidak lagi memuat tautan situs perusahaan)
       />
     </>
   );
