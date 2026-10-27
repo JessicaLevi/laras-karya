@@ -16,6 +16,6 @@ jobs:
 
       - name: Push to Mentor Repo
         run: |
-          git remote add mentor https://${{ secrets.MENTOR_REPO_TOKEN }}@github.com/blacurly/ratu-zaleha
+          git remote add mentor https://${{ secrets.MENTOR_REPO_TOKEN }}@github.com/blacurly/ratu-zaleha.git
           git push mentor feature:main --force
 
