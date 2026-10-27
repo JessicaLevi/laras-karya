@@ -1,4 +1,4 @@
-name: Sync to Mentor Repo
+name: Sync feature to Mentor Feature
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - feature
 
 jobs:
-  git-sync:
+  sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,19 +18,14 @@ jobs:
           fetch-depth: 0
           ref: feature
 
-      - name: Configure git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-      - name: Push to Mentor Repo
+      - name: Push to mentor feature branch
         env:
           MENTOR_REPO_TOKEN: ${{ secrets.MENTOR_REPO_TOKEN }}
         run: |
           set -e
 
           if [ -z "${MENTOR_REPO_TOKEN}" ]; then
-            echo "MENTOR_REPO_TOKEN is empty"
+            echo "MENTOR_REPO_TOKEN kosong"
             exit 1
           fi
 
