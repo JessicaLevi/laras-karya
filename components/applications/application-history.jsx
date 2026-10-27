@@ -88,30 +88,45 @@ function Pagination({ page, totalPages, onPageChange }) {
 
 /**
  * Riwayat lamaran: filter status, pagination, simulasi loading.
- * @param {{ applications: import("@/lib/applications-data").Application[] }} props
+ * ⬇️ DITAMBAH: filter bisa dikendalikan dari luar (kartu statistik) lewat `filter` + `onFilterChange`;
+ * tanpa keduanya, komponen memakai state filter sendiri seperti sebelumnya.
+ * @param {{ applications: import("@/lib/applications-data").Application[],
+ *           filter?: string, onFilterChange?: (value: string) => void }} props
  */
-export function ApplicationHistory({ applications }) {
-  const [filter, setFilter] = useState("semua");
+// ⬇️ DIUBAH: tambah props filter & onFilterChange
+export function ApplicationHistory({ applications, filter: filterProp, onFilterChange }) {
+  // ⬇️ DIUBAH: filter datang dari luar (kartu statistik) atau dari state sendiri
+  const [internalFilter, setInternalFilter] = useState("semua");
+  const filter = filterProp ?? internalFilter;
+  const setFilter = onFilterChange ?? setInternalFilter;
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulasi fetch pertama kali (hapus saat data dari Supabase)
+  // ⬇️ DIUBAH: satu efek yang mengakhiri loading (menggantikan tiga setTimeout terpisah).
+  // Simulasi fetch, hapus saat data dari Supabase.
   useEffect(() => {
+    if (!isLoading) return;
     const t = setTimeout(() => setIsLoading(false), 350);
     return () => clearTimeout(t);
-  }, []);
+  }, [isLoading]);
 
-  const handleFilterChange = (val) => {
-    setFilter(val);
+  // ⬇️ DITAMBAH: saat filter berubah (dari dropdown ATAU dari kartu statistik), kembali ke halaman 1 dan tampilkan loading
+  const [prevFilter, setPrevFilter] = useState(filter);
+  if (filter !== prevFilter) {
+    setPrevFilter(filter);
     setPage(1);
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 350);
+  }
+
+  // ⬇️ DIUBAH: reset halaman & loading sekarang ditangani blok di atas
+  const handleFilterChange = (val) => {
+    setFilter(val);
   };
 
+  // ⬇️ DIUBAH: timer loading ditangani efek di atas
   const handlePageChange = (p) => {
     setPage(p);
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 350);
   };
 
   const filtered = useMemo(
