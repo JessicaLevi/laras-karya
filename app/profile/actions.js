@@ -5,6 +5,8 @@
 // Nanti tiap fungsi diganti menjadi Server Action ("use server") yang menulis ke database.
 // Catatan: file "use server" hanya boleh mengekspor fungsi async.
 
+import { EXPERIENCE_LEVELS, INDUSTRIES, OTHER_SKILL, WORK_ARRANGEMENTS } from "@/lib/profile-options";
+
 const LANGUAGE_LEVELS = {
   Native: { percent: 100, tone: "brand" },
   Profesional: { percent: 80, tone: "blue" },
@@ -43,6 +45,31 @@ function initialsOf(name) {
 export function editProfileHeader(profile, formData) {
   const fields = pick(formData, ["name", "headline", "status"]);
   return { ...profile, ...fields, initials: initialsOf(fields.name) };
+}
+
+/* ---------- Bio ---------- */
+
+export function editBio(profile, formData) {
+  return { ...profile, ...pick(formData, ["bio"]) };
+}
+
+/* ---------- Preferensi karier ---------- */
+
+// Pola kerja (satu pilihan), bidang industri (satu atau lebih), dan tingkat pengalaman kerja secara umum
+// (bukan per pengalaman). Nilai di luar daftar opsi diabaikan.
+export function editPreferences(profile, formData) {
+  const { workArrangement, experienceLevel } = pick(formData, ["workArrangement", "experienceLevel"]);
+  const industries = formData
+    .getAll("industries")
+    .map((value) => String(value).trim())
+    .filter((value) => INDUSTRIES.includes(value));
+
+  return {
+    ...profile,
+    workArrangement: WORK_ARRANGEMENTS.includes(workArrangement) ? workArrangement : (profile.workArrangement ?? ""),
+    industries,
+    experienceLevel: EXPERIENCE_LEVELS.includes(experienceLevel) ? experienceLevel : (profile.experienceLevel ?? ""),
+  };
 }
 
 /* ---------- Pengalaman kerja ---------- */
@@ -98,14 +125,29 @@ export function deleteCertification(profile, id) {
 
 /* ---------- Informasi kontak ---------- */
 
+// Lokasi disimpan sebagai satu teks berformat "Kota, Provinsi" (mis. "Banjarbaru, Kalimantan Selatan").
+export function formatLocation(city, province) {
+  return [city, province].filter(Boolean).join(", ");
+}
+
+// Pecah "Kota, Provinsi" menjadi dua bagian (dipakai untuk mengisi formulir edit).
+export function parseLocation(location = "") {
+  const index = location.lastIndexOf(",");
+  if (index === -1) return { city: location.trim(), province: "" };
+  return { city: location.slice(0, index).trim(), province: location.slice(index + 1).trim() };
+}
+
 export function editContact(profile, formData) {
-  return { ...profile, contact: { ...profile.contact, ...pick(formData, ["email", "phone", "location", "linkedin"]) } };
+  const { email, phone, city, province, linkedin } = pick(formData, ["email", "phone", "city", "province", "linkedin"]);
+  return { ...profile, contact: { ...profile.contact, email, phone, linkedin, location: formatLocation(city, province) } };
 }
 
 /* ---------- Keahlian ---------- */
 
+// Skill dipilih dari dropdown. Kalau memilih "Lainnya", nama skill diambil dari kolom `customLabel`.
 export function addSkill(profile, formData) {
-  const { label } = pick(formData, ["label"]);
+  const picked = pick(formData, ["label", "customLabel"]);
+  const label = picked.label === OTHER_SKILL ? picked.customLabel : picked.label;
   const exists = profile.skills.some((skill) => skill.label.toLowerCase() === label.toLowerCase());
   if (!label || exists) return profile;
   return { ...profile, skills: [...profile.skills, { id: newId("skill"), label, highlight: false }] };
@@ -238,6 +280,21 @@ export async function generateResume(profile, resumes = []) {
   doc.setLineWidth(2);
   doc.line(margin, y, pageW - margin, y);
   y += 4;
+
+  if (profile.bio) {
+    section("Ringkasan");
+    paragraph(profile.bio, { size: 10 });
+  }
+
+  const preferenceLines = [
+    profile.experienceLevel && `Tingkat pengalaman: ${profile.experienceLevel}`,
+    profile.workArrangement && `Pola kerja: ${profile.workArrangement}`,
+    profile.industries?.length > 0 && `Bidang industri: ${profile.industries.join(", ")}`,
+  ].filter(Boolean);
+  if (preferenceLines.length > 0) {
+    section("Preferensi Karier");
+    preferenceLines.forEach((line, i) => paragraph(line, { size: 10, gap: i === preferenceLines.length - 1 ? 0 : 3 }));
+  }
 
   if (profile.experiences.length > 0) {
     section("Pengalaman Kerja");

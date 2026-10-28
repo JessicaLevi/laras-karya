@@ -2,14 +2,12 @@ import Link from "next/link";
 import { Footer } from "@/components/layout/footer";
 import { ChevronRight } from "lucide-react";
 
-import { ApplicationHistory } from "@/components/applications/application-history";
+// ⬇️ DIUBAH: ApplicationHistory sekarang dipakai lewat ApplicationsView (kartu statistik + riwayat berbagi filter)
+import { ApplicationsView } from "@/components/applications/applications-view";
 import { DocumentPrepBanner } from "@/components/applications/document-prep-banner";
 //import { Navbar } from "@/components/layout/navbar";
-import { StatCard } from "@/components/ui/stat-card";
-import {
-  MOCK_APPLICATIONS,
-  STAT_CARDS,
-} from "@/lib/applications-data";
+// ⬇️ DIHAPUS: import StatCard dan STAT_CARDS (dipindah ke ApplicationsView)
+import { MOCK_APPLICATIONS } from "@/lib/applications-data";
 
 export const metadata = {
   title: "Lamaran Saya & Status Tracker | Laras Karya",
@@ -38,22 +36,12 @@ export default function ApplicationsPage() {
           <p className="text-sm text-ink/80">Pantau status lamaran dan persiapan dokumen Anda di satu tempat.</p>
         </header>
 
-        {/* Mobile: Total selebar penuh + 2×2 · Tablet: 3 kolom · Desktop: 5 kolom */}
-        <section aria-label="Ringkasan lamaran" className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-5">
-          {STAT_CARDS.map((card, i) => (
-            <StatCard
-              key={card.id}
-              label={card.label}
-              icon={card.icon}
-              tone={card.tone}
-              value={card.status ? MOCK_APPLICATIONS.filter((a) => a.status === card.status).length : MOCK_APPLICATIONS.length}
-              className={i === 0 ? "col-span-2 md:col-span-1" : undefined}
-            />
-          ))}
-        </section>
+        {/* ⬇️ DIUBAH: blok kartu statistik (STAT_CARDS.map) dan <ApplicationHistory /> digabung menjadi satu komponen */}
+        <ApplicationsView applications={MOCK_APPLICATIONS} />
 
+        {/* Catatan: jika banner dokumen diaktifkan lagi, letakkan di bawah ApplicationsView
+            (atau pindahkan ke dalam applications-view.jsx bila ingin berada di antara kartu dan riwayat). */}
         {/*<DocumentPrepBanner checklist={MOCK_DOCUMENT_CHECKLIST} profileCompleteness={MOCK_PROFILE_COMPLETENESS} />*/}
-        <ApplicationHistory applications={MOCK_APPLICATIONS} />
       </main>
 
       <Footer />
