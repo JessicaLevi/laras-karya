@@ -5,7 +5,7 @@
 // Nanti tiap fungsi diganti menjadi Server Action ("use server") yang menulis ke database.
 // Catatan: file "use server" hanya boleh mengekspor fungsi async.
 
-import { EXPERIENCE_LEVELS, INDUSTRIES, OTHER_SKILL, WORK_ARRANGEMENTS } from "@/lib/profile-options";
+import { EXPERIENCE_LEVELS, INDUSTRIES, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
 
 const LANGUAGE_LEVELS = {
   Native: { percent: 100, tone: "brand" },
@@ -144,12 +144,11 @@ export function editContact(profile, formData) {
 
 /* ---------- Keahlian ---------- */
 
-// Skill dipilih dari dropdown. Kalau memilih "Lainnya", nama skill diambil dari kolom `customLabel`.
+// Skill dipilih dari dropdown katalog. Nama di luar katalog ditolak.
 export function addSkill(profile, formData) {
-  const picked = pick(formData, ["label", "customLabel"]);
-  const label = picked.label === OTHER_SKILL ? picked.customLabel : picked.label;
-  const exists = profile.skills.some((skill) => skill.label.toLowerCase() === label.toLowerCase());
-  if (!label || exists) return profile;
+  const { label } = pick(formData, ["label"]);
+  const exists = profile.skills.some((skill) => skill.label.toLowerCase() === String(label).toLowerCase());
+  if (!label || !SKILL_OPTIONS.includes(label) || exists) return profile;
   return { ...profile, skills: [...profile.skills, { id: newId("skill"), label, highlight: false }] };
 }
 

@@ -15,7 +15,7 @@ import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
 import {
   EXPERIENCE_LEVELS,
-  MOCK_SKILL_OPTIONS,
+  SKILL_OPTIONS,
   MOCK_SUGGESTED_SKILLS_BY_SECTOR,
   SECTORS,
   WORK_ARRANGEMENTS,
@@ -24,9 +24,6 @@ import { isValid, validateStep3 } from "@/lib/assessment-validation";
 
 const WORK_ICONS = { onsite: Building2, remote: House, hybrid: Repeat };
 const WORK_OPTIONS = WORK_ARRANGEMENTS.map((option) => ({ ...option, icon: WORK_ICONS[option.value] }));
-
-// SEMENTARA (fase front-end). Nanti diganti getSkillOptions() dari dokumen bagian 4.
-const SKILL_OPTIONS = MOCK_SKILL_OPTIONS;
 
 /** Langkah 3 – Preferensi & Pengalaman Karier (dokumen bagian 2.3). */
 export default function AssessmentStep3Page() {
@@ -86,16 +83,11 @@ export default function AssessmentStep3Page() {
         />
       </Field>
 
-      <Field as="fieldset" label="Keahlian utama Anda" required error={errorFor("skills") ?? errorFor("custom_skills")}>
+      <Field as="fieldset" label="Keahlian utama Anda" required error={errorFor("skills")}>
         <SkillPicker
           options={SKILL_OPTIONS}
           values={step.skills}
           onChange={(values) => update("skills", values)}
-          customValues={step.custom_skills}
-          onCustomChange={(values) => {
-            update("custom_skills", values);
-            touch("skills");
-          }}
           suggestions={suggestions}
         />
       </Field>

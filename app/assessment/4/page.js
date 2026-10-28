@@ -8,7 +8,7 @@ import { Info, Pencil } from "lucide-react";
 import { AssessmentCard } from "@/components/assessment/assessment-card";
 import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
-import { EDUCATION_LEVELS, EXPERIENCE_LEVELS, MOCK_SKILL_OPTIONS, SECTORS } from "@/lib/assessment-options";
+import { EDUCATION_LEVELS, EXPERIENCE_LEVELS, SKILL_OPTIONS, SECTORS } from "@/lib/assessment-options";
 import { isValid, validateStep1, validateStep2, validateStep3 } from "@/lib/assessment-validation";
 
 const WORK_LABELS = { onsite: "WFO (kerja di kantor)", remote: "Remote", hybrid: "Hybrid (WFO & Remote)" };
@@ -40,7 +40,7 @@ export default function AssessmentStep4Page() {
   const incompleteSteps = [
     !isValid(validateStep1(s1)) && 1,
     !isValid(validateStep2(s2)) && 2,
-    !isValid(validateStep3(s3, MOCK_SKILL_OPTIONS)) && 3,
+    !isValid(validateStep3(s3, SKILL_OPTIONS)) && 3,
   ].filter(Boolean);
 
   const education = [labelOf(EDUCATION_LEVELS, s2.education.degree_level), s2.education.major].filter(Boolean).join(" ");
@@ -117,17 +117,7 @@ export default function AssessmentStep4Page() {
                     {skill}
                   </li>
                 ))}
-                {s3.custom_skills.map((skill) => (
-                  <li key={`custom-${skill}`} className="rounded-lg border-[1.5px] border-dashed border-brand bg-white px-2.5 py-1 text-[13px] font-semibold text-brand">
-                    {skill} <span className="font-normal text-ink/60">· di luar daftar</span>
-                  </li>
-                ))}
               </ul>
-              {s3.custom_skills.length > 0 ? (
-                <p className="mt-2 text-xs leading-relaxed text-ink/70">
-                  Keahlian di luar daftar tetap tercatat, tetapi belum dihitung dalam skor kecocokan karena namanya belum ada di data lowongan.
-                </p>
-              ) : null}
             </Item>
             <Item label="Tingkat pengalaman">
               <p className="text-[15px] font-bold text-ink">{labelOf(EXPERIENCE_LEVELS, s3.experience_level)}</p>
