@@ -55,7 +55,6 @@ import { PROFILE } from "@/lib/profile-data";
 import {
   EXPERIENCE_LEVELS,
   INDUSTRIES,
-  OTHER_SKILL,
   PROVINCES,
   SKILL_OPTIONS,
   WORK_ARRANGEMENTS,
@@ -197,7 +196,7 @@ function getValues(profile, type, id) {
 }
 
 // Dropdown skill: pilih dari daftar (skill yang sudah dimiliki disembunyikan).
-// Kalau skill Anda tidak ada, pilih "Lainnya" lalu ketik sendiri.
+// Daftar mengikuti katalog keahlian; tidak ada ketik bebas.
 function SkillSelectField({ field, ownedSkills }) {
   const [value, setValue] = useState("");
   const owned = new Set(ownedSkills.map((skill) => skill.label.toLowerCase()));
@@ -221,18 +220,7 @@ function SkillSelectField({ field, ownedSkills }) {
             {option}
           </option>
         ))}
-        <option value={OTHER_SKILL}>Lainnya (ketik sendiri)</option>
       </select>
-      {value === OTHER_SKILL && (
-        <input
-          name="customLabel"
-          type="text"
-          required
-          aria-label="Nama skill lainnya"
-          placeholder="Ketik nama skill Anda"
-          className={`${INPUT} mt-3 h-11`}
-        />
-      )}
     </>
   );
 }

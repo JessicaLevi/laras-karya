@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, Sparkles } from "lucide-react";
 
 import { useAssessment } from "@/context/assessment-store";
-import { MOCK_SKILL_OPTIONS } from "@/lib/assessment-options";
+import { SKILL_OPTIONS } from "@/lib/assessment-options";
 import { isValid, validateStep1, validateStep2, validateStep3 } from "@/lib/assessment-validation";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,7 @@ export default function AssessmentLoadingPage() {
   const isComplete =
     isValid(validateStep1(answers.step_1)) &&
     isValid(validateStep2(answers.step_2)) &&
-    isValid(validateStep3(answers.step_3, MOCK_SKILL_OPTIONS));
+    isValid(validateStep3(answers.step_3, SKILL_OPTIONS));
   const ready = hydrated && isComplete;
 
   useEffect(() => {
