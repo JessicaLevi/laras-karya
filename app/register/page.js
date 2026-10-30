@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Lock, Mail, Sparkle, User } from "lucide-react";
+import { ArrowRight, Brain, Check, FileText, Lock, Mail, Sparkle, Sparkles, User } from "lucide-react";
 
 import { signup } from "./actions";
 
@@ -11,33 +11,30 @@ import { cn } from "@/lib/utils";
 export const metadata = { title: "Daftar" };
 
 const STEPS = [
-  { n: 1, label: "Daftar", active: true },
-  { n: 2, label: "Asesmen", active: false },
-  { n: 3, label: "Rekomendasi AI", active: false },
+  { n: 1, icon: FileText, label: "Daftar", desc: "Mengisi formulir pendaftaran akun" },
+  { n: 2, icon: Brain, label: "Asesmen", desc: "Mengerjakan asesmen singkat 5 menit" },
+  { n: 3, icon: Sparkles, label: "Rekomendasi AI", desc: "Dapatkan informasi lowongan yang cocok dengan profil Anda" },
 ];
 
 export default function RegisterPage() {
   return (
     <AuthShell
+      variant="leaf"
       title="Mulai Perjalanan Karier Hijau Anda"
-      description="Daftar gratis, jawab asesmen singkat, dan temukan lowongan yang cocok dengan profil Anda."
+      //description="Daftar gratis, jawab asesmen singkat, dan temukan lowongan yang cocok dengan profil Anda."
       panelFooter={
-        <div className="rounded-3xl bg-white/10 px-6 py-6">
-          <p className="text-sm font-semibold uppercase tracking-wide">Langkah Pendaftaran</p>
-          <ol className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-            {STEPS.map(({ n, label, active }, i) => (
-              <li key={n} className="flex items-center gap-3">
-                <span
-                  aria-current={active ? "step" : undefined}
-                  className={cn(
-                    "grid size-8 shrink-0 place-items-center rounded-full border text-sm font-semibold",
-                    active ? "border-white bg-white text-brand" : "border-white/80 text-white"
-                  )}
-                >
-                  {n}
-                </span>
-                <span className={cn(active ? "font-semibold" : "text-white/90")}>{label}</span>
-                {i < STEPS.length - 1 && <ArrowRight className="ml-1 size-4 text-white/70" aria-hidden="true" />}
+        <div className="rounded-2xl border border-white/10 bg-emerald-900/40 p-6 backdrop-blur-md">
+          <p className="text-sm font-semibold uppercase tracking-wide">Alur Pendaftaran</p>
+          <ol className="mt-4 flex items-stretch gap-2">
+            {STEPS.map(({ n, icon: Icon, label, desc }, i) => (
+              <li key={n} className="flex min-w-0 flex-1 items-center gap-2">
+                <div className="flex h-full min-w-0 flex-1 flex-col items-center rounded-xl border border-white/10 bg-white/10 px-3 py-4 text-center">
+                  <span className="grid size-7 place-items-center rounded-full border border-white/40 text-sm">{n}</span>
+                  <Icon className="mt-3 size-10 text-emerald-300" strokeWidth={1.25} aria-hidden="true" />
+                  <span className="mt-3 text-sm font-semibold">{label}</span>
+                  <span className="mt-1 text-xs leading-snug text-white/75">{desc}</span>
+                </div>
+                {i < STEPS.length - 1 && <ArrowRight className="size-4 shrink-0 text-white/60" aria-hidden="true" />}
               </li>
             ))}
           </ol>
