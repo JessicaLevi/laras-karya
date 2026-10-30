@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Heart, Laptop, MapPin } from "lucide-react";
+import { CheckCircle2, Heart, Laptop, MapPin, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { hasApplied } from "@/lib/applications-data";
@@ -42,12 +42,10 @@ export function JobCard({ job, featured = false }) {
           </h3>
           <p className="text-xs text-ink/70">{company}</p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-bold leading-none text-ai">
-            {matchPercent}%
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-ai">Cocok</p>
-        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ai/10 px-2.5 py-1 text-xs font-semibold text-ai">
+          <Sparkles className="size-3" aria-hidden="true" />
+          {matchPercent}% Cocok
+        </span>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">

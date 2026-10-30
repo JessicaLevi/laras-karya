@@ -10,8 +10,11 @@ import { cn } from "@/lib/utils";
  * - onChange dipanggil setiap ketikan (untuk menyaring langsung);
  *   onSubmit dipanggil saat Enter / tombol Cari (untuk pindah halaman, mis. di Beranda).
  * - submitLabel: tampilkan tombol Cari di dalam kotak (dipakai di Beranda).
+ *   Di layar < sm tombolnya berubah jadi ikon saja supaya kolom input tidak sempit.
+ * - leading: isi bagian kiri kotak sebagai ganti ikon kaca pembesar (mis. pilihan cakupan
+ *   Lowongan/Pelatihan di Beranda). Atur jarak kirinya lewat className (mis. "pl-1.5").
  */
-export function SearchBar({ label, placeholder, value, onChange, onSubmit, submitLabel, className }) {
+export function SearchBar({ label, placeholder, value, onChange, onSubmit, submitLabel, leading, className }) {
   const id = useId();
 
   return (
@@ -30,7 +33,9 @@ export function SearchBar({ label, placeholder, value, onChange, onSubmit, submi
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
-      <Search className="size-[18px] shrink-0 text-ink/50" aria-hidden="true" />
+      {leading ?? (
+        <Search className="size-[18px] shrink-0 text-ink/50" aria-hidden="true" />
+      )}
       <input
         id={id}
         type="search"
@@ -39,7 +44,7 @@ export function SearchBar({ label, placeholder, value, onChange, onSubmit, submi
         placeholder={placeholder}
         enterKeyHint="search"
         autoComplete="off"
-        className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-ink/50 [&::-webkit-search-cancel-button]:appearance-none"
+        className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-ink/65 [&::-webkit-search-cancel-button]:appearance-none"
       />
       {value ? (
         <button
@@ -54,9 +59,11 @@ export function SearchBar({ label, placeholder, value, onChange, onSubmit, submi
       {submitLabel ? (
         <button
           type="submit"
-          className="min-h-9 shrink-0 rounded-full bg-brand px-5 text-sm font-bold text-white transition-colors hover:bg-brand/90"
+          aria-label={submitLabel}
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-white transition-colors hover:bg-brand/90 sm:inline-grid sm:size-auto sm:min-h-9 sm:px-5"
         >
-          {submitLabel}
+          <Search className="size-[18px] sm:hidden" aria-hidden="true" />
+          <span className="hidden sm:inline">{submitLabel}</span>
         </button>
       ) : null}
     </form>
