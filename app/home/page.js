@@ -48,11 +48,16 @@ export default function HomePage() {
                   selesaikan{" "}
                   <strong className="font-bold text-ai">
                     {HOME_ALERT.skill}
-                  </strong>{" "}
-                  untuk menaikkan kecocokan di lowongan teratas hingga{" "}
-                  <strong className="font-bold text-ai">
-                    {HOME_ALERT.targetMatch}
                   </strong>
+                  {HOME_ALERT.gapCount > 0 ? (
+                    <>
+                      {", skill gap yang muncul di "}
+                      <strong className="font-bold text-ai">
+                        {HOME_ALERT.gapCount}
+                      </strong>
+                      {" lowongan cocok Anda"}
+                    </>
+                  ) : null}
                   .
                 </p>
               </div>

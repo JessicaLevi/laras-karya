@@ -104,8 +104,8 @@ export default function AssessmentStep1Page() {
                     onChange={(value) => updateStep("step_1", { career_break: value })}
                   >
                     <p className="mt-2.5 text-xs leading-relaxed text-ink/70">
-                      Membantu kami menampilkan lowongan dengan program return-to-work atau jam kerja fleksibel. Jawaban ini
-                      tidak mengurangi skor kecocokan Anda.
+                      Membantu kami menampilkan lowongan dengan program return-to-work atau jam kerja fleksibel. Informasi ini
+                      digunakan khusus untuk mencocokkan preferensi benefit Anda.
                     </p>
                   </ChoicePills>
                 </div>
