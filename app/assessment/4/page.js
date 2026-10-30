@@ -10,20 +10,12 @@ import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
 import { EDUCATION_LEVELS, EXPERIENCE_LEVELS, SKILL_OPTIONS, SECTORS } from "@/lib/assessment-options";
 import { isValid, validateStep1, validateStep2, validateStep3 } from "@/lib/assessment-validation";
+import { toCareerLabel } from "@/lib/career-label";
 
 const WORK_LABELS = { onsite: "WFO (kerja di kantor)", remote: "Remote", hybrid: "Hybrid (WFO & Remote)" };
 const STORY_PREVIEW_LENGTH = 160;
 
 const labelOf = (list, value) => list.find((item) => item.value === value)?.label ?? value;
-
-function careerProfileLabel({ career_situation, career_break }) {
-  if (career_situation === "switch_or_return") {
-    return career_break === "yes" ? "Kembali bekerja setelah jeda karier" : "Berpindah karier";
-  }
-  if (career_situation === "practical_experience") return "Belajar dari pengalaman praktik";
-  if (career_situation === "fresh_start") return "Lulusan baru atau mulai dari nol";
-  return "–";
-}
 
 // true setelah halaman berjalan di browser; mencegah ringkasan kosong sesaat sebelum jawaban dari sessionStorage terbaca
 const subscribeNothing = () => () => {};
@@ -73,7 +65,7 @@ export default function AssessmentStep4Page() {
         <div className="mb-5 divide-y divide-brand/15 rounded-2xl bg-brand-light px-5 sm:px-6">
           <SummaryGroup editHref="/assessment/1" editLabel="situasi karier">
             <Item label="Profil Anda">
-              <p className="text-[15px] font-bold text-ink">{careerProfileLabel(s1)}</p>
+              <p className="text-[15px] font-bold text-ink">{toCareerLabel(s1.career_situation, s1.career_break)}</p>
             </Item>
           </SummaryGroup>
 
