@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight, GraduationCap, Wrench } from "lucide-react";
 
@@ -11,6 +12,8 @@ import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
 import { CAREER_BREAK_OPTIONS, CAREER_SITUATIONS } from "@/lib/assessment-options";
 import { isValid, validateStep1 } from "@/lib/assessment-validation";
+import { DEMO_ASSESSMENT } from "@/lib/demo-persona";
+import { PROFILE } from "@/lib/profile-data";
 
 const ICONS = {
   switch_or_return: ArrowLeftRight,
@@ -18,12 +21,25 @@ const ICONS = {
   fresh_start: GraduationCap,
 };
 
+// Mode demo aktif lewat alamat /assessment/1?demo=1. Dibaca di browser saja (server selalu false).
+const subscribeNothing = () => () => {};
+const isDemoUrl = () => new URLSearchParams(window.location.search).get("demo") === "1";
+const useDemoMode = () => useSyncExternalStore(subscribeNothing, isDemoUrl, () => false);
+
 /** Langkah 1 – Mulai Asesmen Karier (dokumen bagian 2.1). */
 export default function AssessmentStep1Page() {
   const router = useRouter();
   const { answers, updateStep, reachStep } = useAssessment();
   const step = answers.step_1;
   const canContinue = isValid(validateStep1(step));
+  const demo = useDemoMode();
+  const [filled, setFilled] = useState(false);
+
+  const fillDemo = () => {
+    ["step_1", "step_2", "step_3"].forEach((key) => updateStep(key, DEMO_ASSESSMENT[key]));
+    reachStep(4);
+    setFilled(true);
+  };
 
   const chooseSituation = (value) =>
     // Jawaban jeda karier hanya berlaku untuk opsi pertama; buang jika user pindah opsi.
@@ -40,6 +56,23 @@ export default function AssessmentStep1Page() {
       title="Mulai Asesmen Karier Anda"
       description="Jawab beberapa pertanyaan singkat agar kami dapat memberikan rekomendasi karier hijau yang tepat untuk Anda."
     >
+      {demo ? (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-brand/40 bg-brand-light/60 px-4 py-3 text-[13px] leading-relaxed text-ink">
+          <p aria-live="polite">
+            {filled
+              ? "Terisi. Pilih Lanjut untuk melihat setiap langkah."
+              : `Mode demo: isi seluruh asesmen dengan data contoh (${PROFILE.name}).`}
+          </p>
+          <button
+            type="button"
+            onClick={fillDemo}
+            className="min-h-10 shrink-0 rounded-full bg-brand px-4 text-[13px] font-bold text-white transition-colors hover:bg-brand/90"
+          >
+            {filled ? "Isi ulang" : "Isi data contoh"}
+          </button>
+        </div>
+      ) : null}
+
       <fieldset className="mb-5">
         <legend className="mb-3 text-[15px] font-bold text-ink">
           Mana yang paling menggambarkan Anda saat ini?<span className="text-red-600"> *</span>
