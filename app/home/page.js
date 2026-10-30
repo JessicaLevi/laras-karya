@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { CourseCard } from "@/components/home/course-card";
+import { ProfileCompletion } from "@/components/home/profile-completion";
 import { RecentApplications } from "@/components/home/recent-applications";
 import { RecommendedJobs } from "@/components/home/recommended-jobs";
 import { WelcomeBanner } from "@/components/home/welcome-banner";
@@ -23,7 +24,10 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col bg-surface">
       <main className="flex-1">
         <div className="mx-auto w-full max-w-[1200px] space-y-10 px-4 py-6 md:space-y-12 md:px-6 md:py-8 xl:px-8">
-          <WelcomeBanner {...HOME_USER} />
+          <div className="space-y-3">
+            <WelcomeBanner {...HOME_USER} />
+            <ProfileCompletion value={HOME_USER.profileCompleteness} />
+          </div>
           <RecommendedJobs jobs={MOCK_JOBS} />
           <RecentApplications />
         </div>

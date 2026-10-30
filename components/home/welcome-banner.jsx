@@ -1,33 +1,41 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { HomeSearch } from "@/components/home/home-search";
 
 /*
+  Hero Beranda: sapaan, judul, pencarian, satu tautan ke lowongan cocok.
+  Kelengkapan profil sengaja tidak di sini; lihat components/home/profile-completion.jsx.
+
   Latar foto: taruh gambar di public/images/hero-home.jpg (export dari Figma).
   Jika file belum ada, banner tetap tampil dengan warna hijau.
 
   Cara menyetel posisi foto: ubah angka pada bg-[position:X%_Y%]
   - Y kecil = bagian atas foto lebih terlihat (kepala), Y besar = bagian bawah lebih terlihat
   - X besar = fokus ke sisi kanan foto
+
+  Cara menyetel lebar area teks yang solid: ubah via-XX% dan to-XX% pada gradasi di bawah.
+  Teks berhenti sekitar 46% lebar banner, jadi hijau pekat dijaga sampai ~40% lalu habis di ~65%.
 */
-export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
+export function WelcomeBanner({ firstName, matchedJobs }) {
   return (
     <section
       aria-labelledby="welcome-title"
-      className="relative overflow-hidden rounded-2xl bg-brand"
+      className="relative rounded-2xl bg-brand"
     >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-[position:75%_35%] md:bg-[position:65%_32%]"
-        style={{ backgroundImage: "url('/images/hero-home.jpg')" }}
-      />
+      {/* Foto + gradasi dipotong di lapisan ini saja. Section sengaja tanpa overflow-hidden
+          supaya menu pilihan pencarian bisa keluar dari batas hero. */}
+      <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-2xl">
+        <div
+          className="absolute inset-0 bg-cover bg-[position:75%_35%] md:bg-[position:65%_32%]"
+          style={{ backgroundImage: "url('/images/hero-home.jpg')" }}
+        />
+        {/* Mobile: teks selebar kartu, jadi seluruhnya ditutup lebih pekat (kontras teks putih). */}
+        {/* Desktop: hijau pekat di area teks, memudar jelas ke foto di kanan. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand/95 via-brand/90 to-brand/80 md:from-brand md:via-brand/95 md:via-40% md:to-brand/0 md:to-65%" />
+      </div>
 
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-brand/95 via-brand/85 to-brand/60 md:from-brand/95 md:via-brand/75 md:via-45% md:to-brand/0 md:to-75%"
-      />
-
-      <div className="relative flex min-h-[240px] max-w-xl flex-col items-start justify-center gap-4 px-6 py-7 md:min-h-[280px] md:px-10 xl:min-h-[300px] xl:px-12">
+      <div className="relative flex min-h-[220px] max-w-xl flex-col items-start justify-center gap-4 px-6 py-6 md:min-h-[240px] md:px-10 xl:min-h-[250px] xl:px-12">
         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand">
           Selamat datang kembali, {firstName}
         </span>
@@ -40,20 +48,13 @@ export function WelcomeBanner({ firstName, profileCompleteness, matchedJobs }) {
             : "Selesaikan asesmen untuk melihat lowongan yang cocok"}
         </h1>
         <HomeSearch />
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          <Link
-            href="/recommended-jobs"
-            className="inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-bold text-brand transition-colors hover:bg-brand-light md:min-h-10"
-          >
-            Lihat Lowongan Cocok
-          </Link>
-          <Link
-            href="/profile"
-            className="inline-flex min-h-11 items-center rounded-full border border-white/70 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10 md:min-h-10"
-          >
-            Lengkapi Profil ({profileCompleteness}%)
-          </Link>
-        </div>
+        <Link
+          href="/recommended-jobs"
+          className="-mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-white underline-offset-4 hover:underline md:mt-0 md:min-h-0 md:py-1"
+        >
+          Lihat Lowongan Cocok
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
       </div>
     </section>
   );
