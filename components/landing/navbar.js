@@ -3,7 +3,12 @@ import Link from "next/link";
 
 // Menu navbar publik (landing, Perusahaan, dan halaman publik lain).
 export const PUBLIC_NAV_ITEMS = [
+<<<<<<< Updated upstream
   { label: "Tentang", href: "/about" },
+=======
+  { label: "Beranda", href: "/" },
+  { label: "Tentang Kami", href: "/about" },
+>>>>>>> Stashed changes
   { label: "Karier Hijau", href: "/jobs" },
   { label: "Perusahaan", href: "/employer" },
 ];
