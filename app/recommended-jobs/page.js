@@ -2,14 +2,41 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import JobList, { JobListFromUrl } from "@/components/jobs/job-list";
+import { GuestPreview } from "@/components/jobs/guest-preview";
 import { Footer } from "@/components/layout/footer";
 import { PageBanner } from "@/components/ui/page-banner";
+import { hasSession } from "@/lib/mock-session";
 
 export const metadata = {
   title: "Rekomendasi Karier Hijau | Laras Karya",
   description:
     "Pekerjaan sektor hijau yang paling cocok dengan profil Anda, berdasarkan hasil asesmen.",
 };
+
+/*
+  Dua keadaan halaman ini:
+  - tamu (belum masuk)  -> GuestPreview: satu rekomendasi utuh, sisanya buram + ajakan daftar
+  - pengguna sudah masuk -> daftar penuh (JobList)
+  Pembedanya cookie sesi (lib/mock-session.js), dibaca di server di dalam <Suspense>.
+*/
+async function Results() {
+  if (!(await hasSession())) return <GuestPreview />;
+  // JobListFromUrl membaca ?q= dari URL; selama itu, daftar tanpa pencarian tampil lebih dulu
+  return (
+    <Suspense fallback={<JobList />}>
+      <JobListFromUrl />
+    </Suspense>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div role="status" aria-label="Memuat rekomendasi" className="mt-6 space-y-5">
+      <div className="h-6 w-2/3 max-w-md animate-pulse rounded bg-black/10 motion-reduce:animate-none" />
+      <div className="h-64 animate-pulse rounded-2xl bg-black/5 motion-reduce:animate-none" />
+    </div>
+  );
+}
 
 export default function RecommendedJobsPage() {
   return (
@@ -37,9 +64,8 @@ export default function RecommendedJobsPage() {
           </PageBanner>
         </div>
 
-        {/* JobListFromUrl membaca ?q= dari URL; selama itu, daftar tanpa pencarian tampil lebih dulu */}
-        <Suspense fallback={<JobList />}>
-          <JobListFromUrl />
+        <Suspense fallback={<ResultsSkeleton />}>
+          <Results />
         </Suspense>
       </div>
 

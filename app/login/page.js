@@ -5,8 +5,11 @@ import { Lock, Mail } from "lucide-react";
 import { login } from "./actions";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { DemoPrefill } from "@/components/auth/demo-prefill";
+import { NextField, NextLink } from "@/components/auth/next-field";
 import { GoogleIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { DEMO_CREDENTIALS } from "@/lib/demo-persona";
 
 export const metadata = { title: "Masuk" };
 
@@ -58,6 +61,8 @@ export default function LoginPage() {
         <p className="mt-2 text-base text-ink">Masuk untuk melanjutkan perjalanan karier hijau Anda.</p>
 
         <form className="mt-6 space-y-4 lg:mt-[clamp(1rem,3vh,1.5rem)] lg:space-y-[clamp(0.5rem,1.8vh,1rem)]">
+          <NextField />
+          <DemoPrefill values={{ identifier: DEMO_CREDENTIALS.identifier, password: DEMO_CREDENTIALS.password }} />
           <div>
             <label htmlFor="identifier" className="mb-2 block text-sm font-semibold text-ink lg:mb-1.5">
               Email atau Nomor HP
@@ -119,9 +124,9 @@ export default function LoginPage() {
 
         <p className="mt-8 text-center lg:mt-[clamp(0.75rem,2.5vh,1.25rem)] text-base text-ink">
           Belum punya akun?{" "}
-          <Link href="/register" className="font-bold text-brand hover:underline">
+          <NextLink href="/register" className="font-bold text-brand hover:underline">
             Daftar di sini
-          </Link>
+          </NextLink>
         </p>
 
         <p className="mt-8 flex items-center lg:mt-[clamp(0.5rem,2vh,1rem)] justify-center gap-2 text-sm text-subtle">

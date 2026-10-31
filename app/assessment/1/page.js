@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight, GraduationCap, Wrench } from "lucide-react";
 
@@ -12,6 +12,7 @@ import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
 import { CAREER_BREAK_OPTIONS, CAREER_SITUATIONS } from "@/lib/assessment-options";
 import { isValid, validateStep1 } from "@/lib/assessment-validation";
+import { useDemoMode } from "@/lib/demo-mode";
 import { DEMO_ASSESSMENT } from "@/lib/demo-persona";
 import { PROFILE } from "@/lib/profile-data";
 
@@ -20,11 +21,6 @@ const ICONS = {
   practical_experience: Wrench,
   fresh_start: GraduationCap,
 };
-
-// Mode demo aktif lewat alamat /assessment/1?demo=1. Dibaca di browser saja (server selalu false).
-const subscribeNothing = () => () => {};
-const isDemoUrl = () => new URLSearchParams(window.location.search).get("demo") === "1";
-const useDemoMode = () => useSyncExternalStore(subscribeNothing, isDemoUrl, () => false);
 
 /** Langkah 1 – Mulai Asesmen Karier (dokumen bagian 2.1). */
 export default function AssessmentStep1Page() {
