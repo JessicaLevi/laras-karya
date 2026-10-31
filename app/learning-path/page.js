@@ -175,7 +175,7 @@ const handleComplete = (courseId) => {
     <section className="relative">
       <div className="bg-grid bg-radial-fade absolute inset-0 -z-10" />
 
-      <div className="mx-auto max-w-6xl px-6 py-20">
+      <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-6 md:px-6 md:pt-8 xl:px-8">
         <nav aria-label="Breadcrumb" className="text-sm text-ink/70">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
