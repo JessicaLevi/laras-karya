@@ -66,8 +66,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
         />
       </div>
       <p className="mt-2 text-xs text-white/80">
-        Dihitung dari keahlian, sektor, pola kerja, lokasi, pengalaman, dan
-        pendidikan.
+        Dihitung dari tujuh komponen: keahlian, sektor, pengalaman, pola kerja, lokasi, pendidikan, dan benefit.
       </p>
 
       <button
