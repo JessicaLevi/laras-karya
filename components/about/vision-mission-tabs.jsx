@@ -6,15 +6,9 @@ import { Eye, GraduationCap, HeartHandshake, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MISSIONS = [
-<<<<<<< Updated upstream
-  { id: "m1", icon: Zap, title: "Peluang Karir Hijau", text: "Membuka dan mempermudah akses lapangan kerja inklusif di perusahaan berkomitmen ESG dan keberlanjutan." },
+  { id: "m1", icon: Zap, title: "Peluang Karier Hijau", text: "Membuka dan mempermudah akses lapangan kerja inklusif di perusahaan berkomitmen ESG dan keberlanjutan." },
   { id: "m2", icon: GraduationCap, title: "Peningkatan Keterampilan", text: "Menyediakan pelatihan tersertifikasi di bidang energi terbarukan, analisis ESG, dan manajemen limbah." },
   { id: "m3", icon: HeartHandshake, title: "Aksesibilitas & Inklusivitas Pengguna", text: "Menghadirkan pengalaman yang jelas, inklusif, dan mudah diakses bagi pengguna dari beragam latar belakang." },
-=======
-  { id: "m1", icon: Zap, title: "Akses & Pencocokan Kerja Inklusif", text: "Mempermudah perempuan menemukan pekerjaan hijau (green jobs) yang relevan dengan minat, keterampilan, dan preferensi kerja melalui pengalaman platform yang jelas dan inklusif." },
-  { id: "m2", icon: GraduationCap, title: "Rekomendasi Transparan & Pengembangan Diri", text: "Memberikan penjelasan transparan di balik setiap rekomendasi pekerjaan serta mengidentifikasi kesenjangan keterampilan (skill gap) untuk dihubungkan dengan pelatihan yang relevan." },
-  { id: "m3", icon: HeartHandshake, title: "Kesiapan Melamar & Validasi Keterampilan", text: "Mendukung kesiapan pengguna dalam melamar kerja melalui persiapan CV yang matang dan pembuktian keterampilan yang tervalidasi." },
->>>>>>> Stashed changes
 ];
 
 const TABS = [
@@ -38,7 +32,7 @@ export function VisionMissionTabs() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div role="tablist" aria-label="Visi dan misi" className="mx-auto mb-8 flex max-w-md justify-center rounded-xl border border-slate-200 bg-slate-100 p-1">
+      <div role="tablist" aria-label="Visi dan misi" className="mx-auto mb-8 flex max-w-md justify-center rounded-full border border-line bg-surface p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -49,8 +43,8 @@ export function VisionMissionTabs() {
             aria-controls={`panel-${t.id}`}
             onClick={() => setActive(t.id)}
             className={cn(
-              "min-h-11 w-1/2 rounded-lg py-2.5 text-sm font-bold transition-all",
-              active === t.id ? "bg-white text-green-800 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              "min-h-11 w-1/2 rounded-full py-2.5 text-sm font-semibold transition-all",
+              active === t.id ? "bg-white text-brand shadow-sm" : "text-subtle hover:text-ink"
             )}
           >
             {t.label}
@@ -59,39 +53,39 @@ export function VisionMissionTabs() {
       </div>
 
       <div className="grid">
-      {/* Visi */}
-      <div id="panel-visi" role="tabpanel" aria-labelledby="tab-visi" className={panelClass(active === "visi")}>
-        <div
-          className="relative flex flex-1 items-center overflow-hidden rounded-2xl p-5 text-white shadow-xl md:p-6"
-          style={{ backgroundImage: "linear-gradient(135deg, #14532D 0%, #064E3B 50%, #022C22 100%)" }}
-        >
-          <div aria-hidden="true" className="absolute -bottom-10 -right-10 h-52 w-60 rounded-full bg-green-400/10 blur-2xl" />
-          <div className="relative z-10 mx-auto max-w-2xl text-center">
-            <div className="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-white/10 text-green-300 backdrop-blur">
-              <Eye className="size-5" aria-hidden="true" />
+        {/* Visi */}
+        <div id="panel-visi" role="tabpanel" aria-labelledby="tab-visi" className={panelClass(active === "visi")}>
+          <div
+            className="relative flex flex-1 items-center overflow-hidden rounded-2xl p-6 text-white shadow-xl md:p-8"
+            style={{ backgroundImage: "linear-gradient(135deg, #14532D 0%, #055c45 50%, #022C22 100%)" }}
+          >
+            <div aria-hidden="true" className="absolute -bottom-10 -right-10 h-52 w-60 rounded-full bg-emerald-400/10 blur-2xl" />
+            <div className="relative z-10 mx-auto max-w-2xl text-center">
+              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-white/10 text-emerald-200 backdrop-blur">
+                <Eye className="size-5" aria-hidden="true" />
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-white">Visi Kami</h3>
+              <p className="text-sm font-normal leading-relaxed text-emerald-100/90 sm:text-base">
+                “Menjadi platform pendorong utama kesetaraan gender dan pertumbuhan ekonomi hijau di Indonesia, di mana setiap perempuan memiliki akses setara untuk berkarier, memimpin, dan berinovasi demi kelestarian bumi.”
+              </p>
             </div>
-            <h3 className="mb-1.5 text-xl font-bold text-white">Visi Kami</h3>
-            <p className="text-sm font-normal leading-relaxed text-emerald-100/90 sm:text-base">
-              “Menjadi platform pendorong utama kesetaraan gender dan pertumbuhan ekonomi hijau di Indonesia, di mana setiap perempuan memiliki akses setara untuk berkarier, memimpin, dan berinovasi demi kelestarian bumi.”
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* Misi */}
-      <div id="panel-misi" role="tabpanel" aria-labelledby="tab-misi" className={panelClass(active === "misi")}>
-        <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-3 md:grid-rows-1">
-          {MISSIONS.map(({ id, icon: Icon, title, text }) => (
-            <article key={id} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 transition-shadow hover:shadow-md">
-              <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-green-700 text-white">
-                <Icon className="size-5" aria-hidden="true" />
-              </div>
-              <h4 className="mb-2 text-lg font-bold text-slate-900">{title}</h4>
-              <p className="text-sm leading-relaxed text-slate-600">{text}</p>
-            </article>
-          ))}
+        {/* Misi */}
+        <div id="panel-misi" role="tabpanel" aria-labelledby="tab-misi" className={panelClass(active === "misi")}>
+          <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-3 md:grid-rows-1">
+            {MISSIONS.map(({ id, icon: Icon, title, text }) => (
+              <article key={id} className="rounded-2xl border border-mint-line bg-mint/50 p-6 transition-shadow hover:shadow-md">
+                <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-brand text-white shadow-sm">
+                  <Icon className="size-5" aria-hidden="true" />
+                </div>
+                <h4 className="mb-2 text-lg font-bold text-ink">{title}</h4>
+                <p className="text-sm leading-relaxed text-slate-600">{text}</p>
+              </article>
+            ))}
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

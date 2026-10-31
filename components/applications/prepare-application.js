@@ -155,7 +155,7 @@ function PrepareForm({ job }) {
       ? "Centang pernyataan di atas untuk melanjutkan."
       : !cvFile
         ? "Belum ada CV terlampir. Anda tetap bisa melanjutkan, tetapi sebagian perusahaan mewajibkan CV."
-      : "Lamaran Anda akan dikirim ke perusahaan melalui Laras Karya."; // ⬇️ DIUBAH: sebelumnya "Anda akan diarahkan ke situs sumber lowongan..."
+      : "Lamaran Anda akan dikirim ke perusahaan melalui Laras Karya.";
 
   return (
     <>

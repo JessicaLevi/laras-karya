@@ -4,7 +4,7 @@ import { Questions, Jobs, CtaBanner } from "@/components/landing/sections";
 
 export default function LandingPage() {
   return (
-    <PublicShell>
+    <PublicShell active="/">
       <main>
         <Hero />
         <Questions />

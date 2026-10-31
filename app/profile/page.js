@@ -14,6 +14,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  SlidersHorizontal,
   Sparkles,
   Star,
   Trash2,
@@ -35,11 +36,14 @@ import {
   deleteSkill,
   downloadResume,
   editCertification,
+  editBio,
   editContact,
   editEducation,
   editExperience,
+  editPreferences,
   editProfileHeader,
   generateResume,
+  parseLocation,
   saveProfile,
 } from "./actions";
 
@@ -48,6 +52,13 @@ import { Footer } from "@/components/layout/footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PROFILE } from "@/lib/profile-data";
+import {
+  EXPERIENCE_LEVELS,
+  INDUSTRIES,
+  PROVINCES,
+  SKILL_OPTIONS,
+  WORK_ARRANGEMENTS,
+} from "@/lib/profile-options";
 
 const CARD = "rounded-3xl border border-line bg-white p-6 md:p-8";
 const CARD_TITLE = "flex items-center gap-3 text-xl font-semibold text-ink";
@@ -97,18 +108,40 @@ const FORMS = {
       { name: "year", label: "Tahun", inputMode: "numeric", placeholder: "2023" },
     ],
   },
+  bio: {
+    title: { edit: "Ubah Bio" },
+    fields: [
+      {
+        name: "bio",
+        label: "Bio",
+        type: "textarea",
+        rows: 6,
+        maxLength: 500,
+        placeholder: "Ceritakan singkat latar belakang, keahlian, dan tujuan karier Anda.",
+      },
+    ],
+  },
+  preferences: {
+    title: { edit: "Ubah Preferensi Karier" },
+    fields: [
+      { name: "workArrangement", label: "Pola kerja yang Anda inginkan", type: "radio", options: WORK_ARRANGEMENTS, required: true },
+      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", options: INDUSTRIES, required: true },
+      { name: "experienceLevel", label: "Tingkat pengalaman kerja", type: "select", options: EXPERIENCE_LEVELS, placeholder: "Pilih tingkat pengalaman", required: true },
+    ],
+  },
   contact: {
     title: { edit: "Ubah Informasi Kontak" },
     fields: [
       { name: "email", label: "Email", type: "email", required: true },
       { name: "phone", label: "Nomor HP", type: "tel" },
-      { name: "location", label: "Lokasi" },
+      { name: "city", label: "Kota", required: true, placeholder: "Banjarbaru" },
+      { name: "province", label: "Provinsi", type: "select", options: PROVINCES, placeholder: "Pilih provinsi", required: true },
       { name: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/namaanda" },
     ],
   },
   skill: {
     title: { add: "Tambah Skill" },
-    fields: [{ name: "label", label: "Nama Skill", required: true }],
+    fields: [{ name: "label", label: "Nama Skill", type: "skill-select", required: true }],
   },
   language: {
     title: { add: "Tambah Bahasa" },
@@ -123,6 +156,8 @@ const FORMS = {
 // Aksi yang dipanggil saat formulir dialog dikirim.
 const ACTIONS = {
   header: { edit: editProfileHeader },
+  bio: { edit: editBio },
+  preferences: { edit: editPreferences },
   experience: { add: addExperience, edit: editExperience },
   education: { add: addEducation, edit: editEducation },
   certification: { add: addCertification, edit: editCertification },
@@ -143,13 +178,98 @@ function formatAddedAt(iso) {
 
 function getValues(profile, type, id) {
   if (type === "header") return profile;
-  if (type === "contact") return profile.contact;
+  if (type === "bio") return { bio: profile.bio ?? "" };
+  if (type === "preferences") {
+    return {
+      workArrangement: profile.workArrangement ?? "",
+      industries: profile.industries ?? [],
+      experienceLevel: profile.experienceLevel ?? "",
+    };
+  }
+  if (type === "contact") return { ...profile.contact, ...parseLocation(profile.contact.location) };
   const lists = {
     experience: profile.experiences,
     education: profile.education,
     certification: profile.certifications,
   };
   return lists[type]?.find((item) => item.id === id) ?? {};
+}
+
+// Dropdown skill: pilih dari daftar (skill yang sudah dimiliki disembunyikan).
+// Daftar mengikuti katalog keahlian; tidak ada ketik bebas.
+function SkillSelectField({ field, ownedSkills }) {
+  const [value, setValue] = useState("");
+  const owned = new Set(ownedSkills.map((skill) => skill.label.toLowerCase()));
+  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
+
+  return (
+    <>
+      <select
+        id={`field-${field.name}`}
+        name={field.name}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        required={field.required}
+        className={`${INPUT} h-11`}
+      >
+        <option value="" disabled>
+          Pilih skill
+        </option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
+
+// Pilih satu (pola kerja), ditampilkan sebagai kartu seperti di halaman onboarding.
+function RadioCards({ field, defaultValue }) {
+  return (
+    <div role="radiogroup" aria-labelledby={`label-${field.name}`} className="grid grid-cols-3 gap-3">
+      {field.options.map((option) => (
+        <label
+          key={option}
+          className="flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-line bg-white px-3 text-sm font-semibold text-ink transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-light has-[:checked]:text-brand has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/30"
+        >
+          <input
+            type="radio"
+            name={field.name}
+            value={option}
+            defaultChecked={defaultValue === option}
+            required={field.required}
+            className="sr-only"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+// Pilih satu atau lebih (bidang industri), ditampilkan sebagai chip.
+function CheckboxChips({ field, defaultValue = [] }) {
+  return (
+    <div role="group" aria-labelledby={`label-${field.name}`} className="flex flex-wrap gap-2.5">
+      {field.options.map((option) => (
+        <label
+          key={option}
+          className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line bg-white px-4 text-sm text-ink transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-light has-[:checked]:font-semibold has-[:checked]:text-brand has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/30"
+        >
+          <input
+            type="checkbox"
+            name={field.name}
+            value={option}
+            defaultChecked={defaultValue.includes(option)}
+            className="sr-only"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+  );
 }
 
 export default function ProfilePage() {
@@ -191,6 +311,13 @@ export default function ProfilePage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const { type, mode, id } = dialog;
+
+    // Checkbox tidak bisa memakai `required` bawaan browser, jadi dicek di sini.
+    if (type === "preferences" && formData.getAll("industries").length === 0) {
+      setDialog((current) => ({ ...current, error: "Pilih minimal satu bidang industri." }));
+      return;
+    }
+
     setDraft((current) => ACTIONS[type][mode](current, formData, id));
     setDialog(null);
   }
@@ -297,6 +424,94 @@ export default function ProfilePage() {
 
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
           <div className="space-y-6">
+            {/* Bio */}
+            <section aria-labelledby="bio-title" className={CARD}>
+              <header className="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="bio-title" className={CARD_TITLE}>
+                  <span className={CARD_ICON}>
+                    <User className="size-5" aria-hidden="true" />
+                  </span>
+                  Bio
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-label="Edit bio"
+                  onClick={() => openDialog("bio", "edit")}
+                  className={PILL_BUTTON}
+                >
+                  <Pencil className="size-4" aria-hidden="true" />
+                  Edit
+                </Button>
+              </header>
+              <div className="mt-6">
+                {p.bio ? (
+                  <p className="whitespace-pre-line text-base leading-relaxed text-ink">{p.bio}</p>
+                ) : (
+                  <p className="text-sm text-ink/70">Belum ada bio. Ceritakan singkat tentang diri Anda.</p>
+                )}
+              </div>
+            </section>
+
+            {/* Preferensi karier */}
+            <section aria-labelledby="preferensi-title" className={CARD}>
+              <header className="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="preferensi-title" className={CARD_TITLE}>
+                  <span className={CARD_ICON}>
+                    <SlidersHorizontal className="size-5" aria-hidden="true" />
+                  </span>
+                  Preferensi Karier
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-label="Edit preferensi karier"
+                  onClick={() => openDialog("preferences", "edit")}
+                  className={PILL_BUTTON}
+                >
+                  <Pencil className="size-4" aria-hidden="true" />
+                  Edit
+                </Button>
+              </header>
+              <dl className="mt-6 space-y-5 text-sm">
+                <div>
+                  <dt className="font-semibold text-ink">Tingkat pengalaman kerja</dt>
+                  <dd className="mt-1 text-ink/70">{p.experienceLevel || "Belum diisi"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Pola kerja</dt>
+                  <dd className="mt-1.5">
+                    {p.workArrangement ? (
+                      <Badge tone="brand" outline className="border-brand px-3 py-1 text-sm font-semibold">
+                        {p.workArrangement}
+                      </Badge>
+                    ) : (
+                      <span className="text-ink/70">Belum diisi</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Bidang industri yang diminati</dt>
+                  <dd className="mt-1.5">
+                    {p.industries?.length > 0 ? (
+                      <ul className="flex flex-wrap gap-2">
+                        {p.industries.map((industry) => (
+                          <li
+                            key={industry}
+                            className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
+                          >
+                            {industry}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="text-ink/70">Belum diisi</span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
             {/* Pengalaman kerja */}
             <section aria-labelledby="pengalaman-title" className={CARD}>
               <header className="flex flex-wrap items-center justify-between gap-3">
@@ -730,9 +945,15 @@ export default function ProfilePage() {
             <div className="mt-6 space-y-4">
               {form.fields.map((field) => (
                 <div key={field.name}>
-                  <label htmlFor={`field-${field.name}`} className="mb-1.5 block text-sm font-semibold text-ink">
-                    {field.label}
-                  </label>
+                  {field.type === "radio" || field.type === "checkboxes" ? (
+                    <p id={`label-${field.name}`} className="mb-2 block text-sm font-semibold text-ink">
+                      {field.label}
+                    </p>
+                  ) : (
+                    <label htmlFor={`field-${field.name}`} className="mb-1.5 block text-sm font-semibold text-ink">
+                      {field.label}
+                    </label>
+                  )}
                   {field.type === "textarea" ? (
                     <textarea
                       id={`field-${field.name}`}
@@ -740,16 +961,29 @@ export default function ProfilePage() {
                       defaultValue={dialog.values[field.name] ?? ""}
                       required={field.required}
                       placeholder={field.placeholder}
-                      rows={4}
+                      maxLength={field.maxLength}
+                      rows={field.rows ?? 4}
                       className={`${INPUT} py-3`}
                     />
+                  ) : field.type === "skill-select" ? (
+                    <SkillSelectField field={field} ownedSkills={draft.skills} />
+                  ) : field.type === "radio" ? (
+                    <RadioCards field={field} defaultValue={dialog.values[field.name]} />
+                  ) : field.type === "checkboxes" ? (
+                    <CheckboxChips field={field} defaultValue={dialog.values[field.name]} />
                   ) : field.type === "select" ? (
                     <select
                       id={`field-${field.name}`}
                       name={field.name}
-                      defaultValue={dialog.values[field.name] ?? field.defaultValue}
+                      defaultValue={dialog.values[field.name] || field.defaultValue || ""}
+                      required={field.required}
                       className={`${INPUT} h-11`}
                     >
+                      {field.placeholder && (
+                        <option value="" disabled>
+                          {field.placeholder}
+                        </option>
+                      )}
                       {field.options.map((option) => (
                         <option key={option} value={option}>
                           {option}
@@ -771,6 +1005,12 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
+
+            {dialog.error && (
+              <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+                {dialog.error}
+              </p>
+            )}
 
             <div className="mt-8 flex justify-end gap-3">
               <Button

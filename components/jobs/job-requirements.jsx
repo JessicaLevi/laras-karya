@@ -1,4 +1,4 @@
-import { Check, MapPin } from "lucide-react";
+import { Check } from "lucide-react";
 
 /** Kartu putih bergaya seragam untuk tiap seksi konten. */
 function Section({ id, title, children }) {
@@ -13,7 +13,8 @@ function Section({ id, title, children }) {
 }
 
 /**
- * Empat seksi: Detail Pekerjaan, Persyaratan Pekerjaan, Benefit & Fasilitas, Lokasi Perusahaan.
+ * Tiga seksi: Detail Pekerjaan, Persyaratan Pekerjaan, Benefit & Fasilitas.
+ * Lokasi perusahaan sudah tampil di kartu JobHeader utama.
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function JobRequirements({ job }) {
@@ -45,16 +46,6 @@ export function JobRequirements({ job }) {
             </li>
           ))}
         </ul>
-      </Section>
-
-      <Section id="location-title" title="Lokasi Perusahaan">
-        <p className="flex items-start gap-2 text-[13px] leading-relaxed text-ink/80">
-          <MapPin
-            className="mt-0.5 size-4 shrink-0 text-brand"
-            aria-hidden="true"
-          />
-          {job.address}
-        </p>
       </Section>
     </>
   );
