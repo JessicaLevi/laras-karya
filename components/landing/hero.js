@@ -46,7 +46,10 @@ export default function Hero() {
               Platform Karier Hijau untuk Perempuan
             </span>
             <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
-              Wujudkan Karier Bermakna di Sektor Hijau
+              Temukan green jobs yang selaras dengan diri Anda,
+              <span className="mt-3 block text-xl font-semibold leading-snug tracking-normal text-slate-700 md:text-2xl">
+                dan berkarya untuk lingkungan serta pembangunan berkelanjutan.
+              </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
               Jawab beberapa pertanyaan, lalu dapatkan lowongan hijau yang cocok

@@ -16,7 +16,8 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata = {
   title: "Laras Karya",
-  description: "Platform Karier Sektor Hijau untuk Perempuan Indonesia",
+  description:
+    "Platform karier sektor hijau untuk perempuan Indonesia. Temukan green jobs yang selaras dengan diri Anda, dan berkarya untuk lingkungan serta pembangunan berkelanjutan.",
   applicationName: "Laras Karya",
   appleWebApp: {
     capable: true,
