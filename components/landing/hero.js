@@ -46,7 +46,10 @@ export default function Hero() {
               Platform Karier Hijau untuk Perempuan
             </span>
             <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
-              Wujudkan Karier Bermakna di Sektor Hijau
+              Temukan green jobs yang selaras dengan diri Anda,
+              <span className="mt-3 block text-xl font-semibold leading-snug tracking-normal text-slate-700 md:text-2xl">
+                dan berkarya untuk lingkungan serta pembangunan berkelanjutan.
+              </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
               Jawab beberapa pertanyaan, lalu dapatkan lowongan hijau yang cocok
@@ -55,10 +58,10 @@ export default function Hero() {
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
                 href="/assessment"
-                className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
+                className="cta-shine group inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-white transition hover:bg-brand/90"
               >
                 Mulai Asesmen Gratis{" "}
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
               <Link
                 href="/login"
