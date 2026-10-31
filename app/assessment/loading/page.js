@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  */
 const STAGES = [
   "Membaca cerita pengalaman Anda",
-  "Memperbarui keahlian di profil Anda",
+  "Membaca keahlian dari jawaban Anda",
   "Menghitung kecocokan dengan lowongan",
 ];
 const STAGE_DURATION_MS = 1800;

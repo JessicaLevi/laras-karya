@@ -1,20 +1,18 @@
 import Link from "next/link";
-import { ArrowRight, Brain, Check, FileText, Lock, Mail, Sparkle, Sparkles, User } from "lucide-react";
+import { Check, Lock, Mail, User } from "lucide-react";
 
 import { signup } from "./actions";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { DemoPrefill } from "@/components/auth/demo-prefill";
+import { AfterSignupHint, NextField, NextLink } from "@/components/auth/next-field";
+import { SignupSteps } from "@/components/auth/signup-steps";
 import { GoogleIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { DEMO_CREDENTIALS } from "@/lib/demo-persona";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Daftar" };
-
-const STEPS = [
-  { n: 1, icon: FileText, label: "Daftar", desc: "Mengisi formulir pendaftaran akun" },
-  { n: 2, icon: Brain, label: "Asesmen", desc: "Mengerjakan asesmen singkat 5 menit" },
-  { n: 3, icon: Sparkles, label: "Rekomendasi AI", desc: "Dapatkan informasi lowongan yang cocok dengan profil Anda" },
-];
 
 export default function RegisterPage() {
   return (
@@ -23,22 +21,7 @@ export default function RegisterPage() {
       title="Mulai Perjalanan Karier Hijau Anda"
       //description="Daftar gratis, jawab asesmen singkat, dan temukan lowongan yang cocok dengan profil Anda."
       panelFooter={
-        <div className="rounded-2xl border border-white/10 bg-emerald-900/40 p-6 backdrop-blur-md">
-          <p className="text-sm font-semibold uppercase tracking-wide">Alur Pendaftaran</p>
-          <ol className="mt-4 flex items-stretch gap-2">
-            {STEPS.map(({ n, icon: Icon, label, desc }, i) => (
-              <li key={n} className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col items-center rounded-xl border border-white/10 bg-white/10 px-3 py-4 text-center">
-                  <span className="grid size-7 place-items-center rounded-full border border-white/40 text-sm">{n}</span>
-                  <Icon className="mt-3 size-10 text-emerald-300" strokeWidth={1.25} aria-hidden="true" />
-                  <span className="mt-3 text-sm font-semibold">{label}</span>
-                  <span className="mt-1 text-xs leading-snug text-white/75">{desc}</span>
-                </div>
-                {i < STEPS.length - 1 && <ArrowRight className="size-4 shrink-0 text-white/60" aria-hidden="true" />}
-              </li>
-            ))}
-          </ol>
-        </div>
+        <SignupSteps />
       }
     >
       <div className="w-full max-w-[440px]">
@@ -48,6 +31,8 @@ export default function RegisterPage() {
         <p className="mt-2 text-base text-ink">Mulai temukan lowongan hijau yang selaras dengan Anda.</p>
 
         <form className="mt-6 space-y-4 lg:mt-[clamp(1rem,3vh,1.5rem)] lg:space-y-[clamp(0.5rem,1.8vh,1rem)]">
+          <NextField />
+          <DemoPrefill values={{ ...DEMO_CREDENTIALS, agree: true }} />
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-semibold text-ink lg:mb-1.5">
               Nama Lengkap
@@ -131,10 +116,7 @@ export default function RegisterPage() {
             <Button type="submit" formAction={signup} className="h-12 w-full lg:h-[clamp(2.25rem,5.4vh,3rem)] bg-brand hover:bg-brand/90 rounded-xl text-white font-semibold">
               Daftar Sekarang
             </Button>
-            <p className="flex items-center justify-center gap-2 rounded-xl bg-accent-light py-2 text-sm font-bold text-accent">
-              <Sparkle className="size-3.5 fill-current" aria-hidden="true" />
-              Setelah daftar, lanjut ke asesmen 5 menit
-            </p>
+            <AfterSignupHint />
           </div>
 
           <div className="flex items-center gap-4 text-sm text-subtle" role="separator" aria-label="atau">
@@ -155,9 +137,9 @@ export default function RegisterPage() {
 
         <p className="mt-8 text-center lg:mt-[clamp(0.75rem,2.5vh,1.25rem)] text-base text-ink">
           Sudah punya akun?{" "}
-          <Link href="/login" className="font-bold text-brand hover:underline">
+          <NextLink href="/login" className="font-bold text-brand hover:underline">
             Masuk di sini
-          </Link>
+          </NextLink>
         </p>
 
         <p className="mt-8 flex items-center lg:mt-[clamp(0.5rem,2vh,1rem)] justify-center gap-2 text-sm text-subtle">
