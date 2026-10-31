@@ -45,23 +45,25 @@ export default function Hero() {
             <span className="inline-block rounded-full bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand">
               Platform Karier Hijau untuk Perempuan
             </span>
-            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
-              Temukan green jobs yang selaras dengan diri Anda,
-              <span className="mt-3 block text-xl font-semibold leading-snug tracking-normal text-slate-700 md:text-2xl">
-                dan berkarya untuk lingkungan serta pembangunan berkelanjutan.
-              </span>
+            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
+              Wujudkan Karier Hijau yang Selaras dengan Diri Anda
             </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-800">
-              Jawab beberapa pertanyaan, lalu dapatkan lowongan hijau yang cocok
+
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600">
+              Jawab asesmen singkat dan temukan lowongan hijau yang cocok
               beserta penjelasan dan pelatihannya.
             </p>
+
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
                 href="/assessment"
                 className="cta-shine group inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-white transition hover:bg-brand/90"
               >
                 Mulai Asesmen Gratis{" "}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                <ArrowRight
+                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                  aria-hidden
+                />
               </Link>
               <Link
                 href="/login"
@@ -108,8 +110,8 @@ export default function Hero() {
       <section className="border-y border-slate-200 bg-white">
         <div className="mx-auto max-w-[1200px] px-4 py-6 text-center md:px-6 xl:px-8">
           <p className="text-sm font-medium text-slate-700">
-            Sesuai untuk Anda yang berpindah karier, belajar dari pengalaman praktik, atau
-            baru memulai
+            Sesuai untuk Anda yang berpindah karier, belajar dari pengalaman
+            praktik, atau baru memulai
           </p>
           <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600">
             {sectors.map(({ icon: Icon, label }) => (
