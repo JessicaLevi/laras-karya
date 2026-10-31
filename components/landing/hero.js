@@ -55,10 +55,10 @@ export default function Hero() {
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <Link
                 href="/assessment"
-                className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand/90"
+                className="cta-shine group inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-white transition hover:bg-brand/90"
               >
                 Mulai Asesmen Gratis{" "}
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
               <Link
                 href="/login"
