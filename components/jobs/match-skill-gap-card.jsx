@@ -145,7 +145,7 @@ export function MatchSkillGapCard({ job, defaultOpen = false }) {
             Lamar Sekarang <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
           <p className="mt-2 text-center text-xs text-white/80">
-            Periksa dokumen dulu, lalu lamar di situs perusahaan.
+            Periksa dokumen dulu, lalu kirim lamaran.
           </p>
         </>
       ) : (

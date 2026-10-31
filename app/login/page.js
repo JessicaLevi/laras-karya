@@ -18,6 +18,7 @@ const HIGHLIGHTS = [
 export default function LoginPage() {
   return (
     <AuthShell
+      variant="forest"
       title="Temukan Karier Hijau yang Bermakna"
       description="Platform karier khusus perempuan untuk sektor lingkungan dan keberlanjutan."
       panelMedia={
