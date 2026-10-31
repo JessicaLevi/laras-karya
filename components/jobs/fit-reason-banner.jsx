@@ -1,50 +1,32 @@
-import { Leaf, MapPin, Sparkles, Target, Wrench } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, Info, Sparkles } from "lucide-react";
+
+import { buildFitInsights } from "@/lib/fit-insights";
 
 /** @param {number} p */
 function matchLevel(p) {
   if (p >= 90) return "sangat tinggi";
   if (p >= 80) return "tinggi";
-  return "cukup tinggi";
+  if (p >= 70) return "cukup tinggi";
+  return "sedang";
 }
 
 /**
- * Banner "Mengapa lowongan ini cocok untuk Anda". Poin dibuat dari data lowongan.
- * @param {{ job: import("@/lib/job-detail-data").JobDetail, missingCount: number }} props
+ * Banner "Mengapa lowongan ini cocok untuk Anda". Isinya dari lib/fit-insights.js,
+ * sumber yang sama dengan kartu di /recommended-jobs, jadi keduanya selalu seirama.
+ * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
-export function FitReasonBanner({ job, missingCount }) {
-  const total = job.skills.length;
-  const owned = total - missingCount;
-  const reasons = [
-    {
-      id: "match",
-      icon: Target,
-      color: "text-red-500",
-      text: `Tingkat kecocokan Anda ${matchLevel(job.matchPercent)} untuk posisi ini`,
-    },
-    {
-      id: "skills",
-      icon: Wrench,
-      color: "text-ink/70",
-      text:
-        missingCount === 0
-          ? "Anda sudah memiliki seluruh keterampilan yang dibutuhkan"
-          : owned === 0
-            ? "Anda belum memiliki keterampilan yang dibutuhkan"
-            : `Anda memiliki ${owned} dari ${total} keterampilan yang dibutuhkan`,
-    },
-    {
-      id: "sector",
-      icon: Leaf,
-      color: "text-emerald-600",
-      text: `Sektor ${job.sector} cocok dengan minat dan pengalaman Anda`,
-    },
-    {
-      id: "location",
-      icon: MapPin,
-      color: "text-red-500",
-      text: `Lokasi dan pola kerja ${job.workMode.toLowerCase()} sesuai preferensi Anda`,
-    },
-  ];
+export function FitReasonBanner({ job }) {
+  const insights = buildFitInsights({
+    sector: job.sector,
+    mode: job.workMode,
+    city: job.city,
+    perks: job.perks ?? [],
+    owned: job.skills.filter((s) => s.status === "dimiliki").map((s) => s.name),
+    missing: job.skills.filter((s) => s.status !== "dimiliki").map((s) => s.name),
+  });
+  const points = insights.filter((i) => i.tone !== "next");
+  const next = insights.find((i) => i.tone === "next");
 
   return (
     <section
@@ -60,23 +42,37 @@ export function FitReasonBanner({ job, missingCount }) {
         </h2>
       </div>
       <p className="mt-2 text-xs text-ink/70">
-        Berdasarkan profil dan hasil asesmen Anda.
+        Tingkat kecocokan {matchLevel(job.matchPercent)} ({job.matchPercent}%), berdasarkan profil dan hasil asesmen Anda.
       </p>
 
-      <ul className="mt-3 space-y-2.5">
-        {reasons.map(({ id, icon: Icon, color, text }) => (
-          <li
-            key={id}
-            className="flex items-start gap-2.5 text-[13px] text-ink"
-          >
-            <Icon
-              className={`mt-0.5 size-4 shrink-0 ${color}`}
-              aria-hidden="true"
-            />
-            {text}
+      <ul className="mt-3 space-y-3">
+        {points.map(({ id, tone, text, detail }) => (
+          <li key={id} className="flex items-start gap-2.5 text-[13px] text-ink">
+            {tone === "good" ? (
+              <Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
+            ) : (
+              <Info className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
+            )}
+            <div>
+              <p className="font-semibold">{text}</p>
+              {detail ? <p className="mt-0.5 text-xs leading-relaxed text-ink/70">{detail}</p> : null}
+            </div>
           </li>
         ))}
       </ul>
+
+      {next ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-mint-line pt-3 text-[13px]">
+          <span className="font-semibold text-ink">{next.text}</span>
+          <Link
+            href={next.href}
+            className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand hover:underline md:min-h-0"
+          >
+            {next.linkLabel}
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      ) : null}
     </section>
   );
 }
