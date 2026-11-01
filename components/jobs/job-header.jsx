@@ -5,7 +5,7 @@ import { Bookmark, MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { hasApplied } from "@/lib/applications-data";
+import { useHasApplied } from "@/lib/demo-history";
 import { AppliedBadge } from "@/components/ui/applied-badge";
 import { CompanyAvatar } from "@/components/ui/company-avatar";
 
@@ -54,6 +54,7 @@ function MatchRing({ value, size = 44, strokeWidth = 3 }) {
  */
 export function JobHeader({ job }) {
   const [saved, setSaved] = useState(false);
+  const applied = useHasApplied(job.id);
 
   return (
     <header className="rounded-xl bg-white p-5 shadow-sm">
@@ -123,7 +124,7 @@ export function JobHeader({ job }) {
             Ditutup
           </span>
         )}
-        {hasApplied(job.id) && <AppliedBadge />}
+        {applied && <AppliedBadge />}
         <span>Diperbarui {job.updatedAt}</span>
       </p>
     </header>

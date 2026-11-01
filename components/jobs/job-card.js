@@ -12,11 +12,12 @@ import {
 } from "lucide-react";
 import MatchPanel, { splitSkills } from "./match-panel";
 
-import { hasApplied } from "@/lib/applications-data";
+import { useHasApplied } from "@/lib/demo-history";
 import { AppliedBadge } from "@/components/ui/applied-badge";
 import { CompanyAvatar, sectorTone } from "@/components/ui/company-avatar";
 
-function TopRow({ job, showMatch = true }) {
+function TopRow({ job, showMatch = true, hideApplied = false }) {
+  const applied = useHasApplied(job.id);
   return (
     <div className="flex items-center justify-between gap-3">
       <span
@@ -25,7 +26,7 @@ function TopRow({ job, showMatch = true }) {
         {job.sector}
       </span>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {hasApplied(job.id) && <AppliedBadge />}
+        {!hideApplied && applied && <AppliedBadge />}
         {showMatch && (
           <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
             {job.match}% Cocok
@@ -70,7 +71,8 @@ function SkillSummary({ job }) {
   );
 }
 
-export function FeaturedJobCard({ job }) {
+/** hideApplied: sembunyikan lencana "Sudah Dilamar" (dipakai pratinjau tamu, yang belum punya lamaran). */
+export function FeaturedJobCard({ job, hideApplied = false }) {
   return (
     <section
       aria-label="Rekomendasi paling cocok"
@@ -82,7 +84,7 @@ export function FeaturedJobCard({ job }) {
 
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
         <article className="flex flex-col rounded-2xl bg-white p-6">
-          <TopRow job={job} showMatch={false} />
+          <TopRow job={job} showMatch={false} hideApplied={hideApplied} />
           <div className="mt-5 flex items-center gap-4">
             <CompanyAvatar
               company={job.company}

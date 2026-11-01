@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { hasApplied } from "@/lib/applications-data";
+import { useHasApplied } from "@/lib/demo-history";
 
 const SKILL_STATUS = {
   dimiliki: {
@@ -36,7 +36,7 @@ const SKILL_STATUS = {
  */
 export function MatchSkillGapCard({ job, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const applied = hasApplied(job.id);
+  const applied = useHasApplied(job.id);
 
   const missing = job.skills.filter((s) => s.status !== "dimiliki");
 

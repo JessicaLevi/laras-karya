@@ -2,12 +2,13 @@ import Link from "next/link";
 import { Check, Lock } from "lucide-react";
 
 import { FeaturedJobCard, JobCard } from "@/components/jobs/job-card";
-import { getOpenJobsAppliedLast } from "@/lib/job-ordering";
 import { JOBS } from "@/lib/mock-jobs";
 
 /*
   Pratinjau hasil untuk TAMU (belum masuk): rekomendasi teratas tampil utuh, sisanya diburamkan,
-  lalu pengguna diajak mendaftar. Urutan lowongan sama dengan daftar penuh (lib/job-ordering.js).
+  lalu pengguna diajak mendaftar. Urutan murni berdasarkan skor: tamu belum punya lamaran, jadi aturan
+  "sudah dilamar di belakang" (lib/job-ordering.js) sengaja tidak dipakai di sini; yang tampil adalah
+  lowongan paling cocok sungguhan.
 
   - VISIBLE: jumlah lowongan yang tampil utuh (kartu utama sudah memuat skor, alasan, dan skill gap).
   - BLURRED: jumlah kartu yang diburamkan; tidak perlu semua supaya halaman tidak panjang.
@@ -20,8 +21,12 @@ import { JOBS } from "@/lib/mock-jobs";
 */
 const VISIBLE = 1;
 const BLURRED = 4;
+// Setelah daftar/masuk langsung ke daftar rekomendasi penuh. Pada akun baru (mode demo) daftar itu belum
+// menampilkan lamaran; catatan "Beberapa minggu kemudian" muncul saat Beranda/Lamaran/Bookmark dibuka
+// (components/demo/history-gate.jsx).
 const NEXT = "/recommended-jobs";
-const OPEN_JOBS = getOpenJobsAppliedLast(JOBS);
+// JOBS sudah terurut dari skor tertinggi.
+const OPEN_JOBS = JOBS.filter((j) => j.status === "dibuka");
 
 // Isi kartu contoh untuk bagian terkunci (sengaja generik).
 const STUB_TITLES = ["Spesialis Keberlanjutan", "Koordinator Program Hijau", "Analis Dampak Lingkungan", "Konsultan Energi Bersih"];
@@ -67,7 +72,7 @@ export function GuestPreview() {
 
       {shown.map((job) => (
         <div key={job.id} className="mt-6">
-          <FeaturedJobCard job={job} />
+          <FeaturedJobCard job={job} hideApplied />
         </div>
       ))}
 

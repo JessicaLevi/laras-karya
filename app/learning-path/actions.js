@@ -1,42 +1,46 @@
 // Data & action untuk halaman Jalur Belajar.
 // Saat ini masih mock (dummy). Ganti isi fungsi dengan fetch / Supabase saat backend siap.
 
+// Target = lowongan demo "Sustainability Officer, PT Hijau Lestari" (lib/mock-jobs.js, id 1), supaya
+// ceritanya nyambung dengan halaman rekomendasi. Skill gap sama dengan gap lowongan itu:
+// Pelaporan ESG dan Regulasi Keberlanjutan belum dikuasai; Analisis Data dan Koordinasi Proyek sudah.
+// Kalau kedua skill gap terpenuhi, skor kecocokan lowongan ini naik dari 83 ke 95.
 const LEARNING_TARGET = {
-  position: "Environmental Officer",
-  company: "PT Hijau Lestari Energi",
+  position: "Sustainability Officer",
+  company: "PT Hijau Lestari",
   skillGaps: [
-    { skill: "Pengelolaan Limbah B3", status: "Belum dikuasai", tone: "red" },
-    { skill: "AMDAL & UKL-UPL", status: "Perlu ditingkatkan", tone: "amber" },
-    { skill: "Audit ISO 14001", status: "Perlu ditingkatkan", tone: "amber" },
-    { skill: "Pemantauan Kualitas Lingkungan", status: "Sudah baik", tone: "green" },
+    { skill: "Pelaporan ESG", status: "Belum dikuasai", tone: "red" },
+    { skill: "Regulasi Keberlanjutan", status: "Belum dikuasai", tone: "red" },
+    { skill: "Analisis Data", status: "Sudah baik", tone: "green" },
+    { skill: "Koordinasi Proyek", status: "Sudah baik", tone: "green" },
   ],
 };
 
-// Satu bidang (lingkungan), berjenjang: Dasar -> Menengah -> Lanjutan.
+// Satu bidang (keberlanjutan), berjenjang: Dasar -> Menengah -> Lanjutan.
 // Setiap langkah berisi course milik pihak ketiga (Udemy, Kemnaker, dll).
 // Judul & `url` di bawah hanya contoh: ganti dengan link course asli.
 const LEARNING_STEPS = [
   {
     n: 1,
-    title: "Dasar Pengelolaan Lingkungan",
+    title: "Dasar Keberlanjutan & Regulasi",
     description:
-      "Pahami regulasi lingkungan hidup dan prinsip dasar pengelolaan limbah B3 di industri.",
+      "Pahami kerangka ESG dan regulasi keberlanjutan yang berlaku di Indonesia.",
     courses: [
       {
         id: "c1",
         provider: "Udemy",
-        title: "Pengelolaan Limbah B3 untuk Pemula",
+        title: "Pengantar ESG dan Keberlanjutan untuk Pemula",
         level: "Beginner",
         format: "Kursus Online",
         duration: "4 minggu",
-        skillTag: "Penanganan Limbah B3",
+        skillTag: "Pelaporan ESG",
         popular: true,
         url: "https://www.udemy.com",
       },
       {
         id: "c2",
         provider: "Udemy",
-        title: "Dasar Regulasi Lingkungan Hidup di Indonesia",
+        title: "Dasar Regulasi Keberlanjutan di Indonesia",
         level: "Beginner",
         format: "Kursus Online",
         duration: "2 minggu",
@@ -48,29 +52,29 @@ const LEARNING_STEPS = [
   },
   {
     n: 2,
-    title: "Analisis Dampak Lingkungan",
+    title: "Pelaporan Keberlanjutan",
     description:
-      "Susun dokumen AMDAL dan UKL-UPL, serta lakukan pemantauan kualitas air dan udara.",
+      "Susun laporan keberlanjutan dengan standar GRI dan pantau kepatuhan terhadap regulasi.",
     courses: [
       {
         id: "c3",
         provider: "Kemnaker",
-        title: "Penyusunan Dokumen AMDAL & UKL-UPL",
+        title: "Penyusunan Laporan Keberlanjutan (GRI Standards)",
         level: "Intermediate",
         format: "Workshop",
         duration: "3 hari",
-        skillTag: "Laporan Amdal",
+        skillTag: "Pelaporan ESG",
         popular: false,
         url: "https://kemnaker.go.id",
       },
       {
         id: "c4",
         provider: "Kemnaker",
-        title: "Pemantauan Kualitas Air & Udara",
+        title: "Pemantauan Kepatuhan Regulasi Keberlanjutan",
         level: "Intermediate",
         format: "Workshop",
         duration: "2 hari",
-        skillTag: "Pemantauan Kualitas Air",
+        skillTag: "Regulasi Keberlanjutan",
         popular: false,
         url: "https://kemnaker.go.id",
       },
@@ -78,29 +82,29 @@ const LEARNING_STEPS = [
   },
   {
     n: 3,
-    title: "Auditor Sistem Manajemen Lingkungan",
+    title: "Sertifikasi Profesional",
     description:
-      "Jadi auditor internal dan pimpin penerapan ISO 14001 untuk perbaikan kinerja lingkungan perusahaan.",
+      "Perkuat kompetensi dengan sertifikasi pelaporan dan kepatuhan yang diakui industri.",
     courses: [
       {
         id: "c5",
         provider: "Udemy",
-        title: "Auditor Internal ISO 14001",
+        title: "Sertifikasi Profesional Pelaporan ESG",
         level: "Advanced",
         format: "Sertifikasi",
         duration: "5 hari",
-        skillTag: "ISO 14001",
+        skillTag: "Pelaporan ESG",
         popular: false,
         url: "https://www.udemy.com",
       },
       {
         id: "c6",
         provider: "Kemnaker",
-        title: "Penanggung Jawab Pengendalian Pencemaran Air",
+        title: "Kepatuhan Regulasi Keberlanjutan untuk Perusahaan",
         level: "Advanced",
         format: "Sertifikasi",
         duration: "3 minggu",
-        skillTag: "Pemberdayaan Masyarakat",
+        skillTag: "Regulasi Keberlanjutan",
         popular: false,
         url: "https://kemnaker.go.id",
       },

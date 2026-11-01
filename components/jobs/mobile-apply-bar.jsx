@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
-import { hasApplied } from "@/lib/applications-data";
+import { useHasApplied } from "@/lib/demo-history";
 
 /**
  * Bilah aksi tetap di dasar layar, khusus HP/tablet. Di desktop aksi melamar
@@ -12,7 +12,7 @@ import { hasApplied } from "@/lib/applications-data";
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function MobileApplyBar({ job }) {
-  const applied = hasApplied(job.id);
+  const applied = useHasApplied(job.id);
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur lg:hidden">

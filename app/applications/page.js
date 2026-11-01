@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HistoryGate } from "@/components/demo/history-gate";
 import { Footer } from "@/components/layout/footer";
 import { ChevronRight } from "lucide-react";
 
@@ -16,6 +17,7 @@ export const metadata = {
 /* F05 · application-tracker. Server component; hanya riwayat yang client (filter & pagination). */
 export default function ApplicationsPage() {
   return (
+    <HistoryGate>
     <div className="flex min-h-screen flex-col bg-surface">
       {/* <Navbar /> */}
 
@@ -46,5 +48,6 @@ export default function ApplicationsPage() {
 
       <Footer />
     </div>
+    </HistoryGate>
   );
 }
