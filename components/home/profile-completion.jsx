@@ -4,9 +4,10 @@ import { ArrowRight } from "lucide-react";
 /**
  * Pengingat kelengkapan profil di bawah hero, satu baris di layar sm ke atas.
  * Hilang sendiri kalau profil sudah 100%.
- * @param {{ value: number }} props  persen kelengkapan, 0 sampai 100
+ * @param {{ value: number, remaining?: string }} props  persen kelengkapan, 0 sampai 100;
+ *   remaining = teks bagian yang belum terisi (tampil di layar md ke atas)
  */
-export function ProfileCompletion({ value }) {
+export function ProfileCompletion({ value, remaining = "" }) {
   if (value >= 100) return null;
 
   return (
@@ -14,7 +15,10 @@ export function ProfileCompletion({ value }) {
       aria-label="Kelengkapan profil"
       className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-line bg-white px-4 py-2 md:px-5"
     >
-      <p className="text-sm font-semibold text-ink">Profil Anda {value}% lengkap</p>
+      <p className="text-sm font-semibold text-ink">
+        Profil Anda {value}% lengkap
+        {remaining ? <span className="ml-2 hidden font-normal text-ink/70 md:inline">{remaining}</span> : null}
+      </p>
       <div
         role="progressbar"
         aria-label="Kelengkapan profil"

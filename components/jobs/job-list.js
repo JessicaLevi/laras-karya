@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchX, Sparkles } from "lucide-react";
 import { JOBS } from "@/lib/mock-jobs";
+import { hasApplied } from "@/lib/applications-data";
+import { useHistoryStage } from "@/lib/demo-history";
 import { getOpenJobsAppliedLast } from "@/lib/job-ordering";
 import { FeaturedJobCard, JobCard } from "./job-card";
 import Pagination from "./pagination";
@@ -21,8 +23,9 @@ const MODES = [
 ];
 
 // Sementara. Nanti recommended_jobs() di database yang menyaring ini.
-// Aturan urutan ada di lib/job-ordering.js (sama dengan Beranda).
-const OPEN_JOBS = getOpenJobsAppliedLast(JOBS);
+// Aturan urutan ada di lib/job-ordering.js (sama dengan Beranda). Akun baru belum punya lamaran,
+// jadi tidak ada lowongan yang dipindah ke belakang (lib/demo-history.js).
+const NO_APPLICATIONS = () => false;
 
 function FilterGroup({ label, options, value, onChange }) {
   return (
@@ -69,6 +72,12 @@ export function JobListFromUrl() {
 }
 
 export default function JobList({ initialQuery = "" }) {
+  const stage = useHistoryStage();
+  const history = stage === "riwayat";
+  const openJobs = useMemo(
+    () => getOpenJobsAppliedLast(JOBS, history ? hasApplied : NO_APPLICATIONS),
+    [history],
+  );
   const [mode, setMode] = useState("semua");
   const [query, setQuery] = useState(initialQuery);
   const [page, setPage] = useState(1);
@@ -78,10 +87,10 @@ export default function JobList({ initialQuery = "" }) {
 
   const filtered = useMemo(
     () =>
-      OPEN_JOBS.filter(
+      openJobs.filter(
         (j) => (mode === "semua" || j.mode === mode) && matchesQuery(jobSearchFields(j), query),
       ),
-    [mode, query],
+    [openJobs, mode, query],
   );
   const searching = query.trim().length > 0;
 
@@ -116,6 +125,9 @@ export default function JobList({ initialQuery = "" }) {
       block: "start",
     });
   }
+
+  // Tunggu tahap pengguna diketahui supaya kartu utama tidak berganti sesaat setelah tampil.
+  if (stage === "pending") return <div className="mt-6 min-h-[60vh]" aria-busy="true" />;
 
   return (
     <div className="mt-6">

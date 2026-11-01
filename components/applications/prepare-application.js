@@ -18,7 +18,7 @@ import ReadinessChecklist from "./readiness-checklist";
 import SubmissionDialog from "./submission-dialog";
 import ApplySteps from "./apply-steps";
 import { CvUpload } from "./cv-upload";
-import { hasApplied } from "@/lib/applications-data";
+import { useHasApplied } from "@/lib/demo-history";
 
 // ⬇️ DIHAPUS: PLACEHOLDER_APPLY_URL (tidak dipakai lagi, lamaran sekarang dikirim lewat Laras Karya)
 const MAX_FILE_MB = 5;
@@ -376,8 +376,9 @@ export default function PrepareApplication() {
   // /applications/prepare?job=1  → kalau parameter belum ada, sementara pakai lowongan pertama.
   const jobId = Number(params.get("job") ?? 1);
   const job = JOBS.find((j) => j.id === jobId);
+  const alreadyApplied = useHasApplied(job?.id);
 
-  if (job && hasApplied(job.id)) {
+  if (job && alreadyApplied) {
     return (
       <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-8 md:px-6 xl:px-8">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-600">

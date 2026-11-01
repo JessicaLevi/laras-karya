@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SavedJobs from "@/components/bookmarks/saved-jobs";
+import { HistoryGate } from "@/components/demo/history-gate";
 import { Footer } from "@/components/layout/footer";
 
 export const metadata = {
@@ -9,6 +10,7 @@ export const metadata = {
 
 export default function BookmarksPage() {
   return (
+    <HistoryGate>
     <main className="flex-1 bg-surface">
       <div className="mx-auto max-w-[1200px] px-4 md:px-6 xl:px-8 pb-16 pt-8">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
@@ -22,5 +24,6 @@ export default function BookmarksPage() {
 
       <Footer />
     </main>
+    </HistoryGate>
   );
 }

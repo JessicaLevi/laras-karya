@@ -51,7 +51,7 @@ import { LinkedinIcon } from "@/components/icons";
 import { Footer } from "@/components/layout/footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PROFILE } from "@/lib/profile-data";
+import { PROFILE, PROFILE_REMAINING } from "@/lib/profile-data";
 import {
   EXPERIENCE_LEVELS,
   INDUSTRIES,
@@ -411,7 +411,7 @@ export default function ProfilePage() {
             >
               <div className="h-full rounded-full bg-brand" style={{ width: `${p.completeness}%` }} />
             </div>
-            <p className="mt-2 text-sm text-ink/70">Lengkapi untuk meningkatkan rekomendasi AI</p>
+            <p className="mt-2 text-sm text-ink/70">{PROFILE_REMAINING || "Profil Anda sudah lengkap"}</p>
           </div>
         </section>
 
