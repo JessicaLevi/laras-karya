@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // Menu navbar publik (landing, Perusahaan, dan halaman publik lain).
 export const PUBLIC_NAV_ITEMS = [
   { label: "Beranda", href: "/" },
-  { label: "Tentang", href: "/about" },
+  { label: "Tentang Kami", href: "/about" },
   { label: "Karier Hijau", href: "/jobs" },
   { label: "Perusahaan", href: "/employer" },
 ];
