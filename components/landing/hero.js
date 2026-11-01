@@ -46,7 +46,7 @@ export default function Hero() {
               Platform Karier Hijau untuk Perempuan
             </span>
             <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-balance text-brand md:text-5xl">
-              Wujudkan Karier Hijau yang Selaras dengan Diri Anda
+              Wujudkan Karier Bermakna di Sektor Hijau
             </h1>
 
             <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600">

@@ -12,13 +12,38 @@ import { JOBS } from "@/lib/mock-jobs";
   - VISIBLE: jumlah lowongan yang tampil utuh (kartu utama sudah memuat skor, alasan, dan skill gap).
   - BLURRED: jumlah kartu yang diburamkan; tidak perlu semua supaya halaman tidak panjang.
   Bagian buram diberi aria-hidden + inert: tidak bisa difokus, diklik, atau dibaca pembaca layar.
-  CATATAN: ini baru penutup visual. Setelah ada backend, data lowongan yang terkunci tidak perlu
-  dikirim ke browser sebelum login.
+  DATA KARTU TERKUNCI: yang dikirim ke browser hanya bahan "umpan" (sektor, pola kerja, skor), bukan
+  judul, perusahaan, gaji, lokasi, atau keahlian asli (lihat lockedStub). Jadi meski blur dihapus lewat
+  DevTools, yang terlihat hanya kartu contoh. Satu kartu utuh (VISIBLE) memang sengaja terbuka.
+  KONTRAK UNTUK BACKEND: respons untuk tamu cukup { total, top, teaser: [{ sector, mode, match }] };
+  data lengkap baru dikirim setelah masuk (dijaga RLS), sehingga tidak ada lowongan terkunci di browser.
 */
 const VISIBLE = 1;
 const BLURRED = 4;
 const NEXT = "/recommended-jobs";
 const OPEN_JOBS = getOpenJobsAppliedLast(JOBS);
+
+// Isi kartu contoh untuk bagian terkunci (sengaja generik).
+const STUB_TITLES = ["Spesialis Keberlanjutan", "Koordinator Program Hijau", "Analis Dampak Lingkungan", "Konsultan Energi Bersih"];
+const STUB_COMPANIES = ["Perusahaan Mitra", "Lembaga Mitra", "Perusahaan Hijau", "Mitra Laras Karya"];
+
+/** Kartu terkunci: hanya sektor, pola kerja, dan skor yang asli; sisanya contoh. */
+function lockedStub(job, i) {
+  return {
+    id: `terkunci-${i}`,
+    title: STUB_TITLES[i % STUB_TITLES.length],
+    company: STUB_COMPANIES[i % STUB_COMPANIES.length],
+    sector: job.sector,
+    mode: job.mode,
+    match: job.match,
+    city: "Indonesia",
+    salary: "Rp •• – •• juta/bulan",
+    status: "dibuka",
+    skills: ["Keahlian 1", "Keahlian 2", "Keahlian 3"],
+    gaps: [["Keahlian 3", "belum"]],
+    benefits: [],
+  };
+}
 
 const BENEFITS = [
   "Hasil asesmen Anda tersimpan di profil",
@@ -53,8 +78,8 @@ export function GuestPreview() {
             inert
             className="pointer-events-none grid select-none items-stretch gap-5 opacity-90 blur-[5px] md:grid-cols-2"
           >
-            {locked.map((job) => (
-              <JobCard key={job.id} job={job} />
+            {locked.map((job, i) => (
+              <JobCard key={job.id} job={lockedStub(job, i)} />
             ))}
           </div>
 
