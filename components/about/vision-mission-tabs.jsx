@@ -6,9 +6,9 @@ import { Eye, GraduationCap, HeartHandshake, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MISSIONS = [
-  { id: "m1", icon: Zap, title: "Peluang Karier Hijau", text: "Membuka dan mempermudah akses lapangan kerja inklusif di perusahaan berkomitmen ESG dan keberlanjutan." },
-  { id: "m2", icon: GraduationCap, title: "Peningkatan Keterampilan", text: "Menyediakan pelatihan tersertifikasi di bidang energi terbarukan, analisis ESG, dan manajemen limbah." },
-  { id: "m3", icon: HeartHandshake, title: "Aksesibilitas & Inklusivitas Pengguna", text: "Menghadirkan pengalaman yang jelas, inklusif, dan mudah diakses bagi pengguna dari beragam latar belakang." },
+  { id: "m1", icon: Zap, title: "Akses & Pencocokan Kerja Inklusif", text: "Mempermudah perempuan menemukan pekerjaan hijau (green jobs) yang relevan dengan minat, keterampilan, dan preferensi kerja melalui pengalaman platform yang jelas dan inklusif." },
+  { id: "m2", icon: GraduationCap, title: "Rekomendasi Transparan & Pengembangan Diri", text: "Memberikan penjelasan transparan di balik setiap rekomendasi pekerjaan serta mengidentifikasi kesenjangan keterampilan (skill gap) untuk dihubungkan dengan pelatihan yang relevan." },
+  { id: "m3", icon: HeartHandshake, title: "Kesiapan Melamar & Bukti Keterampilan", text: "Mendukung kesiapan pengguna dalam melamar kerja melalui persiapan CV yang matang dan bukti keterampilan yang jelas." }
 ];
 
 const TABS = [
