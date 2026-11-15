@@ -12,6 +12,7 @@ function visiblePages(page, totalPages) {
   return Array.from({ length: count }, (_, i) => start + i);
 }
 
+/** label = nama navigasi untuk pembaca layar, mis. "Halaman lowongan" atau "Halaman pelatihan". */
 export default function Pagination({ page, totalPages, onChange, label = "Halaman lowongan" }) {
   if (totalPages <= 1) return null;
   const pages = visiblePages(page, totalPages);
