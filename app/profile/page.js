@@ -302,6 +302,20 @@ export default function ProfilePage() {
       const data = loaded ?? PROFILE;
       setSaved(data);
       setDraft(data);
+
+      // Dari /learning-path ("Sudah Selesai Diikuti"): buka dialog Tambah Sertifikasi yang sudah terisi.
+      // Parameter dihapus dari alamat supaya dialog tidak terbuka lagi saat halaman dimuat ulang.
+      const params = new URLSearchParams(window.location.search);
+      const certName = params.get("sertifikasi")?.trim();
+      if (certName) {
+        window.history.replaceState(null, "", window.location.pathname);
+        setDialog({
+          type: "certification",
+          mode: "add",
+          key: Date.now(),
+          values: { name: certName, issuer: params.get("penerbit") ?? "", year: params.get("tahun") ?? "" },
+        });
+      }
     });
     return () => {
       alive = false;

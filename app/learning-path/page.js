@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
@@ -18,9 +18,9 @@ import {
   Tag,
 } from "lucide-react";
 
-import Pagination from "@/components/jobs/pagination";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import Pagination from "@/components/jobs/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import { courseSearchFields, matchesQuery, replaceQueryParam } from "@/lib/search";
 import { cn } from "@/lib/utils";
@@ -39,10 +39,11 @@ const GAP_TEXT = {
   green: "text-lime-300",
 };
 
-const LEVEL_BADGE = {
-  Pemula: "bg-brand-light text-brand",
-  Menengah: "bg-amber-100 text-amber-700",
-  Lanjutan: "bg-red-100 text-red-700",
+// Warna teks level pada lencana di atas gambar (latar putih transparan diberikan oleh ImageBadge).
+const LEVEL_TEXT = {
+  Pemula: "text-brand",
+  Menengah: "text-amber-700",
+  Lanjutan: "text-red-700",
 };
 
 function LoadingView() {
@@ -74,17 +75,15 @@ export default function LearningPathPage() {
 }
 
 const PAGE_SIZE = 9; // 3 kolom x 3 baris
-// Tombol "Daftar" membuka beranda Udemy; tombol "Lanjutkan Belajar" membuka tautan course (courses.url).
-const UDEMY_URL = "https://www.udemy.com/";
+// "Mulai Belajar" dan "Lanjutkan Belajar" membuka tautan course (courses.url) di tab baru. "Sudah Selesai Diikuti"
+// menandai selesai, lalu membuka dialog "Tambah Sertifikasi" di /profile dengan nama terisi judul course.
 const LEVEL_ORDER = ["Pemula", "Menengah", "Lanjutan"];
 
 /**
  * Gambar sampul course (courses.image_url, 240x135 = rasio 16:9). Kotak gambar mengikuti rasio itu
  * (aspect-video) supaya gambar tidak terpotong. Bila kosong atau gagal dimuat, tampil placeholder.
- * `children` = lencana yang diletakkan di atas gambar (posisi diatur oleh pemanggil). Saat kartu
- * (class "group") disorot, gambar membesar sedikit.
  */
-function CourseImage({ src, children }) {
+function CourseImage({ src }) {
   const [failed, setFailed] = useState(false);
 
   return (
@@ -98,16 +97,13 @@ function CourseImage({ src, children }) {
           decoding="async"
           referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
-          className="absolute inset-0 size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none"
+          className="absolute inset-0 size-full object-cover"
         />
       ) : (
         <span className="absolute inset-0 grid place-items-center text-brand/40">
           <BookOpen className="size-10" aria-hidden="true" />
         </span>
       )}
-      {/* Gradasi tipis di bawah supaya lencana tetap terbaca di atas gambar apa pun */}
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-900/40 to-transparent" />
-      {children}
     </div>
   );
 }
@@ -143,53 +139,91 @@ function LevelSelect({ value, onChange, options }) {
   );
 }
 
+/** Lencana kecil di atas gambar sampul. */
+function ImageBadge({ className, children }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm backdrop-blur",
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Kartu satu pelatihan. Interaktif: kartu terangkat dan gambar membesar pelan saat disorot atau difokus,
+ * panah di tombol bergeser, dan garis progres di atas kartu mengikuti status (belum mulai / sedang diikuti / selesai).
+ * Semua gerak dimatikan bila pengguna memilih "kurangi gerakan" (motion-safe / motion-reduce).
+ */
 function CourseCard({ course, status, onStart, onComplete }) {
+  const completed = status === "completed";
+  const enrolled = status === "enrolled";
+
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-brand/20 motion-safe:hover:-translate-y-1",
-        status === "completed" ? "border-brand/40 hover:border-brand" : "border-line hover:border-brand/40"
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300",
+        "motion-safe:hover:-translate-y-1 hover:border-brand hover:shadow-xl hover:shadow-brand/10",
+        "focus-within:border-brand focus-within:ring-3 focus-within:ring-brand/20",
+        completed ? "border-brand/40 bg-brand-light/40" : "border-line"
       )}
     >
-      {/* Garis aksen di atas kartu: memanjang saat kartu disorot */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 z-10 h-1 origin-left scale-x-0 bg-gradient-to-r from-brand to-emerald-400 transition-transform duration-300 group-hover:scale-x-100 group-focus-within:scale-x-100 motion-reduce:transition-none"
-      />
+      {/* Garis progres: 0% belum mulai, setengah sedang diikuti, penuh selesai */}
+      <div className="h-1 w-full bg-line/70" aria-hidden="true">
+        <div
+          className={cn(
+            "h-full bg-brand transition-all duration-500",
+            completed ? "w-full" : enrolled ? "w-1/2" : "w-0"
+          )}
+        />
+      </div>
 
-      <CourseImage src={course.imageUrl}>
-        {/* Kiri atas: status atau lencana populer */}
-        {status === "completed" ? (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-white shadow-sm">
-            <Check className="size-3" aria-hidden="true" />
-            Selesai
-          </span>
-        ) : status === "enrolled" ? (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-brand shadow-sm">
-            <span aria-hidden="true" className="size-2 rounded-full bg-brand motion-safe:animate-pulse" />
-            Sedang diikuti
-          </span>
-        ) : (
-          course.popular && (
-            <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-accent-light px-2.5 py-1 text-xs font-bold text-accent shadow-sm">
-              <Sparkle className="size-3 fill-current" aria-hidden="true" />
-              Paling Populer
-            </span>
-          )
-        )}
+      <div className="relative overflow-hidden">
+        <div className="transition-transform duration-500 motion-safe:group-hover:scale-105">
+          <CourseImage src={course.imageUrl} />
+        </div>
+        {/* Gradasi tipis di bawah gambar supaya lencana level dan format tetap terbaca */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent"
+          aria-hidden="true"
+        />
 
-        {/* Bawah: level (kiri) dan format belajar (kanan) */}
-        <span className={cn("absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm", LEVEL_BADGE[course.level])}>
-          {course.level}
-        </span>
-        {course.format && (
-          <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink/80 shadow-sm backdrop-blur">
-            {course.format}
-          </span>
-        )}
-      </CourseImage>
+        {/* Kiri atas: status */}
+        <div className="absolute left-3 top-3">
+          {completed ? (
+            <ImageBadge className="bg-brand text-white">
+              <Check className="size-3" aria-hidden="true" />
+              Selesai
+            </ImageBadge>
+          ) : enrolled ? (
+            <ImageBadge className="bg-white/90 text-brand">
+              <span className="relative flex size-2" aria-hidden="true">
+                <span className="absolute inline-flex size-full rounded-full bg-brand opacity-60 motion-safe:animate-ping" />
+                <span className="relative inline-flex size-2 rounded-full bg-brand" />
+              </span>
+              Sedang diikuti
+            </ImageBadge>
+          ) : (
+            course.popular && (
+              <ImageBadge className="bg-accent-light text-accent">
+                <Sparkle className="size-3 fill-current" aria-hidden="true" />
+                Paling Populer
+              </ImageBadge>
+            )
+          )}
+        </div>
 
-      <div className="flex flex-1 flex-col p-6">
+        {/* Kiri bawah: level. Kanan bawah: format */}
+        <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+          <ImageBadge className={cn("bg-white/90", LEVEL_TEXT[course.level] ?? "text-ink")}>{course.level}</ImageBadge>
+          <ImageBadge className="bg-white/90 text-ink/80">{course.format}</ImageBadge>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
         <p className="flex min-w-0 items-center gap-2.5 text-sm text-ink/80">
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand-light text-brand transition-colors group-hover:bg-brand group-hover:text-white">
             <BookOpen className="size-4" aria-hidden="true" />
@@ -197,43 +231,46 @@ function CourseCard({ course, status, onStart, onComplete }) {
           <span className="truncate">{course.provider}</span>
         </p>
 
-        <h4 className="mt-4 min-h-12 text-lg font-bold leading-snug text-ink transition-colors group-hover:text-brand">
+        <h4 className="mt-4 min-h-14 text-lg font-bold leading-snug text-ink transition-colors group-hover:text-brand">
           {course.title}
         </h4>
 
         {/* Durasi, lalu kategori tepat di bawahnya */}
-        <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm text-ink/80">
-          <li className="flex items-center gap-2">
+        <div className="mt-4 space-y-2.5 border-t border-line pt-4 text-sm text-ink/80">
+          <p className="flex items-center gap-2">
             <Clock className="size-4 shrink-0" aria-hidden="true" />
             {course.duration}
-          </li>
+          </p>
           {course.skillTag && (
-            <li className="flex items-center gap-2">
-              <Tag className="size-4 shrink-0" aria-hidden="true" />
-              <span className="rounded-md border border-accent px-2 py-0.5 text-xs font-medium text-accent transition-colors group-hover:bg-accent-light">
+            <p className="flex items-center gap-2">
+              <Tag className="size-4 shrink-0 text-accent" aria-hidden="true" />
+              <span className="rounded-md border border-accent px-2 py-0.5 text-xs font-medium text-accent">
                 {course.skillTag}
               </span>
-            </li>
+            </p>
           )}
-        </ul>
+        </div>
 
         <div className="mt-auto pt-5">
-          {status === "completed" ? (
+          {completed ? (
             <p className="flex h-12 items-center justify-center gap-2 rounded-full bg-brand-light text-sm font-bold text-brand">
               <Check className="size-4" aria-hidden="true" />
               Selesai
             </p>
-          ) : status === "enrolled" ? (
+          ) : enrolled ? (
             <div className="space-y-2">
               <Button
                 href={course.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 size="lg"
-                className="group/btn w-full bg-brand hover:bg-brand/90"
+                className="w-full bg-brand hover:bg-brand/90"
               >
-                Lanjutkan Belajar di Udemy
-                <ExternalLink className="size-4 transition-transform motion-safe:group-hover/btn:translate-x-0.5 motion-safe:group-hover/btn:-translate-y-0.5" aria-hidden="true" />
+                Lanjutkan Belajar
+                <ExternalLink
+                  className="size-4 transition-transform motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-0.5"
+                  aria-hidden="true"
+                />
               </Button>
               <Button
                 size="sm"
@@ -241,20 +278,24 @@ function CourseCard({ course, status, onStart, onComplete }) {
                 className="w-full inline-flex min-h-11 items-center gap-1.5 border-brand px-3.5 text-xs font-semibold text-brand transition-colors hover:bg-brand-light disabled:opacity-70 md:min-h-8"
                 onClick={() => onComplete(course.id)}
               >
+                <Check className="size-3.5" aria-hidden="true" />
                 Sudah Selesai Diikuti
               </Button>
             </div>
           ) : (
             <Button
-              href={UDEMY_URL}
+              href={course.url}
               target="_blank"
               rel="noopener noreferrer"
               size="lg"
-              className="group/btn w-full bg-brand hover:bg-brand/90"
+              className="w-full bg-brand hover:bg-brand/90"
               onClick={() => onStart(course.id)}
             >
-              Daftar di Udemy
-              <ExternalLink className="size-4 transition-transform motion-safe:group-hover/btn:translate-x-0.5 motion-safe:group-hover/btn:-translate-y-0.5" aria-hidden="true" />
+              Mulai Belajar
+              <ExternalLink
+                className="size-4 transition-transform motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-0.5"
+                aria-hidden="true"
+              />
             </Button>
           )}
         </div>
@@ -264,6 +305,7 @@ function CourseCard({ course, status, onStart, onComplete }) {
 }
 
 function LearningPathContent({ initialQuery = "", job = "" }) {
+  const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const urlTimer = useRef(null);
   useEffect(() => () => clearTimeout(urlTimer.current), []);
@@ -343,8 +385,8 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
       });
   }, [job]);
 
-  // Dipanggil saat user klik "Daftar": catat sebagai "Sedang diikuti".
-  // Pendaftaran sebenarnya terjadi di situs provider (tab baru).
+  // Dipanggil saat user klik "Mulai Belajar": catat sebagai "Sedang diikuti".
+  // Course dikerjakan di situs provider (tab baru).
   const handleStart = (courseId) => {
     setActionError("");
 
@@ -355,13 +397,23 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
       .catch((error) => setActionError(error.message));
   };
 
+  // "Sudah Selesai Diikuti": simpan status selesai, lalu buka /profile dengan dialog "Tambah Sertifikasi"
+  // yang sudah terisi (nama = judul course, penerbit = penyedia, tahun = tahun ini).
   const handleComplete = (courseId) => {
     setActionError("");
+    const course = courses.find((c) => c.id === courseId);
 
     completeCourse(courseId)
-      .then(({ status }) =>
-        setProgress((prev) => ({ ...prev, [courseId]: { status } }))
-      )
+      .then(({ status }) => {
+        setProgress((prev) => ({ ...prev, [courseId]: { status } }));
+        if (!course) return;
+        const params = new URLSearchParams({
+          sertifikasi: course.title,
+          penerbit: course.provider ?? "",
+          tahun: String(new Date().getFullYear()),
+        });
+        router.push(`/profile?${params.toString()}`);
+      })
       .catch((error) => setActionError(error.message));
   };
 
@@ -516,7 +568,7 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
                 </h2>
                 <p className="mt-0.5 text-sm text-ink/70">
                   Course dikerjakan di situs penyedia (Udemy, Kemnaker, dll).
-                  Tandai Sudah Selesai Diikuti setelah selesai.
+                  Tandai Sudah Selesai Diikuti setelah selesai, lalu tambahkan sertifikatnya ke profil Anda.
                 </p>
               </div>
             </div>
@@ -637,7 +689,7 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
                     ))}
                   </div>
                   {totalPages > 1 ? (
-                    <Pagination page={currentPage} totalPages={totalPages} onChange={goToPage} label="Halaman pelatihan" />
+                    <Pagination label="Halaman pelatihan" page={currentPage} totalPages={totalPages} onChange={goToPage} />
                   ) : null}
                 </>
               )}
