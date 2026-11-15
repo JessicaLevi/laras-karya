@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
 
 import { refreshRecommendations } from "@/app/home/actions";
 import { JobCard } from "@/components/home/job-card";
+import { useRefreshPhase } from "@/components/home/refresh-status";
 import { cn } from "@/lib/utils";
 
 /** Seksi rekomendasi lowongan. Tombol "Perbarui Rekomendasi" meminta database menghitung ulang, lalu memuat ulang halaman. */
@@ -16,13 +17,35 @@ export function RecommendedJobs({ jobs, assessmentDone = true }) {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState(null);
   const isUpdating = updating || isPending;
+  // Memberi tahu bagian saran pelatihan (komponen lain) bahwa rekomendasi sedang dihitung ulang.
+  const { setPhase } = useRefreshPhase();
+  const refreshedRef = useRef(false);
+
+  // Selesai = permintaan berhasil dan halaman sudah selesai dimuat ulang (isPending kembali false).
+  useEffect(() => {
+    if (!isUpdating && refreshedRef.current) {
+      refreshedRef.current = false;
+      setPhase("done");
+    }
+  }, [isUpdating, setPhase]);
 
   async function handleUpdate() {
     setUpdating(true);
     setError(null);
-    const result = await refreshRecommendations();
-    if (result.ok) startTransition(() => router.refresh());
-    else setError(result.error);
+    setPhase("updating");
+    try {
+      const result = await refreshRecommendations();
+      if (result.ok) {
+        refreshedRef.current = true;
+        startTransition(() => router.refresh());
+      } else {
+        setError(result.error);
+        setPhase("idle");
+      }
+    } catch {
+      setError("Rekomendasi belum bisa diperbarui. Coba lagi beberapa saat lagi.");
+      setPhase("idle");
+    }
     setUpdating(false);
   }
 

@@ -7,6 +7,7 @@ import { CourseCard } from "@/components/home/course-card";
 import { ProfileCompletion } from "@/components/home/profile-completion";
 import { RecentApplications } from "@/components/home/recent-applications";
 import { RecommendedJobs } from "@/components/home/recommended-jobs";
+import { CoursesRefreshFeedback, RecommendationRefreshProvider } from "@/components/home/refresh-status";
 import { WelcomeBanner } from "@/components/home/welcome-banner";
 import { PROFILE_MISSING, PROFILE_REMAINING } from "@/lib/profile-data";
 import { Footer } from "@/components/layout/footer";
@@ -168,6 +169,7 @@ function HomeTopSkeleton() {
 export default function HomePage() {
   return (
     <HistoryGate>
+    <RecommendationRefreshProvider>
     <div className="flex min-h-screen flex-col bg-surface">
       <main className="flex-1">
         <div className="mx-auto w-full max-w-[1200px] space-y-10 px-4 py-6 md:space-y-12 md:px-6 md:py-8 xl:px-8">
@@ -179,15 +181,18 @@ export default function HomePage() {
         {/* Pita hijau lembut selebar layar */}
         <section aria-labelledby="courses-title" className="mt-4 bg-mint">
           <div className="mx-auto w-full max-w-[1200px] space-y-5 px-4 py-10 md:px-6 xl:px-8">
-            <Suspense fallback={<HomeCoursesSkeleton />}>
-              <HomeCourses />
-            </Suspense>
+            <CoursesRefreshFeedback>
+              <Suspense fallback={<HomeCoursesSkeleton />}>
+                <HomeCourses />
+              </Suspense>
+            </CoursesRefreshFeedback>
           </div>
         </section>
       </main>
 
       <Footer />
     </div>
+    </RecommendationRefreshProvider>
     </HistoryGate>
   );
 }
