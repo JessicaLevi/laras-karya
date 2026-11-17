@@ -32,6 +32,7 @@ import {
   deleteCertification,
   deleteEducation,
   deleteExperience,
+  deleteLanguage,
   deleteResume,
   deleteSkill,
   downloadResume,
@@ -40,9 +41,11 @@ import {
   editContact,
   editEducation,
   editExperience,
+  editLanguage,
   editPreferences,
   editProfileHeader,
   generateResume,
+  industryLabels,
   parseLocation,
 } from "./actions";
 import { loadMyProfile, saveMyProfile } from "./data-actions";
@@ -56,11 +59,16 @@ import { Button } from "@/components/ui/button";
 import { PROFILE, PROFILE_REMAINING } from "@/lib/profile-data";
 import {
   EXPERIENCE_LEVELS,
-  INDUSTRIES,
+  LANGUAGE_LEVELS,
+  LANGUAGE_OPTIONS,
   PROVINCES,
   SKILL_OPTIONS,
   WORK_ARRANGEMENTS,
 } from "@/lib/profile-options";
+import { LANGUAGE_SKILL_CODES, SKILLS_CATALOG } from "@/lib/skills-catalog";
+
+// Jumlah bidang minat yang langsung tampil di kartu Preferensi Karier; sisanya dibuka lewat "Lihat lainnya".
+const INDUSTRIES_PREVIEW = 4;
 
 const CARD = "rounded-3xl border border-line bg-white p-6 md:p-8";
 const CARD_TITLE = "flex items-center gap-3 text-xl font-semibold text-ink";
@@ -127,7 +135,7 @@ const FORMS = {
     title: { edit: "Ubah Preferensi Karier" },
     fields: [
       { name: "workArrangement", label: "Pola kerja yang Anda inginkan", type: "radio", options: WORK_ARRANGEMENTS, required: true },
-      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", options: INDUSTRIES, required: true },
+      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", required: true },
       { name: "experienceLevel", label: "Tingkat pengalaman kerja", type: "select", options: EXPERIENCE_LEVELS, placeholder: "Pilih tingkat pengalaman", required: true },
     ],
   },
@@ -146,11 +154,10 @@ const FORMS = {
     fields: [{ name: "label", label: "Nama Skill", type: "skill-select", required: true }],
   },
   language: {
-    title: { add: "Tambah Bahasa" },
+    title: { add: "Tambah Bahasa", edit: "Ubah Bahasa" },
     fields: [
-      { name: "name", label: "Bahasa", required: true },
-      // Daftar level harus sama dengan LANGUAGE_LEVELS di actions.js
-      { name: "level", label: "Tingkat", type: "select", options: ["Native", "Profesional", "Menengah", "Dasar"], defaultValue: "Profesional" },
+      { name: "name", label: "Bahasa", type: "language-select", required: true },
+      { name: "level", label: "Tingkat", type: "select", options: Object.keys(LANGUAGE_LEVELS), defaultValue: "Profesional" },
     ],
   },
 };
@@ -165,7 +172,7 @@ const ACTIONS = {
   certification: { add: addCertification, edit: editCertification },
   contact: { edit: editContact },
   skill: { add: addSkill },
-  language: { add: addLanguage },
+  language: { add: addLanguage, edit: editLanguage },
 };
 
 function formatAddedAt(iso) {
@@ -193,6 +200,7 @@ function getValues(profile, type, id) {
     experience: profile.experiences,
     education: profile.education,
     certification: profile.certifications,
+    language: profile.languages,
   };
   return lists[type]?.find((item) => item.id === id) ?? {};
 }
@@ -202,7 +210,9 @@ function getValues(profile, type, id) {
 function SkillSelectField({ field, ownedSkills }) {
   const [value, setValue] = useState("");
   const owned = new Set(ownedSkills.map((skill) => skill.label.toLowerCase()));
-  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
+  // Keahlian bahasa (mis. "Bahasa Inggris") ditambahkan lewat bagian Bahasa supaya levelnya ikut tersimpan.
+  const languageLabels = new Set(SKILLS_CATALOG.filter((s) => LANGUAGE_SKILL_CODES.has(s.code)).map((s) => s.label.toLowerCase()));
+  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()) && !languageLabels.has(option.toLowerCase()));
 
   return (
     <>
@@ -224,6 +234,34 @@ function SkillSelectField({ field, ownedSkills }) {
         ))}
       </select>
     </>
+  );
+}
+
+// Dropdown bahasa: bahasa yang sudah dimiliki disembunyikan (kecuali yang sedang diedit).
+function LanguageSelectField({ field, languages, current }) {
+  const owned = new Set(languages.map((lang) => lang.name.trim().toLowerCase()));
+  if (current) owned.delete(current.trim().toLowerCase());
+  const options = LANGUAGE_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
+  // Bahasa lama yang diketik bebas (di luar daftar) tetap bisa dipilih saat diedit.
+  if (current && !options.some((option) => option.toLowerCase() === current.trim().toLowerCase())) options.unshift(current);
+
+  return (
+    <select
+      id={`field-${field.name}`}
+      name={field.name}
+      defaultValue={current ?? ""}
+      required={field.required}
+      className={`${INPUT} h-11`}
+    >
+      <option value="" disabled>
+        Pilih bahasa
+      </option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -252,10 +290,10 @@ function RadioCards({ field, defaultValue }) {
 }
 
 // Pilih satu atau lebih (bidang industri), ditampilkan sebagai chip.
-function CheckboxChips({ field, defaultValue = [] }) {
+function CheckboxChips({ field, options, defaultValue = [] }) {
   return (
     <div role="group" aria-labelledby={`label-${field.name}`} className="flex flex-wrap gap-2.5">
-      {field.options.map((option) => (
+      {options.map((option) => (
         <label
           key={option}
           className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line bg-white px-4 text-sm text-ink transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-light has-[:checked]:font-semibold has-[:checked]:text-brand has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/30"
@@ -284,6 +322,7 @@ export default function ProfilePage() {
   const [toast, setToast] = useState("");
   const [resumes, setResumes] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [showAllIndustries, setShowAllIndustries] = useState(false);
   // Saran keahlian AI dari sertifikat yang baru ditambahkan: { status: "idle" | "loading" | "done", source, labels }.
   const [aiSkills, setAiSkills] = useState({ status: "idle", source: "", labels: [] });
   const aiRequestRef = useRef(0);
@@ -590,16 +629,31 @@ export default function ProfilePage() {
                   <dt className="font-semibold text-ink">Bidang industri yang diminati</dt>
                   <dd className="mt-1.5">
                     {p.industries?.length > 0 ? (
-                      <ul className="flex flex-wrap gap-2">
-                        {p.industries.map((industry) => (
-                          <li
-                            key={industry}
-                            className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
+                      <>
+                        {/* Ringkas: tampil beberapa dulu, sisanya dibuka lewat tombol, supaya kartu tidak penuh */}
+                        <ul className="flex flex-wrap gap-2">
+                          {(showAllIndustries ? p.industries : p.industries.slice(0, INDUSTRIES_PREVIEW)).map((industry) => (
+                            <li
+                              key={industry}
+                              className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
+                            >
+                              {industry}
+                            </li>
+                          ))}
+                        </ul>
+                        {p.industries.length > INDUSTRIES_PREVIEW && (
+                          <button
+                            type="button"
+                            aria-expanded={showAllIndustries}
+                            onClick={() => setShowAllIndustries((open) => !open)}
+                            className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-brand hover:underline focus-visible:ring-3 focus-visible:ring-brand/30 focus-visible:outline-none"
                           >
-                            {industry}
-                          </li>
-                        ))}
-                      </ul>
+                            {showAllIndustries
+                              ? "Tampilkan lebih sedikit"
+                              : `Lihat ${p.industries.length - INDUSTRIES_PREVIEW} lainnya`}
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <span className="text-ink/70">Belum diisi</span>
                     )}
@@ -887,28 +941,52 @@ export default function ProfilePage() {
                   Tambah Bahasa
                 </Button>
               </header>
-              <ul className="mt-6 space-y-5">
-                {p.languages.map((lang) => (
-                  <li key={lang.id}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-ink">{lang.name}</span>
-                      <Badge tone={lang.tone} className="px-2.5 py-0.5">
-                        {lang.level}
-                      </Badge>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={lang.percent}
-                      className="mt-2 h-2 overflow-hidden rounded-full bg-line"
-                    >
-                      <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {p.languages.length > 0 ? (
+                <ul className="mt-6 space-y-5">
+                  {p.languages.map((lang) => (
+                    <li key={lang.id}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-semibold text-ink">{lang.name}</span>
+                        <Badge tone={lang.tone} className="px-2.5 py-0.5">
+                          {lang.level}
+                        </Badge>
+                      </div>
+                      <div
+                        role="progressbar"
+                        aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={lang.percent}
+                        className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+                      >
+                        <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
+                      </div>
+                      <div className="mt-1 flex items-center gap-4 text-sm font-semibold">
+                        <button
+                          type="button"
+                          aria-label={`Edit bahasa ${lang.name}`}
+                          onClick={() => openDialog("language", "edit", lang.id)}
+                          className={EDIT_LINK}
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Hapus bahasa ${lang.name}`}
+                          onClick={() => handleDelete(deleteLanguage, lang.id, lang.name)}
+                          className={DELETE_LINK}
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                          Hapus
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-6 text-sm text-ink/70">Belum ada bahasa.</p>
+              )}
             </section>
 
             {/* Resume */}
@@ -1045,10 +1123,12 @@ export default function ProfilePage() {
                     />
                   ) : field.type === "skill-select" ? (
                     <SkillSelectField field={field} ownedSkills={draft.skills} />
+                  ) : field.type === "language-select" ? (
+                    <LanguageSelectField field={field} languages={draft.languages} current={dialog.values[field.name]} />
                   ) : field.type === "radio" ? (
                     <RadioCards field={field} defaultValue={dialog.values[field.name]} />
                   ) : field.type === "checkboxes" ? (
-                    <CheckboxChips field={field} defaultValue={dialog.values[field.name]} />
+                    <CheckboxChips field={field} options={field.options ?? industryLabels(draft)} defaultValue={dialog.values[field.name]} />
                   ) : field.type === "select" ? (
                     <select
                       id={`field-${field.name}`}
