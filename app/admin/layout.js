@@ -7,6 +7,10 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// Panel admin butuh auth, jadi tidak perlu di-prerender saat build.
+// Hapus baris ini jika project memakai `cacheComponents` di next.config.
+export const dynamic = "force-dynamic";
+
 /**
  * Kerangka admin. Layout sengaja tidak membaca cookies; pengecekan role dilakukan di setiap halaman
  * (requireAdminPage) dan setiap Server Action (getAdminContext), karena layout tidak dijalankan ulang di setiap navigasi.
@@ -17,7 +21,9 @@ export default function AdminLayout({ children }) {
       <header className="border-b border-border bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <p className="text-base font-bold text-primary">Laras Karya · Admin</p>
-          <AdminNav />
+          <Suspense fallback={<div className="h-8" aria-hidden="true" />}>
+            <AdminNav />
+          </Suspense>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
