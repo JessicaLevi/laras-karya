@@ -1,17 +1,22 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
-import { FitReasonBanner } from "@/components/jobs/fit-reason-banner";
+
 import { JobHeader } from "@/components/jobs/job-header";
 import { JobRequirements } from "@/components/jobs/job-requirements";
 import { JobSidebarInfo } from "@/components/jobs/job-sidebar-info";
 import { SkillGapPlan } from "@/components/jobs/skill-gap-plan";
 import { MatchSkillGapCard } from "@/components/jobs/match-skill-gap-card";
 import { MobileApplyBar } from "@/components/jobs/mobile-apply-bar";
-//import { Navbar } from "@/components/layout/navbar";
+import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { countMissingSkills, getJobDetail } from "@/lib/job-detail-data";
+import { fetchJobDetail } from "@/lib/job-detail-db";
+import { isUuid } from "@/lib/job-detail-mapping";
+import { loginTo } from "@/lib/routes";
+import { getCurrentUser } from "@/lib/session";
 
 /*
   Metadata statis. generateMetadata yang membaca `params` dihapus karena
@@ -43,23 +48,34 @@ function JobDetailSkeleton() {
 }
 
 /**
+ * Id UUID = lowongan dari database Supabase (wajib masuk, karena skor dan keahlian milik user).
+ * Id angka (1–15) = data contoh untuk demo.
+ */
+async function loadJob(id) {
+  if (!isUuid(id)) return getJobDetail(id);
+
+  const user = await getCurrentUser();
+  if (!user) redirect(loginTo(`/jobs/${id}`));
+
+  const job = await fetchJobDetail(id, user);
+  if (!job) notFound();
+  return job;
+}
+
+/**
  * Bagian yang membaca `params`. Dipisah dan dibungkus <Suspense> di halaman,
  * sehingga `await params` tidak lagi memblokir prerender (aturan Next.js 16).
  * @param {{ params: Promise<{ id: string }> }} props
  */
 async function JobDetailContent({ params }) {
   const { id } = await params;
-  const job = getJobDetail(id);
+  const job = await loadJob(id);
 
   return (
     <>
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <JobHeader job={job} />
-          <FitReasonBanner
-            job={job}
-            missingCount={countMissingSkills(job.skills)}
-          />
           <JobSidebarInfo job={job} />
           <SkillGapPlan job={job} />
           <JobRequirements job={job} />
@@ -75,10 +91,8 @@ async function JobDetailContent({ params }) {
 }
 
 /*
-  Detail lowongan umum (/jobs/[id]). Salinan mandiri dari /recommended-jobs/[id]
-  supaya halaman rekomendasi bisa berkembang sendiri. Satu-satunya beda: tautan kembali.
-  Desktop (≥1024): 2 kolom (konten 2/3, sidebar 1/3) · Tablet & mobile: 1 kolom bertumpuk.
-  Kerangka (navbar, tautan kembali, footer) statis; konten lowongan di-stream lewat Suspense.
+  Detail lowongan umum (/jobs/[id]). UUID = data database (wajib login), id angka = data contoh.
+  Kerangka (tautan kembali, footer) statis; konten lowongan di-stream lewat Suspense.
 */
 export default function JobDetailPage({ params }) {
   return (

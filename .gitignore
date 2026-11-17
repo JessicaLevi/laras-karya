@@ -48,3 +48,10 @@ scripts/data-import/data/
 scripts/
 .env.scripts
 supabase/
+
+#api
+# app/api/applications
+# app/api/bookmarks
+# app/api/learning-path
+# app/api/profile
+# app/api/recommended-jobs
