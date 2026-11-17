@@ -116,15 +116,20 @@ export async function saveMyProfile(draft) {
     if (error) return fail("user_skills", error);
   }
   if (languageSkills.length) {
-    // Tanpa ignoreDuplicates: level yang diubah harus menimpa baris lama.
+    // Level yang berubah harus menimpa baris lama. Dilakukan dengan hapus lalu tambah (bukan upsert/UPDATE),
+    // karena role user di tabel ini hanya punya hak SELECT, INSERT, dan DELETE.
+    const { error: lDel } = await supabase
+      .from("user_skills")
+      .delete()
+      .eq("user_id", user.id)
+      .in("skill_code", languageSkills.map((l) => l.skill_code));
+    if (lDel) return fail("user_skills (hapus bahasa lama)", lDel);
     const rows = languageSkills.map(({ skill_code, level }) => ({ user_id: user.id, skill_code, source: "manual", level }));
-    let { error } = await supabase.from("user_skills").upsert(rows, { onConflict: "user_id,skill_code" });
-    // Kolom `level` belum dibuat (jalankan db/add_user_skills_level.sql): simpan tanpa level agar profil tetap tersimpan.
-    if (error && (error.code === "42703" || error.code === "PGRST204" || /level/i.test(error.message ?? ""))) {
-      console.warn("[saveMyProfile] user_skills.level belum ada, bahasa disimpan tanpa level:", error.message);
-      ({ error } = await supabase
-        .from("user_skills")
-        .upsert(rows.map(({ level: _omit, ...row }) => row), { onConflict: "user_id,skill_code", ignoreDuplicates: true }));
+    let { error } = await supabase.from("user_skills").insert(rows);
+    // Kolom `level` bermasalah (belum ada / nilainya ditolak): simpan tanpa level agar profil tetap tersimpan.
+    if (error && (error.code === "42703" || error.code === "PGRST204" || error.code === "23514" || error.code === "22P02" || /level/i.test(error.message ?? ""))) {
+      console.warn("[saveMyProfile] user_skills.level bermasalah, bahasa disimpan tanpa level:", error.message);
+      ({ error } = await supabase.from("user_skills").insert(rows.map(({ level: _omit, ...row }) => row)));
     }
     if (error) return fail("user_skills (bahasa)", error);
   }
