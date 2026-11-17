@@ -129,7 +129,11 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
       if (saved) {
         /* eslint-disable react-hooks/set-state-in-effect */
         if (typeof saved.letter === "string" && saved.letter.trim()) setLetter(saved.letter);
-        if (Array.isArray(saved.portfolioIds)) setPortfolioIds(saved.portfolioIds.filter((id) => profilePortfolios.some((p) => p.id === id)));
+        if (Array.isArray(saved.portfolioIds)) {
+          // Draf lama yang tersimpan saat portofolio belum ada (kosong) tidak boleh menimpa pilihan awal.
+          const kept = saved.portfolioIds.filter((id) => profilePortfolios.some((p) => p.id === id));
+          if (kept.length > 0) setPortfolioIds(kept);
+        }
         if (Array.isArray(saved.certIds)) setCertIds(saved.certIds.filter((id) => certifications.some((c) => c.id === id)));
         if (typeof saved.saveToProfile === "boolean") setSaveToProfile(saved.saveToProfile);
         /* eslint-enable react-hooks/set-state-in-effect */
