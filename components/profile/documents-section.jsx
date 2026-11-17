@@ -35,7 +35,8 @@ const KIND_BADGE = {
   portfolio: { label: "Portofolio", className: "bg-blue-50 text-blue-700" },
 };
 
-const baseName = (file) => (file ? file.name.replace(/\.pdf$/i, "") : "");
+/** Judul awal dari nama file: tanpa ".pdf", tanda - dan _ menjadi spasi ("Laporan-Studi_2024" -> "Laporan Studi 2024"). */
+const baseName = (file) => (file ? file.name.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() : "");
 
 const certKey = (cert) => [cert.name, cert.issuer, cert.year].map((v) => String(v ?? "").trim().toLowerCase()).join("|");
 const docCertKey = (doc) => certKey({ name: doc.title, issuer: doc.issuer, year: doc.year });

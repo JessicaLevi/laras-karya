@@ -17,7 +17,7 @@ async function currentUser() {
 }
 
 async function readProfile(supabase, user) {
-  const [profile, educations, experiences, skills, assessment] = await Promise.all([
+  const [profile, educations, experiences, skills, assessment, certDocs] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("educations").select("*").eq("user_id", user.id),
     supabase.from("work_experiences").select("*").eq("user_id", user.id),
@@ -30,6 +30,8 @@ async function readProfile(supabase, user) {
       .order("completed_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Jumlah sertifikat yang diunggah (dihitung untuk kelengkapan profil); gagal dibaca dianggap 0, bukan error.
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", user.id).eq("type", "certificate"),
   ]);
   const failed = [profile, educations, experiences, skills].find((r) => r.error);
   if (failed) throw failed.error;
@@ -40,6 +42,7 @@ async function readProfile(supabase, user) {
     experiences: experiences.data,
     skillCodes: skills.data.map((s) => s.skill_code),
     careerBreak: assessment.data?.answers?.step_1?.career_break ?? null,
+    certificateDocs: certDocs.count ?? 0,
   });
 }
 
