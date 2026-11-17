@@ -98,7 +98,7 @@ async function HomeCourses() {
           </h2>
           {suggestion ? (
             <p className="mt-0.5 text-xs text-ink/75">
-              <span className="font-bold text-ai">Saran AI:</span> selesaikan{" "}
+              <span className="font-bold text-ai">Saran:</span> selesaikan{" "}
               <strong className="font-bold text-ai">{suggestion.skill}</strong>
               {suggestion.gapCount > 0 ? (
                 <>
@@ -111,8 +111,9 @@ async function HomeCourses() {
             </p>
           ) : null}
         </div>
+        {/* Bila ada saran: buka halaman Jalur Belajar yang hanya berisi pelatihan rekomendasi. Bila tidak: semua pelatihan. */}
         <Link
-          href="/learning-path"
+          href={user && courses.length > 0 ? "/learning-path?rekomendasi=1" : "/learning-path"}
           className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-brand hover:underline md:min-h-0"
         >
           Lihat Semua Pelatihan <ArrowRight className="size-3.5" aria-hidden="true" />
