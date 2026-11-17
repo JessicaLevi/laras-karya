@@ -11,7 +11,6 @@ import {
   MapPin,
   PenLine,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import { submitApplication } from "@/app/applications/actions";
 import { isUuid } from "@/lib/is-uuid";
@@ -479,8 +478,8 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
               <h2 id="letter-title" className="flex items-center gap-2 text-lg font-bold text-brand">
                 <PenLine className="h-5 w-5" aria-hidden /> Surat Lamaran
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
-                <Sparkles className="h-3 w-3" aria-hidden /> Dibuat dengan bantuan AI
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-light px-3 py-1 text-xs font-semibold text-brand">
+                Draf otomatis dari profil
               </span>
             </div>
 
@@ -539,7 +538,7 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
                 }}
                 className="inline-flex items-center gap-1.5 hover:underline"
               >
-                <RefreshCw className="size-4" aria-hidden /> Buat ulang dengan AI
+                <RefreshCw className="size-4" aria-hidden /> Kembalikan ke draf otomatis
               </button>
             </div>
           </section>
@@ -552,7 +551,7 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
             cv={cvMode === "profile" ? "Dari profil (PDF otomatis)" : (cvFile?.name ?? "Belum diunggah")}
             portfolioCount={selectedPortfolios.length}
             certificateCount={selectedCerts.length}
-            letterLabel={letter === generatedLetter ? "Draf AI" : "Sudah diedit"}
+            letterLabel={letter === generatedLetter ? "Draf otomatis" : "Sudah diedit"}
             onPreview={() => setPreviewOpen(true)}
           />
 
