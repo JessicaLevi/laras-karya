@@ -7,10 +7,6 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-// Panel admin butuh auth, jadi tidak perlu di-prerender saat build.
-// Hapus baris ini jika project memakai `cacheComponents` di next.config.
-export const dynamic = "force-dynamic";
-
 /**
  * Kerangka admin. Layout sengaja tidak membaca cookies; pengecekan role dilakukan di setiap halaman
  * (requireAdminPage) dan setiap Server Action (getAdminContext), karena layout tidak dijalankan ulang di setiap navigasi.
