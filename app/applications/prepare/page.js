@@ -4,12 +4,15 @@ import PrepareApplication from "@/components/applications/prepare-application";
 import { Footer } from "@/components/layout/footer";
 import { loadMyProfile } from "@/app/profile/data-actions";
 import { toApplicant } from "@/lib/applicant-mapping";
+import { documentsToFiles } from "@/lib/document-files";
+import { listDocuments } from "@/lib/documents";
 import { isUuid } from "@/lib/is-uuid";
 import { fetchJobDetail } from "@/lib/job-detail-db";
-//import { MOCK_APPLICANT, MOCK_CERTIFICATIONS, MOCK_PORTFOLIOS } from "@/lib/mock-applicant";
+import { MOCK_APPLICANT } from "@/lib/mock-applicant";
 import { JOBS } from "@/lib/mock-jobs";
 import { loginTo } from "@/lib/routes";
 import { getCurrentUser } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Persiapan Lamaran | Laras Karya",
@@ -34,6 +37,26 @@ function toPrepareJob(detail) {
   };
 }
 
+/** Contoh portofolio dan sertifikat untuk lowongan contoh (id angka); tidak menyimpan apa pun ke database. */
+const MOCK_PORTFOLIOS = [
+  { id: "mock-p1", name: "Laporan Studi Dampak Lingkungan 2024", sizeLabel: "1,8 MB", uploadedAt: "10 Nov 2026" },
+  { id: "mock-p2", name: "Kajian Kebijakan Tata Ruang", sizeLabel: "1,1 MB", uploadedAt: "2 Okt 2026" },
+];
+const MOCK_CERTIFICATIONS = [
+  { id: "mock-c1", name: "Pelatihan Paralegal Dasar", issuer: "LBH Jakarta", year: "2024", sizeLabel: "720 KB" },
+  { id: "mock-c2", name: "Sertifikasi Penyusun AMDAL", issuer: "Kementerian LHK", year: "2023", sizeLabel: "1,2 MB" },
+];
+
+/** Dokumen profil (sertifikat dan portofolio) milik user yang masuk; gagal dibaca -> null (pakai data profil lama). */
+async function loadMyDocumentFiles() {
+  try {
+    const res = await listDocuments(await createClient());
+    return res.ok ? documentsToFiles(res.docs) : null;
+  } catch {
+    return null;
+  }
+}
+
 /*
   /applications/prepare?job=<id>
   - id UUID  = lowongan dari database Supabase (wajib masuk). Status "sudah dilamar" dibaca dari tabel applications,
@@ -51,12 +74,12 @@ async function PrepareLoader({ searchParams }) {
     if (!user) redirect(loginTo(`/applications/prepare?job=${raw}`));
 
     // Lowongan dan profil pelamar dibaca bersamaan; profil gagal dibaca (null) tetap menghasilkan formulir yang bisa dipakai.
-    const [detail, profile] = await Promise.all([fetchJobDetail(raw, user), loadMyProfile()]);
+    const [detail, profile, files] = await Promise.all([fetchJobDetail(raw, user), loadMyProfile(), loadMyDocumentFiles()]);
     return (
       <PrepareApplication
         job={detail ? toPrepareJob(detail) : null}
         alreadyApplied={Boolean(detail?.applied)}
-        applicant={toApplicant(profile, user)}
+        applicant={{ ...toApplicant(profile, user), ...files }}
       />
     );
   }

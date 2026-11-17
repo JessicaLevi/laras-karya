@@ -17,7 +17,7 @@ function CvBody({ a }) {
       <Block title="Nama Lengkap">{a.name}</Block>
       <Block title="Telepon">{a.phone || none}</Block>
       <Block title="Pengalaman Terakhir">
-        {a.lastJob ? `${a.lastJob.title} — ${a.lastJob.company}${a.lastJob.period ? ` (${a.lastJob.period})` : ""}` : none}
+        {a.lastJob ? `${a.lastJob.title} — ${a.lastJob.company}${a.lastJob.period ? `, ${a.lastJob.period}` : ""}` : none}
       </Block>
       <Block title="Pendidikan">
         {a.education ? [a.education.degree, a.education.school].filter(Boolean).join(" — ") : none}

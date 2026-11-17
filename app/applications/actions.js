@@ -37,7 +37,8 @@ function isMissingNewColumn(error) {
  * Hasil: { ok: true } | { ok: false, error: "auth" | "invalid" | "terms" | "letter" | "notfound" | "closed" | "duplicate" | "db" }
  *
  * File CV/portofolio diunggah browser ke bucket Storage "Documents" (lib/application-storage.js) sebelum action ini
- * dipanggil; di sini hanya path-nya yang divalidasi (harus diawali <user_id>/<job_id>/) lalu disimpan.
+ * dipanggil; di sini hanya path-nya yang divalidasi (harus diawali <user_id>/, jadi hanya berkas milik sendiri:
+ * unggahan lamaran ini maupun dokumen profil) lalu disimpan.
  *
  * @param {{ jobId: string, coverLetter?: string, termsAccepted?: boolean, attachments?: { cv?: { source: "profile"|"upload", fileName?: string|null, path?: string|null }, portfolios?: {name:string,source:string,path?:string|null}[], certifications?: {name:string,issuer?:string}[], saveToProfile?: boolean } }} input
  */
@@ -69,7 +70,7 @@ export async function submitApplication({ jobId, coverLetter, termsAccepted, att
 
   // Snapshot dari profil di database. Bila profil gagal dibaca, tetap kirim snapshot minimal (nama dan email akun).
   const profile = await loadMyProfile();
-  const files = sanitizeAttachments(attachments, `${user.id}/${jobId}/`);
+  const files = sanitizeAttachments(attachments, `${user.id}/`);
   const snapshot = buildProfileSnapshot(
     profile,
     { name: user.user_metadata?.full_name, email: user.email },
