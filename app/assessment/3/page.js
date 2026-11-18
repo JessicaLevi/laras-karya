@@ -1,5 +1,5 @@
 "use client";
-
+import { useSectors } from "@/hooks/use-sectors";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, House, Repeat } from "lucide-react";
@@ -19,7 +19,6 @@ import {
   LIMITS,
   SKILL_OPTIONS,
   MOCK_SUGGESTED_SKILLS_BY_SECTOR,
-  SECTORS,
   WORK_ARRANGEMENTS,
 } from "@/lib/assessment-options";
 import { isValid, validateStep3 } from "@/lib/assessment-validation";
@@ -32,8 +31,9 @@ export default function AssessmentStep3Page() {
   const router = useRouter();
   const { answers, updateStep, reachStep, setSuggestions } = useAssessment();
   const step = answers.step_3;
-  const errors = validateStep3(step, SKILL_OPTIONS);
-  const canContinue = isValid(errors);
+  const { sectors, failed: sectorsFailed } = useSectors();
+  const errors = validateStep3(step, SKILL_OPTIONS, sectors ?? []);
+  const canContinue = isValid(errors) && sectors !== null;
 
   const [touched, setTouched] = useState({});
   const touch = (field) => setTouched((t) => ({ ...t, [field]: true }));
@@ -43,6 +43,12 @@ export default function AssessmentStep3Page() {
     updateStep("step_3", { [field]: value });
     touch(field);
   };
+  useEffect(() => {
+    if (!sectors) return;
+    const known = new Set(sectors.map((s) => s.value));
+    const kept = step.interest_sectors.filter((code) => known.has(code));
+    if (kept.length !== step.interest_sectors.length) updateStep("step_3", { interest_sectors: kept });
+  }, [sectors, step.interest_sectors, updateStep]);
 
   // Saran keahlian dari sektor yang dipilih, tanpa duplikat (nanti: getSuggestedSkills()).
   const suggestions = [...new Set(step.interest_sectors.flatMap((code) => MOCK_SUGGESTED_SKILLS_BY_SECTOR[code] ?? []))];
@@ -103,12 +109,13 @@ export default function AssessmentStep3Page() {
         required
         error={errorFor("interest_sectors")}
       >
-        <ChipMultiSelect
-          name="interest_sectors"
-          options={SECTORS}
-          values={step.interest_sectors}
-          onChange={(values) => update("interest_sectors", values)}
-        />
+        {sectors ? (
+  <ChipMultiSelect name="interest_sectors" options={sectors} values={step.interest_sectors} onChange={(values) => update("interest_sectors", values)} />
+    ) : (
+      <p className="text-sm text-ink/70" role="status">
+        {sectorsFailed ? "Daftar bidang industri gagal dimuat. Muat ulang halaman." : "Memuat bidang industri…"}
+      </p>
+    )}
       </Field>
 
       <Field as="fieldset" label="Keahlian utama Anda" required error={errorFor("skills")}>

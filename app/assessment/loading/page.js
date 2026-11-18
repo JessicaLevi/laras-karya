@@ -1,4 +1,5 @@
 "use client";
+import { useSectors } from "@/hooks/use-sectors";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -33,11 +34,14 @@ export default function AssessmentLoadingPage() {
   const { answers } = useAssessment();
   const [doneCount, setDoneCount] = useState(0);
 
+  const { sectors, failed: sectorsFailed } = useSectors();   // ← snippet-mu (setelah baris 34)
+  const sectorsReady = sectors !== null || sectorsFailed;    
+
   const isComplete =
     isValid(validateStep1(answers.step_1)) &&
     isValid(validateStep2(answers.step_2)) &&
-    isValid(validateStep3(answers.step_3, SKILL_OPTIONS));
-  const ready = hydrated && isComplete;
+    isValid(validateStep3(answers.step_3, SKILL_OPTIONS, sectors ?? []));
+   const ready = hydrated && sectorsReady && isComplete;
 
   useEffect(() => {
     if (!ready) return undefined;
@@ -47,7 +51,7 @@ export default function AssessmentLoadingPage() {
     return () => timers.forEach(clearTimeout);
   }, [ready, router]);
 
-  if (hydrated && !isComplete) {
+  if (hydrated && sectorsReady && !isComplete) {
     return (
       <section className="rounded-[22px] border border-black/5 bg-white px-6 py-10 text-center shadow-sm sm:px-11">
         <h1 className="text-2xl font-bold text-brand">Jawaban asesmen belum lengkap</h1>

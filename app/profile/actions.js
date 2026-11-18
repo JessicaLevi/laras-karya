@@ -5,7 +5,7 @@
 // Nanti tiap fungsi diganti menjadi Server Action ("use server") yang menulis ke database.
 // Catatan: file "use server" hanya boleh mengekspor fungsi async.
 
-import { EXPERIENCE_LEVELS, INDUSTRIES, LANGUAGE_LEVELS, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
+import { EXPERIENCE_LEVELS, LANGUAGE_LEVELS, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
 import { languageSkillCodeOf, skillCodeOf } from "@/lib/skills-catalog";
 
 /** Ambil beberapa kolom dari FormData sebagai objek teks yang sudah dirapikan. */
@@ -53,7 +53,7 @@ export function editBio(profile, formData) {
 // (bukan per pengalaman). Nilai di luar daftar opsi diabaikan.
 // Bidang industri yang boleh dipilih: dari database (profile.industryOptions); daftar bawaan bila belum ada.
 export function industryLabels(profile) {
-  return profile.industryOptions?.map((option) => option.label) ?? INDUSTRIES;
+  return profile.industryOptions?.map((option) => option.label) ?? [];
 }
 
 export function editPreferences(profile, formData) {
