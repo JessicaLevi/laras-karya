@@ -24,7 +24,7 @@ import { CertificatePicker } from "./certificate-picker";
 import ApplicationSummary from "./application-summary";
 import { ApplicationPreviewDialog, CvPreviewDialog } from "./application-preview";
 import { useHasApplied } from "@/lib/demo-history";
-import { removeApplicationFiles, uploadApplicationFiles } from "@/lib/application-storage";
+import { removeApplicationFiles, savePortfoliosToProfile, uploadApplicationFiles } from "@/lib/application-storage";
 
 const MAX_FILE_MB = 5;
 const DRAFT_PREFIX = "laras-karya:apply-draft:";
@@ -129,7 +129,11 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
       if (saved) {
         /* eslint-disable react-hooks/set-state-in-effect */
         if (typeof saved.letter === "string" && saved.letter.trim()) setLetter(saved.letter);
-        if (Array.isArray(saved.portfolioIds)) setPortfolioIds(saved.portfolioIds.filter((id) => profilePortfolios.some((p) => p.id === id)));
+        if (Array.isArray(saved.portfolioIds)) {
+          // Draf lama yang tersimpan saat portofolio belum ada (kosong) tidak boleh menimpa pilihan awal.
+          const kept = saved.portfolioIds.filter((id) => profilePortfolios.some((p) => p.id === id));
+          if (kept.length > 0) setPortfolioIds(kept);
+        }
         if (Array.isArray(saved.certIds)) setCertIds(saved.certIds.filter((id) => certifications.some((c) => c.id === id)));
         if (typeof saved.saveToProfile === "boolean") setSaveToProfile(saved.saveToProfile);
         /* eslint-enable react-hooks/set-state-in-effect */
@@ -207,7 +211,7 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
 
     // Lowongan dari database: unggah berkas ke bucket Storage "Documents", lalu simpan lamaran ke tabel
     // applications (status awal "diproses" = tampil "Dilamar") beserta path berkasnya.
-    // TODO: saveToProfile baru berupa niat; belum ada tabel/kolom untuk menyimpan portofolio di profil.
+    // saveToProfile: unggahan baru disalin ke dokumen profil setelah lamaran terkirim (savePortfoliosToProfile).
     setSubmitting(true);
     setSubmitError("");
 
@@ -228,12 +232,20 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
       termsAccepted: consent,
       attachments: {
         cv: { source: cvMode, fileName: cvMode === "upload" ? cvFile?.name : null, path: upload.cvPath },
-        portfolios: selectedPortfolios.map((p) => ({ name: p.name, source: p.source, path: upload.portfolioPaths[p.id] ?? null })),
+        portfolios: selectedPortfolios.map((p) => ({ name: p.name, source: p.source, path: upload.portfolioPaths[p.id] ?? p.filePath ?? null })),
         certifications: selectedCerts.map((c) => ({ name: c.name, issuer: c.issuer })),
         saveToProfile: newPortfolioCount > 0 && saveToProfile,
       },
     });
     if (!result.ok) await removeApplicationFiles(upload.uploaded); // lamaran gagal: jangan tinggalkan berkas yatim
+    if (result.ok && newPortfolioCount > 0 && saveToProfile) {
+      // Salin unggahan baru ke dokumen profil (sekadar-berusaha; lamaran sudah terkirim).
+      await savePortfoliosToProfile(
+        selectedPortfolios
+          .filter((p) => p.source === "upload" && upload.portfolioPaths[p.id])
+          .map((p) => ({ title: p.name.replace(/\.pdf$/i, ""), fileName: p.name, fileSize: p.file.size, fromPath: upload.portfolioPaths[p.id] })),
+      );
+    }
     setSubmitting(false);
 
     if (result.ok) {
@@ -406,7 +418,7 @@ function PrepareForm({ job, applicant, onSubmitted, onDismiss }) {
                     label="Pengalaman Terakhir"
                     value={
                       a.lastJob
-                        ? `${a.lastJob.title} — ${a.lastJob.company}${a.lastJob.period ? ` (${a.lastJob.period})` : ""}`
+                        ? `${a.lastJob.title} — ${a.lastJob.company}${a.lastJob.period ? `, ${a.lastJob.period}` : ""}`
                         : notFilled
                     }
                   />

@@ -46,7 +46,6 @@ async function AssessmentBadge() {
 */
 async function Results() {
   const user = await getCurrentUser();
-
   if (!user) {
     const { preview, error } = await fetchGuestPreview();
     if (error) {
@@ -58,7 +57,6 @@ async function Results() {
     }
     return <GuestPreview preview={preview} />;
   }
-
   const [{ jobs, error }, assessed] = await Promise.all([fetchRecommendedJobs(user), hasCompletedAssessment(user)]);
   const assessmentDone = assessed !== false; // gagal dibaca: anggap sudah, supaya tidak salah mengajak
   if (error) {

@@ -63,7 +63,12 @@ function LearningPathFromUrl() {
   const params = useSearchParams();
   const initialQuery = params.get("q") ?? "";
   const job = params.get("job") ?? "";
-  return <LearningPathContent key={job} initialQuery={initialQuery} job={job} />;
+  // ?rekomendasi=1 (dari "Lihat Semua Pelatihan" di Beranda): hanya pelatihan yang direkomendasikan untuk user.
+  // Bila ?job= juga ada, ?job= yang dipakai.
+  const recommended = params.get("rekomendasi") === "1";
+  return (
+    <LearningPathContent key={`${job}|${recommended}`} initialQuery={initialQuery} job={job} recommended={recommended} />
+  );
 }
 
 export default function LearningPathPage() {
@@ -304,7 +309,7 @@ function CourseCard({ course, status, onStart, onComplete }) {
   );
 }
 
-function LearningPathContent({ initialQuery = "", job = "" }) {
+function LearningPathContent({ initialQuery = "", job = "", recommended = false }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const urlTimer = useRef(null);
@@ -312,6 +317,7 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
   const [target, setTarget] = useState(null);
   const [jobInfo, setJobInfo] = useState(null); // lowongan yang jadi filter (null = semua pelatihan)
   const [gap, setGap] = useState(null);
+  const [recInfo, setRecInfo] = useState(null); // ringkasan mode rekomendasi (null = bukan mode itu)
   const [jobNotFound, setJobNotFound] = useState(false);
   const [courses, setCourses] = useState([]);
   const [progress, setProgress] = useState({});
@@ -369,11 +375,12 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
   const percent = totalCourses ? Math.round((completedCourses / totalCourses) * 100) : 0;
 
   useEffect(() => {
-    getLearningPath(job || null)
+    getLearningPath(job || null, recommended)
       .then((data) => {
         setTarget(data.target);
         setJobInfo(data.job);
         setGap(data.gap);
+        setRecInfo(data.recommended);
         setJobNotFound(data.jobNotFound);
         setCourses(data.courses);
         setProgress(data.progress);
@@ -383,7 +390,7 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
         setError(error.message);
         setLoading(false);
       });
-  }, [job]);
+  }, [job, recommended]);
 
   // Dipanggil saat user klik "Mulai Belajar": catat sebagai "Sedang diikuti".
   // Course dikerjakan di situs provider (tab baru).
@@ -463,8 +470,11 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
             Jalur Belajar &amp; Pelatihan untuk Menutup Skill Gap
           </h1>
           <p className="mt-4 text-muted-foreground">
-            Rekomendasi pelatihan yang dipersonalisasi berdasarkan analisis AI
-            terhadap profil Anda.
+            {jobInfo
+              ? "Pelatihan yang menutup skill teknis yang belum Anda miliki untuk lowongan ini."
+              : recInfo
+                ? "Pelatihan yang menutup skill gap dari lowongan yang cocok untuk Anda."
+                : "Semua pelatihan di Laras Karya. Buka dari detail lowongan atau Beranda untuk melihat yang sesuai skill gap Anda."}
           </p>
         </div>
 
@@ -499,6 +509,38 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
           </div>
         ) : null}
 
+        {recInfo && !jobInfo ? (
+          <div
+            role="status"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm text-ink"
+          >
+            <p>
+              {courses.length > 0 ? (
+                <>
+                  Menampilkan{" "}
+                  <span className="font-bold text-brand">{courses.length} pelatihan rekomendasi</span>, disusun dari
+                  skill gap pada {recInfo.jobCount} lowongan yang cocok untuk Anda.
+                </>
+              ) : (
+                "Pelatihan rekomendasi untuk Anda."
+              )}
+            </p>
+            <Link
+              href="/learning-path"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand px-4 text-xs font-bold text-brand transition-colors hover:bg-white md:min-h-9"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+              Lihat semua pelatihan
+            </Link>
+            {courses.length > 0 && recInfo.uncovered.length > 0 ? (
+              <p className="basis-full text-xs text-ink/70">
+                Belum ada pelatihan untuk: {recInfo.uncovered.slice(0, 5).join(", ")}
+                {recInfo.uncovered.length > 5 ? ` dan ${recInfo.uncovered.length - 5} lainnya` : ""}.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="mt-10 space-y-8">
           {/* Target posisi & skill gap (hanya saat ?job= dipilih) */}
           {target ? (
@@ -526,7 +568,7 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
                   </p>
                   <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-accent-light px-3 py-1 text-xs font-bold text-accent">
                     <Sparkle className="size-3 fill-current" aria-hidden="true" />
-                    Dianalisis oleh AI
+                    Analisis skill gap
                   </span>
                 </div>
 
@@ -626,7 +668,32 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
             ) : null}
 
             <div ref={listRef} className="mt-6 scroll-mt-24">
-              {courses.length === 0 && gap ? (
+              {courses.length === 0 && recInfo ? (
+                <EmptyState
+                  icon={recInfo.reason === "no-gap" ? Check : SearchX}
+                  title={
+                    recInfo.reason === "no-recommendations"
+                      ? "Belum ada rekomendasi pelatihan"
+                      : recInfo.reason === "no-gap"
+                        ? "Keahlian Anda sudah memenuhi lowongan yang cocok"
+                        : "Belum ada pelatihan untuk skill yang kurang"
+                  }
+                  text={
+                    recInfo.reason === "no-recommendations"
+                      ? "Rekomendasi muncul setelah asesmen karier selesai. Tekan Perbarui Rekomendasi di Beranda, lalu kembali ke sini."
+                      : recInfo.reason === "no-gap"
+                        ? "Tidak ada skill gap yang perlu ditutup saat ini. Anda bisa melihat pelatihan lain."
+                        : `Belum ada pelatihan di Laras Karya untuk: ${recInfo.uncovered.slice(0, 5).join(", ")}. Cari di penyedia lain, atau lihat semua pelatihan.`
+                  }
+                >
+                  <Link
+                    href="/learning-path"
+                    className="inline-flex rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+                  >
+                    Lihat semua pelatihan
+                  </Link>
+                </EmptyState>
+              ) : courses.length === 0 && gap ? (
                 <EmptyState
                   icon={gap.missing === 0 ? Check : SearchX}
                   title={
@@ -701,15 +768,15 @@ function LearningPathContent({ initialQuery = "", job = "" }) {
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-accent">
                 <Sparkles className="size-4" aria-hidden="true" />
               </span>
-              Setelah menyelesaikan pelatihan, profil dan tingkat kecocokan
-              lamaran Anda akan diperbarui secara otomatis.
+              Setelah menyelesaikan pelatihan, tambahkan sertifikatnya ke profil Anda,
+              lalu tekan Perbarui Rekomendasi di Beranda agar kecocokan Anda ikut diperbarui.
             </p>
 
             <Link
-              href="#"
+              href="/home"
               className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-brand hover:underline"
             >
-              Pelajari Selengkapnya
+              Ke Beranda
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </aside>

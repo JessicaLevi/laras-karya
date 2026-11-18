@@ -51,6 +51,8 @@ import {
 import { loadMyProfile, saveMyProfile } from "./data-actions";
 import { suggestSkillsFromCertificate } from "./skill-actions";
 
+import Link from "next/link";
+
 import { LinkedinIcon } from "@/components/icons";
 import { Footer } from "@/components/layout/footer";
 import { DocumentsSection } from "@/components/profile/documents-section";
@@ -660,6 +662,12 @@ export default function ProfilePage() {
                   </dd>
                 </div>
               </dl>
+              <p className="mt-5 border-t border-line pt-4 text-sm text-ink/70">
+                Situasi karier Anda berubah?{" "}
+                <Link href="/assessment/1" className="font-semibold text-brand hover:underline">
+                  Perbarui asesmen
+                </Link>
+              </p>
             </section>
 
             {/* Pengalaman kerja */}

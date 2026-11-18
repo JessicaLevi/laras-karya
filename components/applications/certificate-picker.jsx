@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Award } from "lucide-react";
+import { Award, Eye } from "lucide-react";
 
 import { SelectableFile } from "./file-row";
+import { openItem } from "./portfolio-picker";
 
-/** Sertifikat pendukung (opsional), diambil dari bagian Sertifikasi di profil. */
+/** Sertifikat pendukung (opsional), diambil dari dokumen sertifikat di profil (tabel documents). */
 export function CertificatePicker({ items, selectedIds, onToggle }) {
   return (
     <section aria-labelledby="cert-title" className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -23,6 +24,17 @@ export function CertificatePicker({ items, selectedIds, onToggle }) {
               onChange={() => onToggle(c.id)}
               title={c.name}
               meta={[c.issuer, c.year, c.sizeLabel].filter(Boolean).join(" • ")}
+              actions={
+                c.filePath ? (
+                  <button
+                    type="button"
+                    onClick={() => openItem(c)}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+                  >
+                    <Eye className="size-4" aria-hidden /> Lihat
+                  </button>
+                ) : null
+              }
             />
           ))}
         </div>

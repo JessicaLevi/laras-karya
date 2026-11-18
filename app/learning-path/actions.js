@@ -5,8 +5,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 // Data & action untuk halaman Jalur Belajar.
-// - Pelatihan dibaca dari tabel courses (hanya yang is_published). Tanpa ?job= semua pelatihan tampil; dengan
-//   ?job=<uuid lowongan> hanya pelatihan untuk skill teknis lowongan itu yang belum dimiliki user
+// - Pelatihan dibaca dari tabel courses (hanya yang is_published). Tanpa parameter semua pelatihan tampil; dengan
+//   ?job=<uuid lowongan> hanya pelatihan untuk skill teknis lowongan itu yang belum dimiliki user; dengan
+//   ?rekomendasi=1 semua pelatihan yang direkomendasikan untuk user (sama dengan bagian pelatihan di Beranda)
 //   (lib/learning-path-db.js; urutan pelatihan di lib/course-order.js, titik sambung engine rekomendasi).
 // - Progres user disimpan di tabel user_course_progress. Memakai sesi user (bukan service role),
 //   jadi dijaga RLS: user hanya membaca dan menulis progresnya sendiri.
@@ -42,14 +43,15 @@ function toProgress(rows) {
 /**
  * Ambil pelatihan + progres milik user.
  * @param {string | null} [jobParam] nilai ?job= dari URL: id (UUID) lowongan untuk memfilter pelatihan sesuai skill gap-nya
+ * @param {boolean} [recommended] true bila ?rekomendasi=1: tampilkan pelatihan yang direkomendasikan untuk user
  */
-export async function getLearningPath(jobParam = null) {
+export async function getLearningPath(jobParam = null, recommended = false) {
   const { supabase, user } = await currentUser();
   if (!supabase) throw new Error("Koneksi database belum dikonfigurasi.");
   // Skill gap dihitung dari skill milik user, jadi wajib masuk (halaman ini juga dijaga proxy).
   if (!user) throw new Error("Sesi Anda berakhir. Silakan masuk lagi.");
 
-  const path = await fetchLearningPath(supabase, user, typeof jobParam === "string" ? jobParam : null);
+  const path = await fetchLearningPath(supabase, user, typeof jobParam === "string" ? jobParam : null, recommended === true);
 
   const { data: progressRows, error: progressError } = await supabase
     .from("user_course_progress")
@@ -65,6 +67,7 @@ export async function getLearningPath(jobParam = null) {
     job: path.job,
     jobNotFound: path.jobNotFound,
     gap: path.gap,
+    recommended: path.recommended,
     // Hanya mode lowongan yang punya target; mode semua pelatihan: null (kotak target disembunyikan).
     target:
       path.mode === "job"

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Eye, FolderOpen } from "lucide-react";
 
+import { createDocumentUrl } from "@/lib/documents";
+
 import { formatFileSize } from "./cv-upload";
 import { SelectableFile } from "./file-row";
 
@@ -19,11 +21,23 @@ export function portfolioFileProblem(file) {
   return null;
 }
 
-function openItem(item) {
+/** Buka file di tab baru: file lokal (unggahan baru), file di bucket privat (dokumen profil), atau tautan langsung. */
+export async function openItem(item) {
   if (item.file) {
     const url = URL.createObjectURL(item.file);
     window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } else if (item.filePath) {
+    // Tab dibuka dulu (sebelum menunggu tautan) supaya tidak diblokir popup blocker.
+    const tab = window.open("", "_blank");
+    const res = await createDocumentUrl(item.filePath);
+    if (res.ok && tab) {
+      tab.opener = null;
+      tab.location.href = res.url;
+    } else {
+      tab?.close();
+      window.alert(res.error ?? "File tidak dapat dibuka. Coba lagi.");
+    }
   } else if (item.url) {
     window.open(item.url, "_blank", "noopener,noreferrer");
   }
@@ -104,7 +118,7 @@ export function PortfolioPicker({
                 >
                   Hapus
                 </button>
-              ) : item.url ? (
+              ) : item.url || item.filePath ? (
                 <button type="button" onClick={() => openItem(item)} className={`${linkBtn} text-brand`}>
                   <Eye className="size-4" aria-hidden /> Lihat
                 </button>
