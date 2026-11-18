@@ -84,7 +84,7 @@ paths:
                 experience_story: Saya pernah mengelola proyek pengolahan limbah di perusahaan lokal selama tiga tahun dan memimpin tim lapangan.
               step_3:
                 work_arrangement: hybrid
-                interest_sectors: [energi-terbarukan, limbah-daur-ulang]
+                interest_sectors: [renewable_energy, waste_environment]
                 skills: [Manajemen Proyek]
                 experience_level: mid
       responses:
@@ -559,14 +559,20 @@ components:
               items:
                 type: string
                 enum:
-                  - energi-terbarukan
-                  - konservasi-lingkungan
-                  - limbah-daur-ulang
-                  - bangunan-hijau
-                  - pertanian-berkelanjutan
-                  - transportasi-bersih
-                  - keuangan-esg
-                  - air-sanitasi
+                  - renewable_energy
+                  - sustainable_agriculture_forestry
+                  - waste_environment
+                  - clean_transportation
+                  - climate_carbon_finance
+                  - oil_gas
+                  - manufacturing_industrial
+                  - professional_services
+                  - agribusiness
+                  - transport_logistics
+                  - hospitality
+                  - finance_fintech
+                  - ngo_development
+                  - health_wellness
             skills:
               type: array
               minItems: 1
