@@ -1,0 +1,1077 @@
+From cfbe2547f20c730b812e0fa55aed9f1a4fe9f257 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 17 Nov 2026 16:24:07 +0800
+Subject: [PATCH 1/5] Profil: bahasa bisa diedit/dihapus dan disinkronkan ke
+ user_skills (+level); bidang minat dari tabel sectors dengan tampilan ringkas
+
+---
+ app/profile/actions.js      |  46 +++++++---
+ app/profile/data-actions.js |  29 ++++++-
+ app/profile/page.js         | 164 +++++++++++++++++++++++++++---------
+ lib/profile-mapping.js      |  54 +++++++++---
+ lib/profile-options.js      |  25 ++++++
+ lib/skills-catalog.js       |  23 +++++
+ 6 files changed, 271 insertions(+), 70 deletions(-)
+
+diff --git a/app/profile/actions.js b/app/profile/actions.js
+index a54b729..f5edd80 100644
+--- a/app/profile/actions.js
++++ b/app/profile/actions.js
+@@ -5,14 +5,8 @@
+ // Nanti tiap fungsi diganti menjadi Server Action ("use server") yang menulis ke database.
+ // Catatan: file "use server" hanya boleh mengekspor fungsi async.
+ 
+-import { EXPERIENCE_LEVELS, INDUSTRIES, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
+-
+-const LANGUAGE_LEVELS = {
+-  Native: { percent: 100, tone: "brand" },
+-  Profesional: { percent: 80, tone: "blue" },
+-  Menengah: { percent: 55, tone: "neutral" },
+-  Dasar: { percent: 30, tone: "amber" },
+-};
++import { EXPERIENCE_LEVELS, INDUSTRIES, LANGUAGE_LEVELS, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
++import { languageSkillCodeOf, skillCodeOf } from "@/lib/skills-catalog";
+ 
+ /** Ambil beberapa kolom dari FormData sebagai objek teks yang sudah dirapikan. */
+ function pick(formData, keys) {
+@@ -57,12 +51,17 @@ export function editBio(profile, formData) {
+ 
+ // Pola kerja (satu pilihan), bidang industri (satu atau lebih), dan tingkat pengalaman kerja secara umum
+ // (bukan per pengalaman). Nilai di luar daftar opsi diabaikan.
++// Bidang industri yang boleh dipilih: dari database (profile.industryOptions); daftar bawaan bila belum ada.
++export function industryLabels(profile) {
++  return profile.industryOptions?.map((option) => option.label) ?? INDUSTRIES;
++}
++
+ export function editPreferences(profile, formData) {
+   const { workArrangement, experienceLevel } = pick(formData, ["workArrangement", "experienceLevel"]);
+   const industries = formData
+     .getAll("industries")
+     .map((value) => String(value).trim())
+-    .filter((value) => INDUSTRIES.includes(value));
++    .filter((value) => industryLabels(profile).includes(value));
+ 
+   return {
+     ...profile,
+@@ -158,10 +157,37 @@ export function deleteSkill(profile, id) {
+ 
+ /* ---------- Bahasa ---------- */
+ 
++const sameLanguage = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
++
++// Bahasa yang sudah ada tidak ditambah dua kali. Bahasa yang punya keahlian padanan (mis. "Bahasa Inggris")
++// otomatis dihapus dari daftar Keahlian di layar supaya tidak tampil dobel; saat disimpan, bahasa itu
++// masuk ke user_skills beserta levelnya (lihat profileToDb).
+ export function addLanguage(profile, formData) {
+   const { name, level } = pick(formData, ["name", "level"]);
++  if (!name || profile.languages.some((lang) => sameLanguage(lang.name, name))) return profile;
++  const { percent, tone } = LANGUAGE_LEVELS[level] ?? LANGUAGE_LEVELS.Profesional;
++  const code = languageSkillCodeOf(name);
++  return {
++    ...profile,
++    languages: [...profile.languages, { id: newId("lang"), name, level: LANGUAGE_LEVELS[level] ? level : "Profesional", tone, percent }],
++    skills: code ? profile.skills.filter((skill) => skillCodeOf(skill.label) !== code) : profile.skills,
++  };
++}
++
++export function editLanguage(profile, formData, id) {
++  const { name, level } = pick(formData, ["name", "level"]);
++  if (!name || profile.languages.some((lang) => lang.id !== id && sameLanguage(lang.name, name))) return profile;
+   const { percent, tone } = LANGUAGE_LEVELS[level] ?? LANGUAGE_LEVELS.Profesional;
+-  return { ...profile, languages: [...profile.languages, { id: newId("lang"), name, level, tone, percent }] };
++  const code = languageSkillCodeOf(name);
++  return {
++    ...profile,
++    languages: updateById(profile.languages, id, { name, level: LANGUAGE_LEVELS[level] ? level : "Profesional", tone, percent }),
++    skills: code ? profile.skills.filter((skill) => skillCodeOf(skill.label) !== code) : profile.skills,
++  };
++}
++
++export function deleteLanguage(profile, id) {
++  return { ...profile, languages: removeById(profile.languages, id) };
+ }
+ 
+ /* ---------- Simpan / Batal ---------- */
+diff --git a/app/profile/data-actions.js b/app/profile/data-actions.js
+index 5c1ef5a..a467bd1 100644
+--- a/app/profile/data-actions.js
++++ b/app/profile/data-actions.js
+@@ -17,11 +17,13 @@ async function currentUser() {
+ }
+ 
+ async function readProfile(supabase, user) {
+-  const [profile, educations, experiences, skills, assessment] = await Promise.all([
++  const [profile, educations, experiences, skills, sectors, assessment] = await Promise.all([
+     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+     supabase.from("educations").select("*").eq("user_id", user.id),
+     supabase.from("work_experiences").select("*").eq("user_id", user.id),
+     supabase.from("user_skills").select("skill_code").eq("user_id", user.id),
++    // Daftar bidang industri = tabel sectors (sumber yang sama dengan lowongan).
++    supabase.from("sectors").select("code,label"),
+     supabase
+       .from("assessments")
+       .select("answers")
+@@ -33,12 +35,15 @@ async function readProfile(supabase, user) {
+   ]);
+   const failed = [profile, educations, experiences, skills].find((r) => r.error);
+   if (failed) throw failed.error;
++  // Tabel sectors gagal dibaca: pakai daftar bawaan (buildSectorOptions), bukan error.
++  if (sectors.error) console.warn("[readProfile] sectors:", sectors.error.message);
+   return dbToProfile({
+     email: user.email,
+     profile: profile.data,
+     educations: educations.data,
+     experiences: experiences.data,
+     skillCodes: skills.data.map((s) => s.skill_code),
++    sectors: sectors.data ?? [],
+     careerBreak: assessment.data?.answers?.step_1?.career_break ?? null,
+   });
+ }
+@@ -61,7 +66,7 @@ export async function saveMyProfile(draft) {
+   if (!user) return { ok: false, error: "Sesi Anda berakhir. Silakan masuk lagi." };
+   if (!draft?.name?.trim()) return { ok: false, error: "Nama lengkap wajib diisi." };
+ 
+-  const { profile, educations, experiences, skillCodes } = profileToDb(draft);
++  const { profile, educations, experiences, skillCodes, languageSkills } = profileToDb(draft);
+   const fail = (step, error) => {
+     console.error(`[saveMyProfile] ${step}:`, error?.message ?? error);
+     return { ok: false, error: "Profil belum tersimpan. Coba lagi beberapa saat lagi." };
+@@ -93,9 +98,12 @@ export async function saveMyProfile(draft) {
+   const expErr = await syncRows("work_experiences", experiences);
+   if (expErr) return fail("work_experiences", expErr);
+ 
+-  // Keahlian: daftar di halaman profil adalah daftar lengkap milik user
++  // Keahlian: daftar di halaman profil adalah daftar lengkap milik user.
++  // Bahasa yang ada di katalog keahlian ikut disimpan di sini beserta levelnya (user_skills.level),
++  // jadi kodenya harus ikut daftar yang dipertahankan, kalau tidak akan terhapus oleh langkah di bawah.
++  const keepCodes = [...skillCodes, ...languageSkills.map((l) => l.skill_code)];
+   let delSkills = supabase.from("user_skills").delete().eq("user_id", user.id);
+-  if (skillCodes.length) delSkills = delSkills.not("skill_code", "in", `(${skillCodes.map((c) => `"${c}"`).join(",")})`);
++  if (keepCodes.length) delSkills = delSkills.not("skill_code", "in", `(${keepCodes.map((c) => `"${c}"`).join(",")})`);
+   const { error: sDel } = await delSkills;
+   if (sDel) return fail("user_skills", sDel);
+   if (skillCodes.length) {
+@@ -107,6 +115,19 @@ export async function saveMyProfile(draft) {
+       });
+     if (error) return fail("user_skills", error);
+   }
++  if (languageSkills.length) {
++    // Tanpa ignoreDuplicates: level yang diubah harus menimpa baris lama.
++    const rows = languageSkills.map(({ skill_code, level }) => ({ user_id: user.id, skill_code, source: "manual", level }));
++    let { error } = await supabase.from("user_skills").upsert(rows, { onConflict: "user_id,skill_code" });
++    // Kolom `level` belum dibuat (jalankan db/add_user_skills_level.sql): simpan tanpa level agar profil tetap tersimpan.
++    if (error && (error.code === "42703" || error.code === "PGRST204" || /level/i.test(error.message ?? ""))) {
++      console.warn("[saveMyProfile] user_skills.level belum ada, bahasa disimpan tanpa level:", error.message);
++      ({ error } = await supabase
++        .from("user_skills")
++        .upsert(rows.map(({ level: _omit, ...row }) => row), { onConflict: "user_id,skill_code", ignoreDuplicates: true }));
++    }
++    if (error) return fail("user_skills (bahasa)", error);
++  }
+ 
+   try {
+     return { ok: true, profile: await readProfile(supabase, user) };
+diff --git a/app/profile/page.js b/app/profile/page.js
+index 3f96314..2919843 100644
+--- a/app/profile/page.js
++++ b/app/profile/page.js
+@@ -32,6 +32,7 @@ import {
+   deleteCertification,
+   deleteEducation,
+   deleteExperience,
++  deleteLanguage,
+   deleteResume,
+   deleteSkill,
+   downloadResume,
+@@ -40,9 +41,11 @@ import {
+   editContact,
+   editEducation,
+   editExperience,
++  editLanguage,
+   editPreferences,
+   editProfileHeader,
+   generateResume,
++  industryLabels,
+   parseLocation,
+ } from "./actions";
+ import { loadMyProfile, saveMyProfile } from "./data-actions";
+@@ -56,11 +59,16 @@ import { Button } from "@/components/ui/button";
+ import { PROFILE, PROFILE_REMAINING } from "@/lib/profile-data";
+ import {
+   EXPERIENCE_LEVELS,
+-  INDUSTRIES,
++  LANGUAGE_LEVELS,
++  LANGUAGE_OPTIONS,
+   PROVINCES,
+   SKILL_OPTIONS,
+   WORK_ARRANGEMENTS,
+ } from "@/lib/profile-options";
++import { LANGUAGE_SKILL_CODES, SKILLS_CATALOG } from "@/lib/skills-catalog";
++
++// Jumlah bidang minat yang langsung tampil di kartu Preferensi Karier; sisanya dibuka lewat "Lihat lainnya".
++const INDUSTRIES_PREVIEW = 4;
+ 
+ const CARD = "rounded-3xl border border-line bg-white p-6 md:p-8";
+ const CARD_TITLE = "flex items-center gap-3 text-xl font-semibold text-ink";
+@@ -127,7 +135,7 @@ const FORMS = {
+     title: { edit: "Ubah Preferensi Karier" },
+     fields: [
+       { name: "workArrangement", label: "Pola kerja yang Anda inginkan", type: "radio", options: WORK_ARRANGEMENTS, required: true },
+-      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", options: INDUSTRIES, required: true },
++      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", required: true },
+       { name: "experienceLevel", label: "Tingkat pengalaman kerja", type: "select", options: EXPERIENCE_LEVELS, placeholder: "Pilih tingkat pengalaman", required: true },
+     ],
+   },
+@@ -146,11 +154,10 @@ const FORMS = {
+     fields: [{ name: "label", label: "Nama Skill", type: "skill-select", required: true }],
+   },
+   language: {
+-    title: { add: "Tambah Bahasa" },
++    title: { add: "Tambah Bahasa", edit: "Ubah Bahasa" },
+     fields: [
+-      { name: "name", label: "Bahasa", required: true },
+-      // Daftar level harus sama dengan LANGUAGE_LEVELS di actions.js
+-      { name: "level", label: "Tingkat", type: "select", options: ["Native", "Profesional", "Menengah", "Dasar"], defaultValue: "Profesional" },
++      { name: "name", label: "Bahasa", type: "language-select", required: true },
++      { name: "level", label: "Tingkat", type: "select", options: Object.keys(LANGUAGE_LEVELS), defaultValue: "Profesional" },
+     ],
+   },
+ };
+@@ -165,7 +172,7 @@ const ACTIONS = {
+   certification: { add: addCertification, edit: editCertification },
+   contact: { edit: editContact },
+   skill: { add: addSkill },
+-  language: { add: addLanguage },
++  language: { add: addLanguage, edit: editLanguage },
+ };
+ 
+ function formatAddedAt(iso) {
+@@ -193,6 +200,7 @@ function getValues(profile, type, id) {
+     experience: profile.experiences,
+     education: profile.education,
+     certification: profile.certifications,
++    language: profile.languages,
+   };
+   return lists[type]?.find((item) => item.id === id) ?? {};
+ }
+@@ -202,7 +210,9 @@ function getValues(profile, type, id) {
+ function SkillSelectField({ field, ownedSkills }) {
+   const [value, setValue] = useState("");
+   const owned = new Set(ownedSkills.map((skill) => skill.label.toLowerCase()));
+-  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
++  // Keahlian bahasa (mis. "Bahasa Inggris") ditambahkan lewat bagian Bahasa supaya levelnya ikut tersimpan.
++  const languageLabels = new Set(SKILLS_CATALOG.filter((s) => LANGUAGE_SKILL_CODES.has(s.code)).map((s) => s.label.toLowerCase()));
++  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()) && !languageLabels.has(option.toLowerCase()));
+ 
+   return (
+     <>
+@@ -227,6 +237,34 @@ function SkillSelectField({ field, ownedSkills }) {
+   );
+ }
+ 
++// Dropdown bahasa: bahasa yang sudah dimiliki disembunyikan (kecuali yang sedang diedit).
++function LanguageSelectField({ field, languages, current }) {
++  const owned = new Set(languages.map((lang) => lang.name.trim().toLowerCase()));
++  if (current) owned.delete(current.trim().toLowerCase());
++  const options = LANGUAGE_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
++  // Bahasa lama yang diketik bebas (di luar daftar) tetap bisa dipilih saat diedit.
++  if (current && !options.some((option) => option.toLowerCase() === current.trim().toLowerCase())) options.unshift(current);
++
++  return (
++    <select
++      id={`field-${field.name}`}
++      name={field.name}
++      defaultValue={current ?? ""}
++      required={field.required}
++      className={`${INPUT} h-11`}
++    >
++      <option value="" disabled>
++        Pilih bahasa
++      </option>
++      {options.map((option) => (
++        <option key={option} value={option}>
++          {option}
++        </option>
++      ))}
++    </select>
++  );
++}
++
+ // Pilih satu (pola kerja), ditampilkan sebagai kartu seperti di halaman onboarding.
+ function RadioCards({ field, defaultValue }) {
+   return (
+@@ -252,10 +290,10 @@ function RadioCards({ field, defaultValue }) {
+ }
+ 
+ // Pilih satu atau lebih (bidang industri), ditampilkan sebagai chip.
+-function CheckboxChips({ field, defaultValue = [] }) {
++function CheckboxChips({ field, options, defaultValue = [] }) {
+   return (
+     <div role="group" aria-labelledby={`label-${field.name}`} className="flex flex-wrap gap-2.5">
+-      {field.options.map((option) => (
++      {options.map((option) => (
+         <label
+           key={option}
+           className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line bg-white px-4 text-sm text-ink transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-light has-[:checked]:font-semibold has-[:checked]:text-brand has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/30"
+@@ -284,6 +322,7 @@ export default function ProfilePage() {
+   const [toast, setToast] = useState("");
+   const [resumes, setResumes] = useState([]);
+   const [generating, setGenerating] = useState(false);
++  const [showAllIndustries, setShowAllIndustries] = useState(false);
+   // Saran keahlian AI dari sertifikat yang baru ditambahkan: { status: "idle" | "loading" | "done", source, labels }.
+   const [aiSkills, setAiSkills] = useState({ status: "idle", source: "", labels: [] });
+   const aiRequestRef = useRef(0);
+@@ -590,16 +629,31 @@ export default function ProfilePage() {
+                   <dt className="font-semibold text-ink">Bidang industri yang diminati</dt>
+                   <dd className="mt-1.5">
+                     {p.industries?.length > 0 ? (
+-                      <ul className="flex flex-wrap gap-2">
+-                        {p.industries.map((industry) => (
+-                          <li
+-                            key={industry}
+-                            className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
++                      <>
++                        {/* Ringkas: tampil beberapa dulu, sisanya dibuka lewat tombol, supaya kartu tidak penuh */}
++                        <ul className="flex flex-wrap gap-2">
++                          {(showAllIndustries ? p.industries : p.industries.slice(0, INDUSTRIES_PREVIEW)).map((industry) => (
++                            <li
++                              key={industry}
++                              className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
++                            >
++                              {industry}
++                            </li>
++                          ))}
++                        </ul>
++                        {p.industries.length > INDUSTRIES_PREVIEW && (
++                          <button
++                            type="button"
++                            aria-expanded={showAllIndustries}
++                            onClick={() => setShowAllIndustries((open) => !open)}
++                            className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-brand hover:underline focus-visible:ring-3 focus-visible:ring-brand/30 focus-visible:outline-none"
+                           >
+-                            {industry}
+-                          </li>
+-                        ))}
+-                      </ul>
++                            {showAllIndustries
++                              ? "Tampilkan lebih sedikit"
++                              : `Lihat ${p.industries.length - INDUSTRIES_PREVIEW} lainnya`}
++                          </button>
++                        )}
++                      </>
+                     ) : (
+                       <span className="text-ink/70">Belum diisi</span>
+                     )}
+@@ -887,28 +941,52 @@ export default function ProfilePage() {
+                   Tambah Bahasa
+                 </Button>
+               </header>
+-              <ul className="mt-6 space-y-5">
+-                {p.languages.map((lang) => (
+-                  <li key={lang.id}>
+-                    <div className="flex items-center justify-between gap-3">
+-                      <span className="font-semibold text-ink">{lang.name}</span>
+-                      <Badge tone={lang.tone} className="px-2.5 py-0.5">
+-                        {lang.level}
+-                      </Badge>
+-                    </div>
+-                    <div
+-                      role="progressbar"
+-                      aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
+-                      aria-valuemin={0}
+-                      aria-valuemax={100}
+-                      aria-valuenow={lang.percent}
+-                      className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+-                    >
+-                      <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
+-                    </div>
+-                  </li>
+-                ))}
+-              </ul>
++              {p.languages.length > 0 ? (
++                <ul className="mt-6 space-y-5">
++                  {p.languages.map((lang) => (
++                    <li key={lang.id}>
++                      <div className="flex items-center justify-between gap-3">
++                        <span className="font-semibold text-ink">{lang.name}</span>
++                        <Badge tone={lang.tone} className="px-2.5 py-0.5">
++                          {lang.level}
++                        </Badge>
++                      </div>
++                      <div
++                        role="progressbar"
++                        aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
++                        aria-valuemin={0}
++                        aria-valuemax={100}
++                        aria-valuenow={lang.percent}
++                        className="mt-2 h-2 overflow-hidden rounded-full bg-line"
++                      >
++                        <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
++                      </div>
++                      <div className="mt-1 flex items-center gap-4 text-sm font-semibold">
++                        <button
++                          type="button"
++                          aria-label={`Edit bahasa ${lang.name}`}
++                          onClick={() => openDialog("language", "edit", lang.id)}
++                          className={EDIT_LINK}
++                        >
++                          <Pencil className="size-4" aria-hidden="true" />
++                          Edit
++                        </button>
++                        <button
++                          type="button"
++                          aria-label={`Hapus bahasa ${lang.name}`}
++                          onClick={() => handleDelete(deleteLanguage, lang.id, lang.name)}
++                          className={DELETE_LINK}
++                        >
++                          <Trash2 className="size-4" aria-hidden="true" />
++                          Hapus
++                        </button>
++                      </div>
++                    </li>
++                  ))}
++                </ul>
++              ) : (
++                <p className="mt-6 text-sm text-ink/70">Belum ada bahasa.</p>
++              )}
+             </section>
+ 
+             {/* Resume */}
+@@ -1045,10 +1123,12 @@ export default function ProfilePage() {
+                     />
+                   ) : field.type === "skill-select" ? (
+                     <SkillSelectField field={field} ownedSkills={draft.skills} />
++                  ) : field.type === "language-select" ? (
++                    <LanguageSelectField field={field} languages={draft.languages} current={dialog.values[field.name]} />
+                   ) : field.type === "radio" ? (
+                     <RadioCards field={field} defaultValue={dialog.values[field.name]} />
+                   ) : field.type === "checkboxes" ? (
+-                    <CheckboxChips field={field} defaultValue={dialog.values[field.name]} />
++                    <CheckboxChips field={field} options={field.options ?? industryLabels(draft)} defaultValue={dialog.values[field.name]} />
+                   ) : field.type === "select" ? (
+                     <select
+                       id={`field-${field.name}`}
+diff --git a/lib/profile-mapping.js b/lib/profile-mapping.js
+index d05487c..b26b12d 100644
+--- a/lib/profile-mapping.js
++++ b/lib/profile-mapping.js
+@@ -1,6 +1,7 @@
+ import { SECTORS } from "@/lib/assessment-options";
+ import { toCareerLabel } from "@/lib/career-label";
+-import { SKILLS_CATALOG } from "@/lib/skills-catalog";
++import { LANGUAGE_LEVELS } from "@/lib/profile-options";
++import { languageSkillCodeOf, SKILLS_CATALOG } from "@/lib/skills-catalog";
+ 
+ /**
+  * Halaman /profile <-> database Supabase. Fungsi murni (bisa diuji tanpa database).
+@@ -31,12 +32,6 @@ const CAREER = [
+ ];
+ const DEGREE = { sma: "SMA/SMK", d3: "D3", s1: "S1", s2: "S2", s3: "S3" };
+ const DEGREE_IN = { sma: "sma", smk: "sma", d3: "d3", d4: "s1", s1: "s1", s2: "s2", s3: "s3" };
+-const LANGUAGE_LEVELS = {
+-  Native: { percent: 100, tone: "brand" },
+-  Profesional: { percent: 80, tone: "blue" },
+-  Menengah: { percent: 55, tone: "neutral" },
+-  Dasar: { percent: 30, tone: "amber" },
+-};
+ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+ const MONTH_IN = { jan: 1, feb: 2, mar: 3, apr: 4, mei: 5, may: 5, jun: 6, jul: 7, agu: 8, ags: 8, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, des: 12, dec: 12 };
+ 
+@@ -45,6 +40,24 @@ const toCode = (pairs, label) => pairs.find(([, l]) => l === label)?.[0] ?? null
+ const SKILL_LABEL = new Map(SKILLS_CATALOG.map((s) => [s.code, s.label]));
+ const SKILL_CODE = new Map(SKILLS_CATALOG.map((s) => [s.label.toLowerCase(), s.code]));
+ 
++/** "renewable_energy" / "energi-terbarukan" -> "Renewable Energy" / "Energi Terbarukan" (kode yang tidak punya label). */
++const humanize = (code) => String(code).replace(/[_-]+/g, " ").trim().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
++
++/**
++ * Pilihan bidang industri untuk halaman profil, dengan urutan: baris tabel `sectors` di database,
++ * lalu daftar bawaan (SECTORS) bila tabel kosong / tidak terbaca, lalu kode yang tersimpan di profil user
++ * tetapi tidak ada di keduanya (supaya tidak hilang diam-diam saat disimpan ulang).
++ * @param {{code: string, label: string}[]} dbSectors  baris tabel sectors
++ * @param {string[]} storedCodes                        profiles.interest_sectors
++ * @returns {{value: string, label: string}[]}
++ */
++export function buildSectorOptions(dbSectors = [], storedCodes = []) {
++  const base = dbSectors.length > 0 ? dbSectors.map((s) => ({ value: s.code, label: s.label || humanize(s.code) })) : SECTORS;
++  const known = new Set(base.map((s) => s.value));
++  const extra = [...new Set(storedCodes)].filter((c) => c && !known.has(c)).map((c) => ({ value: c, label: humanize(c) }));
++  return [...base, ...extra];
++}
++
+ export function initialsOf(name) {
+   return String(name ?? "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+ }
+@@ -104,8 +117,12 @@ export function completenessOf(p) {
+   return { completeness, remaining, missing: missing.map(([label, weight]) => ({ label, weight })) };
+ }
+ 
+-export function dbToProfile({ email, profile: r, educations = [], experiences = [], skillCodes = [], careerBreak = null }) {
++export function dbToProfile({ email, profile: r, educations = [], experiences = [], skillCodes = [], sectors = [], careerBreak = null }) {
+   const name = r?.full_name || String(email ?? "").split("@")[0] || "Akun";
++  const languages = (r?.languages ?? []).map((l, i) => ({ id: `lang-${i + 1}`, name: l.name, level: l.level, ...(LANGUAGE_LEVELS[l.level] ?? LANGUAGE_LEVELS.Profesional) }));
++  const industryOptions = buildSectorOptions(sectors, r?.interest_sectors ?? []);
++  // Keahlian yang sebenarnya bahasa dan sudah ada di bagian Bahasa hanya tampil di bagian Bahasa (bukan dobel).
++  const languageCodes = new Set(languages.map((l) => languageSkillCodeOf(l.name)).filter(Boolean));
+   const ui = {
+     name,
+     initials: initialsOf(name),
+@@ -114,7 +131,9 @@ export function dbToProfile({ email, profile: r, educations = [], experiences =
+     bio: r?.bio ?? "",
+     experienceLevel: toLabel(EXPERIENCE, r?.experience_level),
+     workArrangement: toLabel(ARRANGEMENT, r?.work_arrangement_pref),
+-    industries: (r?.interest_sectors ?? []).map((c) => SECTORS.find((s) => s.value === c)?.label).filter(Boolean),
++    // Bidang minat = isi kolom interest_sectors apa adanya; label dari tabel sectors.
++    industries: (r?.interest_sectors ?? []).map((c) => industryOptions.find((o) => o.value === c)?.label ?? humanize(c)),
++    industryOptions,
+     contact: {
+       email: email ?? "",
+       phone: r?.phone ?? "",
+@@ -134,8 +153,8 @@ export function dbToProfile({ email, profile: r, educations = [], experiences =
+         gpa: e.gpa != null ? `IPK: ${Number(e.gpa).toFixed(2)} / 4.00` : "",
+       })),
+     certifications: (r?.certifications ?? []).map((c, i) => ({ id: `cert-${i + 1}`, name: c.name ?? "", issuer: c.issuer ?? "", year: c.year ?? "" })),
+-    skills: skillCodes.map((code, i) => ({ id: code, label: SKILL_LABEL.get(code) ?? code, highlight: i < 4 })),
+-    languages: (r?.languages ?? []).map((l, i) => ({ id: `lang-${i + 1}`, name: l.name, level: l.level, ...(LANGUAGE_LEVELS[l.level] ?? LANGUAGE_LEVELS.Profesional) })),
++    skills: skillCodes.filter((code) => !languageCodes.has(code)).map((code, i) => ({ id: code, label: SKILL_LABEL.get(code) ?? code, highlight: i < 4 })),
++    languages,
+   };
+   return { ...ui, ...completenessOf(ui) };
+ }
+@@ -165,7 +184,7 @@ export function profileToDb(ui) {
+     linkedin_url: ui.contact.linkedin?.trim() || null,
+     experience_level: toCode(EXPERIENCE, ui.experienceLevel),
+     work_arrangement_pref: toCode(ARRANGEMENT, ui.workArrangement),
+-    interest_sectors: ui.industries.map((l) => SECTORS.find((s) => s.label === l)?.value).filter(Boolean),
++    interest_sectors: [...new Set(ui.industries.map((l) => (ui.industryOptions ?? SECTORS).find((s) => s.label === l)?.value).filter(Boolean))],
+     certifications: ui.certifications.map((c) => ({ name: c.name, issuer: c.issuer, ...(c.year ? { year: String(c.year) } : {}) })),
+     languages: ui.languages.map((l) => ({ name: l.name, level: l.level })),
+     ...(careerPath ? { career_path: careerPath } : {}), // status teks bebas yang tidak dikenal tidak mengubah jalur karier
+@@ -189,6 +208,13 @@ export function profileToDb(ui) {
+     description: e.description?.trim() || null,
+     ...parseWorkPeriod(e.period),
+   }));
+-  const skillCodes = [...new Set(ui.skills.map((s) => SKILL_CODE.get(s.label.toLowerCase())).filter(Boolean))];
+-  return { profile, educations, experiences, skillCodes };
++  // Bahasa juga ditulis ke user_skills beserta levelnya (hanya bahasa yang ada di katalog keahlian).
++  const languageSkills = [];
++  for (const l of ui.languages) {
++    const skill_code = languageSkillCodeOf(l.name);
++    if (skill_code && !languageSkills.some((x) => x.skill_code === skill_code)) languageSkills.push({ skill_code, level: l.level });
++  }
++  const languageCodes = new Set(languageSkills.map((x) => x.skill_code));
++  const skillCodes = [...new Set(ui.skills.map((s) => SKILL_CODE.get(s.label.toLowerCase())).filter((c) => c && !languageCodes.has(c)))];
++  return { profile, educations, experiences, skillCodes, languageSkills };
+ }
+diff --git a/lib/profile-options.js b/lib/profile-options.js
+index 393f13b..9387bbe 100644
+--- a/lib/profile-options.js
++++ b/lib/profile-options.js
+@@ -17,6 +17,31 @@ export const INDUSTRIES = [
+   "Air & Sanitasi",
+ ];
+ 
++// Tingkat kemahiran bahasa. Nilai `level` ini juga yang disimpan di user_skills.level.
++export const LANGUAGE_LEVELS = {
++  Native: { percent: 100, tone: "brand" },
++  Profesional: { percent: 80, tone: "blue" },
++  Menengah: { percent: 55, tone: "neutral" },
++  Dasar: { percent: 30, tone: "amber" },
++};
++
++// Pilihan bahasa di dropdown (nama tanpa awalan "Bahasa", sama seperti yang tersimpan di profil).
++export const LANGUAGE_OPTIONS = [
++  "Indonesia",
++  "Inggris",
++  "Mandarin",
++  "Jepang",
++  "Korea",
++  "Arab",
++  "Jerman",
++  "Prancis",
++  "Belanda",
++  "Spanyol",
++  "Melayu",
++  "Jawa",
++  "Banjar",
++];
++
+ export const EXPERIENCE_LEVELS = [
+   "Fresh Graduate (0–1 tahun)",
+   "Junior (1–3 tahun)",
+diff --git a/lib/skills-catalog.js b/lib/skills-catalog.js
+index 11ba514..8dee7f3 100644
+--- a/lib/skills-catalog.js
++++ b/lib/skills-catalog.js
+@@ -132,3 +132,26 @@ const CODE_BY_LABEL = new Map(SKILLS_CATALOG.map((s) => [s.label.toLowerCase(),
+ 
+ /** Nama keahlian -> kode di tabel skills (dipakai saat menyimpan ke user_skills). */
+ export const skillCodeOf = (label) => CODE_BY_LABEL.get(String(label).toLowerCase()) ?? null;
++
++/* ---------- Bahasa <-> keahlian ---------- */
++
++// Bahasa di halaman profil disalin ke user_skills (beserta level) bila ada keahlian "Bahasa <nama>" di katalog.
++// Nama dari profil bisa "Inggris", "Bahasa Inggris", atau "English"; semuanya dinormalkan ke nama tanpa awalan.
++const LANGUAGE_ALIASES = { english: "inggris", japanese: "jepang", arabic: "arab", german: "jerman", french: "prancis", chinese: "mandarin" };
++
++const languageKey = (name) => {
++  const key = String(name ?? "").trim().toLowerCase().replace(/^bahasa\s+/, "");
++  return LANGUAGE_ALIASES[key] ?? key;
++};
++
++/** Nama bahasa -> kode keahlian di tabel skills, atau null bila katalog tidak punya keahlian bahasa itu. */
++export const languageSkillCodeOf = (name) => {
++  const key = languageKey(name);
++  if (!key) return null;
++  return CODE_BY_LABEL.get(`bahasa ${key}`) ?? null;
++};
++
++/** Kode keahlian yang sebenarnya adalah bahasa (diatur dari bagian Bahasa, bukan dari dropdown keahlian). */
++export const LANGUAGE_SKILL_CODES = new Set(
++  SKILLS_CATALOG.filter((s) => s.label.toLowerCase().startsWith("bahasa ")).map((s) => s.code),
++);
+-- 
+2.43.0
+
+
+From d98c46537db5187ec1a6c3294fb4c4026231b5fc Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 17 Nov 2026 19:38:59 +0800
+Subject: [PATCH 2/5] Profil: simpan bahasa ke user_skills dengan hapus+tambah
+ (tanpa UPDATE)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EhpyJgTpw7odhwrdpNHsjA
+---
+ app/profile/data-actions.js | 21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/app/profile/data-actions.js b/app/profile/data-actions.js
+index a467bd1..800e564 100644
+--- a/app/profile/data-actions.js
++++ b/app/profile/data-actions.js
+@@ -116,15 +116,20 @@ export async function saveMyProfile(draft) {
+     if (error) return fail("user_skills", error);
+   }
+   if (languageSkills.length) {
+-    // Tanpa ignoreDuplicates: level yang diubah harus menimpa baris lama.
++    // Level yang berubah harus menimpa baris lama. Dilakukan dengan hapus lalu tambah (bukan upsert/UPDATE),
++    // karena role user di tabel ini hanya punya hak SELECT, INSERT, dan DELETE.
++    const { error: lDel } = await supabase
++      .from("user_skills")
++      .delete()
++      .eq("user_id", user.id)
++      .in("skill_code", languageSkills.map((l) => l.skill_code));
++    if (lDel) return fail("user_skills (hapus bahasa lama)", lDel);
+     const rows = languageSkills.map(({ skill_code, level }) => ({ user_id: user.id, skill_code, source: "manual", level }));
+-    let { error } = await supabase.from("user_skills").upsert(rows, { onConflict: "user_id,skill_code" });
+-    // Kolom `level` belum dibuat (jalankan db/add_user_skills_level.sql): simpan tanpa level agar profil tetap tersimpan.
+-    if (error && (error.code === "42703" || error.code === "PGRST204" || /level/i.test(error.message ?? ""))) {
+-      console.warn("[saveMyProfile] user_skills.level belum ada, bahasa disimpan tanpa level:", error.message);
+-      ({ error } = await supabase
+-        .from("user_skills")
+-        .upsert(rows.map(({ level: _omit, ...row }) => row), { onConflict: "user_id,skill_code", ignoreDuplicates: true }));
++    let { error } = await supabase.from("user_skills").insert(rows);
++    // Kolom `level` bermasalah (belum ada / nilainya ditolak): simpan tanpa level agar profil tetap tersimpan.
++    if (error && (error.code === "42703" || error.code === "PGRST204" || error.code === "23514" || error.code === "22P02" || /level/i.test(error.message ?? ""))) {
++      console.warn("[saveMyProfile] user_skills.level bermasalah, bahasa disimpan tanpa level:", error.message);
++      ({ error } = await supabase.from("user_skills").insert(rows.map(({ level: _omit, ...row }) => row)));
+     }
+     if (error) return fail("user_skills (bahasa)", error);
+   }
+-- 
+2.43.0
+
+
+From 3d329998c458b7046fb9404df0d03750a5e0cda2 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 17 Nov 2026 19:40:24 +0800
+Subject: [PATCH 3/5] API: route bahasa (GET/POST/PUT/DELETE) dan bidang minat
+ (GET/PUT) untuk profil
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EhpyJgTpw7odhwrdpNHsjA
+---
+ app/api/profile/languages/[id]/route.js | 54 +++++++++++++++++++++++++
+ app/api/profile/languages/route.js      | 49 ++++++++++++++++++++++
+ app/api/profile/sectors/route.js        | 49 ++++++++++++++++++++++
+ lib/profile-api.js                      | 43 ++++++++++++++++++++
+ 4 files changed, 195 insertions(+)
+ create mode 100644 app/api/profile/languages/[id]/route.js
+ create mode 100644 app/api/profile/languages/route.js
+ create mode 100644 app/api/profile/sectors/route.js
+ create mode 100644 lib/profile-api.js
+
+diff --git a/app/api/profile/languages/[id]/route.js b/app/api/profile/languages/[id]/route.js
+new file mode 100644
+index 0000000..35c22bd
+--- /dev/null
++++ b/app/api/profile/languages/[id]/route.js
+@@ -0,0 +1,54 @@
++import { deleteLanguage, editLanguage } from "@/app/profile/actions";
++import { fail, json, persist, readJsonObject, requireProfile, toFormData } from "@/lib/profile-api";
++import { LANGUAGE_LEVELS } from "@/lib/profile-options";
++import { languageSkillCodeOf } from "@/lib/skills-catalog";
++
++/** Satu bahasa milik user. `id` didapat dari GET /api/profile/languages (mis. lang-1). */
++
++const withSync = (lang) => ({ ...lang, skillCode: languageSkillCodeOf(lang.name), syncedToSkills: Boolean(languageSkillCodeOf(lang.name)) });
++
++/**
++ * PUT /api/profile/languages/:id
++ * Body: { "name": "Inggris", "level": "Native" }  (name boleh dikosongkan untuk tetap memakai nama lama)
++ * Sukses: 200 { ok: true, language, languages }
++ * Gagal : 400 bukan JSON | 401 belum masuk | 404 tidak ditemukan | 409 nama sudah dipakai bahasa lain | 422 | 500
++ */
++export async function PUT(request, { params }) {
++  const { id } = await params;
++  const body = await readJsonObject(request);
++  if (!body) return fail(400, "Data yang dikirim bukan JSON yang valid.");
++
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  const current = profile.languages.find((l) => l.id === id);
++  if (!current) return fail(404, "Bahasa tidak ditemukan.");
++
++  const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : current.name;
++  const level = typeof body.level === "string" && body.level.trim() ? body.level.trim() : current.level;
++  if (name.length > 60) return fail(422, "Nama bahasa maksimal 60 karakter.");
++  if (!LANGUAGE_LEVELS[level]) return fail(422, `Level harus salah satu dari: ${Object.keys(LANGUAGE_LEVELS).join(", ")}.`);
++  if (profile.languages.some((l) => l.id !== id && l.name.trim().toLowerCase() === name.toLowerCase())) {
++    return fail(409, `Bahasa "${name}" sudah ada.`);
++  }
++
++  const saved = await persist(editLanguage(profile, toFormData({ name, level }), id));
++  if (saved.error) return saved.error;
++  const language = saved.profile.languages.find((l) => l.name.trim().toLowerCase() === name.toLowerCase());
++  return json({ ok: true, language: language && withSync(language), languages: saved.profile.languages.map(withSync) });
++}
++
++/**
++ * DELETE /api/profile/languages/:id
++ * Sukses: 200 { ok: true, languages }   (baris user_skills padanannya ikut terhapus)
++ * Gagal : 401 belum masuk | 404 tidak ditemukan | 500 gagal menyimpan
++ */
++export async function DELETE(_request, { params }) {
++  const { id } = await params;
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  if (!profile.languages.some((l) => l.id === id)) return fail(404, "Bahasa tidak ditemukan.");
++
++  const saved = await persist(deleteLanguage(profile, id));
++  if (saved.error) return saved.error;
++  return json({ ok: true, languages: saved.profile.languages.map(withSync) });
++}
+diff --git a/app/api/profile/languages/route.js b/app/api/profile/languages/route.js
+new file mode 100644
+index 0000000..02785fb
+--- /dev/null
++++ b/app/api/profile/languages/route.js
+@@ -0,0 +1,49 @@
++import { addLanguage } from "@/app/profile/actions";
++import { fail, json, persist, readJsonObject, requireProfile, toFormData } from "@/lib/profile-api";
++import { LANGUAGE_LEVELS } from "@/lib/profile-options";
++import { languageSkillCodeOf } from "@/lib/skills-catalog";
++
++/**
++ * Bahasa milik user yang sedang masuk. Bahasa yang punya padanan di katalog keahlian (mis. Inggris ->
++ * bahasa_inggris) otomatis ikut tersimpan di user_skills beserta levelnya (field `syncedToSkills`).
++ * Catatan: `id` bahasa berurutan (lang-1, lang-2, ...) mengikuti urutan daftar saat ini.
++ */
++
++const withSync = (lang) => ({ ...lang, skillCode: languageSkillCodeOf(lang.name), syncedToSkills: Boolean(languageSkillCodeOf(lang.name)) });
++
++/**
++ * GET /api/profile/languages
++ * Sukses: 200 { ok: true, levels, languages }
++ * Gagal : 401 belum masuk | 500 gagal memuat
++ */
++export async function GET() {
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  return json({ ok: true, levels: Object.keys(LANGUAGE_LEVELS), languages: profile.languages.map(withSync) });
++}
++
++/**
++ * POST /api/profile/languages
++ * Body: { "name": "Inggris", "level": "Profesional" }   level: Native | Profesional | Menengah | Dasar
++ * Sukses: 201 { ok: true, language, languages }
++ * Gagal : 400 bukan JSON | 401 belum masuk | 409 bahasa sudah ada | 422 data tidak valid | 500 gagal menyimpan
++ */
++export async function POST(request) {
++  const body = await readJsonObject(request);
++  if (!body) return fail(400, "Data yang dikirim bukan JSON yang valid.");
++  const name = typeof body.name === "string" ? body.name.trim() : "";
++  const level = typeof body.level === "string" ? body.level.trim() : "Profesional";
++  if (!name || name.length > 60) return fail(422, "Nama bahasa wajib diisi (maksimal 60 karakter).");
++  if (!LANGUAGE_LEVELS[level]) return fail(422, `Level harus salah satu dari: ${Object.keys(LANGUAGE_LEVELS).join(", ")}.`);
++
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  if (profile.languages.some((l) => l.name.trim().toLowerCase() === name.toLowerCase())) {
++    return fail(409, `Bahasa "${name}" sudah ada.`);
++  }
++
++  const saved = await persist(addLanguage(profile, toFormData({ name, level })));
++  if (saved.error) return saved.error;
++  const language = saved.profile.languages.find((l) => l.name.trim().toLowerCase() === name.toLowerCase());
++  return json({ ok: true, language: language && withSync(language), languages: saved.profile.languages.map(withSync) }, 201);
++}
+diff --git a/app/api/profile/sectors/route.js b/app/api/profile/sectors/route.js
+new file mode 100644
+index 0000000..21b0321
+--- /dev/null
++++ b/app/api/profile/sectors/route.js
+@@ -0,0 +1,49 @@
++import { editPreferences } from "@/app/profile/actions";
++import { fail, json, persist, readJsonObject, requireProfile } from "@/lib/profile-api";
++
++/** Bidang industri yang diminati. Pilihan berasal dari tabel `sectors`; yang tersimpan di profiles.interest_sectors. */
++
++function view(profile) {
++  const selected = new Set(profile.industries);
++  return {
++    selected: profile.industryOptions.filter((o) => selected.has(o.label)),
++    options: profile.industryOptions,
++  };
++}
++
++/**
++ * GET /api/profile/sectors
++ * Sukses: 200 { ok: true, selected: [{value, label}], options: [{value, label}] }
++ * Gagal : 401 belum masuk | 500 gagal memuat
++ */
++export async function GET() {
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  return json({ ok: true, ...view(profile) });
++}
++
++/**
++ * PUT /api/profile/sectors
++ * Body: { "sectors": ["renewable_energy", "waste"] }   kode dari `options[].value`; daftar ini menggantikan pilihan lama
++ * Sukses: 200 { ok: true, selected, options }
++ * Gagal : 400 bukan JSON | 401 belum masuk | 422 kode tidak dikenal / daftar kosong | 500 gagal menyimpan
++ */
++export async function PUT(request) {
++  const body = await readJsonObject(request);
++  if (!body) return fail(400, "Data yang dikirim bukan JSON yang valid.");
++  if (!Array.isArray(body.sectors) || body.sectors.length === 0 || !body.sectors.every((c) => typeof c === "string")) {
++    return fail(422, "Field `sectors` harus berupa daftar kode sektor (minimal satu).");
++  }
++
++  const { profile, error } = await requireProfile();
++  if (error) return error;
++  const byCode = new Map(profile.industryOptions.map((o) => [o.value, o.label]));
++  const unknown = body.sectors.filter((c) => !byCode.has(c));
++  if (unknown.length > 0) return fail(422, `Kode sektor tidak dikenal: ${unknown.join(", ")}.`);
++
++  const formData = new FormData();
++  for (const code of new Set(body.sectors)) formData.append("industries", byCode.get(code));
++  const saved = await persist(editPreferences(profile, formData));
++  if (saved.error) return saved.error;
++  return json({ ok: true, ...view(saved.profile) });
++}
+diff --git a/lib/profile-api.js b/lib/profile-api.js
+new file mode 100644
+index 0000000..8d49026
+--- /dev/null
++++ b/lib/profile-api.js
+@@ -0,0 +1,43 @@
++import { NextResponse } from "next/server";
++
++import { loadMyProfile, saveMyProfile } from "@/app/profile/data-actions";
++import { getCurrentUser } from "@/lib/session";
++
++/**
++ * Pembantu untuk route /api/profile/*: cek sesi, muat profil user, jalankan perubahan, lalu simpan.
++ * Memakai fungsi yang sama dengan halaman /profile (app/profile/actions.js + data-actions.js).
++ */
++
++export const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
++export const fail = (status, error) => json({ ok: false, error }, status);
++
++/** Body JSON berupa objek, atau null bila bukan. */
++export async function readJsonObject(request) {
++  try {
++    const body = await request.json();
++    return body && typeof body === "object" && !Array.isArray(body) ? body : null;
++  } catch {
++    return null;
++  }
++}
++
++/** Dua langkah awal yang sama di semua route: user harus masuk, dan profilnya harus bisa dimuat. */
++export async function requireProfile() {
++  const user = await getCurrentUser();
++  if (!user) return { error: fail(401, "Sesi Anda berakhir. Silakan masuk lagi.") };
++  const profile = await loadMyProfile();
++  if (!profile) return { error: fail(500, "Profil belum bisa dimuat. Coba lagi beberapa saat lagi.") };
++  return { profile };
++}
++
++/** Simpan profil hasil perubahan; kembalikan profil terbaru dari database (atau respons gagal). */
++export async function persist(next) {
++  const result = await saveMyProfile(next);
++  return result.ok ? { profile: result.profile } : { error: fail(500, result.error) };
++}
++
++export function toFormData(values) {
++  const formData = new FormData();
++  for (const [key, value] of Object.entries(values)) formData.set(key, String(value ?? ""));
++  return formData;
++}
+-- 
+2.43.0
+
+
+From 5a77b13218038012d675b87a2eb0afe0542aa280 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 17 Nov 2026 21:39:09 +0800
+Subject: [PATCH 4/5] Profil: petakan level bahasa ke nilai constraint
+ user_skills.level (Dasar/Menengah/Mahir)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EhpyJgTpw7odhwrdpNHsjA
+---
+ lib/profile-mapping.js | 4 ++--
+ lib/profile-options.js | 9 +++++++++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/lib/profile-mapping.js b/lib/profile-mapping.js
+index b26b12d..11841c4 100644
+--- a/lib/profile-mapping.js
++++ b/lib/profile-mapping.js
+@@ -1,6 +1,6 @@
+ import { SECTORS } from "@/lib/assessment-options";
+ import { toCareerLabel } from "@/lib/career-label";
+-import { LANGUAGE_LEVELS } from "@/lib/profile-options";
++import { LANGUAGE_LEVELS, LANGUAGE_SKILL_LEVEL } from "@/lib/profile-options";
+ import { languageSkillCodeOf, SKILLS_CATALOG } from "@/lib/skills-catalog";
+ 
+ /**
+@@ -212,7 +212,7 @@ export function profileToDb(ui) {
+   const languageSkills = [];
+   for (const l of ui.languages) {
+     const skill_code = languageSkillCodeOf(l.name);
+-    if (skill_code && !languageSkills.some((x) => x.skill_code === skill_code)) languageSkills.push({ skill_code, level: l.level });
++    if (skill_code && !languageSkills.some((x) => x.skill_code === skill_code)) languageSkills.push({ skill_code, level: LANGUAGE_SKILL_LEVEL[l.level] ?? null });
+   }
+   const languageCodes = new Set(languageSkills.map((x) => x.skill_code));
+   const skillCodes = [...new Set(ui.skills.map((s) => SKILL_CODE.get(s.label.toLowerCase())).filter((c) => c && !languageCodes.has(c)))];
+diff --git a/lib/profile-options.js b/lib/profile-options.js
+index 9387bbe..e1e9402 100644
+--- a/lib/profile-options.js
++++ b/lib/profile-options.js
+@@ -25,6 +25,15 @@ export const LANGUAGE_LEVELS = {
+   Dasar: { percent: 30, tone: "amber" },
+ };
+ 
++// Nilai user_skills.level (constraint di database: Dasar, Menengah, Mahir atau kosong) untuk tiap level bahasa di halaman.
++// Profesional dan Native sama-sama "Mahir"; level aslinya tetap tersimpan di profiles.languages.
++export const LANGUAGE_SKILL_LEVEL = {
++  Native: "Mahir",
++  Profesional: "Mahir",
++  Menengah: "Menengah",
++  Dasar: "Dasar",
++};
++
+ // Pilihan bahasa di dropdown (nama tanpa awalan "Bahasa", sama seperti yang tersimpan di profil).
+ export const LANGUAGE_OPTIONS = [
+   "Indonesia",
+-- 
+2.43.0
+
+
+From 0049e472f90bd814768af95d26a10f3bbf01f594 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 18 Nov 2026 05:29:42 +0800
+Subject: [PATCH 5/5] Profil: kembalikan hitungan sertifikat yang diunggah
+ (certDocs) untuk kelengkapan profil
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EhpyJgTpw7odhwrdpNHsjA
+---
+ app/profile/data-actions.js |  5 ++++-
+ lib/profile-mapping.js      | 14 +++++++++-----
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/app/profile/data-actions.js b/app/profile/data-actions.js
+index 800e564..e1309ad 100644
+--- a/app/profile/data-actions.js
++++ b/app/profile/data-actions.js
+@@ -17,7 +17,7 @@ async function currentUser() {
+ }
+ 
+ async function readProfile(supabase, user) {
+-  const [profile, educations, experiences, skills, sectors, assessment] = await Promise.all([
++  const [profile, educations, experiences, skills, sectors, assessment, certDocs] = await Promise.all([
+     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+     supabase.from("educations").select("*").eq("user_id", user.id),
+     supabase.from("work_experiences").select("*").eq("user_id", user.id),
+@@ -32,6 +32,8 @@ async function readProfile(supabase, user) {
+       .order("completed_at", { ascending: false })
+       .limit(1)
+       .maybeSingle(),
++    // Jumlah sertifikat yang diunggah (dihitung untuk kelengkapan profil); gagal dibaca dianggap 0, bukan error.
++    supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", user.id).eq("type", "certificate"),
+   ]);
+   const failed = [profile, educations, experiences, skills].find((r) => r.error);
+   if (failed) throw failed.error;
+@@ -45,6 +47,7 @@ async function readProfile(supabase, user) {
+     skillCodes: skills.data.map((s) => s.skill_code),
+     sectors: sectors.data ?? [],
+     careerBreak: assessment.data?.answers?.step_1?.career_break ?? null,
++    certificateDocs: certDocs.count ?? 0,
+   });
+ }
+ 
+diff --git a/lib/profile-mapping.js b/lib/profile-mapping.js
+index 11841c4..052d126 100644
+--- a/lib/profile-mapping.js
++++ b/lib/profile-mapping.js
+@@ -98,8 +98,12 @@ export function formatWorkPeriod({ start_date: startRaw, end_date: endRaw, is_cu
+ 
+ /* ---------- Database -> UI ---------- */
+ 
+-/** Persen kelengkapan + teks "Tersisa: ...", dihitung dari isi profil sungguhan. */
+-export function completenessOf(p) {
++/**
++ * Persen kelengkapan + teks "Tersisa: ...", dihitung dari isi profil sungguhan.
++ * extra.certificateDocs = jumlah dokumen sertifikat yang diunggah (tabel documents); sertifikat yang diunggah
++ * dianggap memenuhi bagian "tambah sertifikasi" walau data sertifikasi di profil belum disimpan.
++ */
++export function completenessOf(p, extra = {}) {
+   const parts = [
+     ["lengkapi nama dan posisi", 10, p.name && p.headline],
+     ["tulis bio", 10, p.bio],
+@@ -108,7 +112,7 @@ export function completenessOf(p) {
+     ["tambah pengalaman kerja", 15, p.experiences.length],
+     ["tambah pendidikan", 15, p.education.length],
+     ["tambah keahlian", 15, p.skills.length],
+-    ["tambah sertifikasi", 5, p.certifications.length],
++    ["tambah sertifikasi", 5, p.certifications.length || extra.certificateDocs],
+     ["tambah bahasa", 5, p.languages.length],
+   ];
+   const missing = parts.filter(([, , done]) => !done);
+@@ -117,7 +121,7 @@ export function completenessOf(p) {
+   return { completeness, remaining, missing: missing.map(([label, weight]) => ({ label, weight })) };
+ }
+ 
+-export function dbToProfile({ email, profile: r, educations = [], experiences = [], skillCodes = [], sectors = [], careerBreak = null }) {
++export function dbToProfile({ email, profile: r, educations = [], experiences = [], skillCodes = [], sectors = [], careerBreak = null, certificateDocs = 0 }) {
+   const name = r?.full_name || String(email ?? "").split("@")[0] || "Akun";
+   const languages = (r?.languages ?? []).map((l, i) => ({ id: `lang-${i + 1}`, name: l.name, level: l.level, ...(LANGUAGE_LEVELS[l.level] ?? LANGUAGE_LEVELS.Profesional) }));
+   const industryOptions = buildSectorOptions(sectors, r?.interest_sectors ?? []);
+@@ -156,7 +160,7 @@ export function dbToProfile({ email, profile: r, educations = [], experiences =
+     skills: skillCodes.filter((code) => !languageCodes.has(code)).map((code, i) => ({ id: code, label: SKILL_LABEL.get(code) ?? code, highlight: i < 4 })),
+     languages,
+   };
+-  return { ...ui, ...completenessOf(ui) };
++  return { ...ui, ...completenessOf(ui, { certificateDocs }) };
+ }
+ 
+ /* ---------- UI -> Database ---------- */
+-- 
+2.43.0
+

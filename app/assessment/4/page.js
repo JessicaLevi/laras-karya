@@ -8,7 +8,8 @@ import { Info, Pencil } from "lucide-react";
 import { AssessmentCard } from "@/components/assessment/assessment-card";
 import { StepNav } from "@/components/assessment/step-nav";
 import { useAssessment } from "@/context/assessment-store";
-import { EDUCATION_LEVELS, EXPERIENCE_LEVELS, SKILL_OPTIONS, SECTORS } from "@/lib/assessment-options";
+import { useSectors } from "@/hooks/use-sectors";
+import { EDUCATION_LEVELS, EXPERIENCE_LEVELS, SKILL_OPTIONS } from "@/lib/assessment-options";
 import { isValid, validateStep1, validateStep2, validateStep3 } from "@/lib/assessment-validation";
 import { toCareerLabel } from "@/lib/career-label";
 
@@ -27,12 +28,14 @@ export default function AssessmentStep4Page() {
   const hydrated = useHydrated();
   const { answers } = useAssessment();
   const { step_1: s1, step_2: s2, step_3: s3 } = answers;
+  const { sectors, failed } = useSectors();
+  const ready = hydrated && (sectors !== null || failed);
 
   // Halaman ini bisa dibuka langsung lewat URL, jadi cek ulang semua langkah.
   const incompleteSteps = [
     !isValid(validateStep1(s1)) && 1,
     !isValid(validateStep2(s2)) && 2,
-    !isValid(validateStep3(s3, SKILL_OPTIONS)) && 3,
+    !isValid(validateStep3(s3, SKILL_OPTIONS, sectors ?? [])) && 3,
   ].filter(Boolean);
 
   const education = [labelOf(EDUCATION_LEVELS, s2.education.degree_level), s2.education.major].filter(Boolean).join(" ");
@@ -45,7 +48,7 @@ export default function AssessmentStep4Page() {
       title="Ringkasan Profil & Asesmen Anda"
       description="Periksa kembali jawaban Anda sebelum kami memproses rekomendasi karier hijau."
     >
-      {!hydrated ? (
+      {!ready ? (
         <div className="mb-5 h-80 animate-pulse rounded-2xl bg-brand-light motion-reduce:animate-none" aria-hidden="true" />
       ) : incompleteSteps.length > 0 ? (
         <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-relaxed text-ink" role="status">
@@ -94,7 +97,7 @@ export default function AssessmentStep4Page() {
               <ul className="flex flex-wrap gap-2">
                 {s3.interest_sectors.map((code) => (
                   <li key={code} className="rounded-lg border border-brand/15 bg-white px-2.5 py-1.5 text-[13px] text-ink">
-                    {labelOf(SECTORS, code)}
+                    {labelOf(sectors ?? [], code)}
                   </li>
                 ))}
               </ul>
@@ -131,7 +134,7 @@ export default function AssessmentStep4Page() {
         backHref="/assessment/3"
         nextLabel="Proses Rekomendasi"
         onNext={() => router.push("/assessment/loading")}
-        disabled={!hydrated || incompleteSteps.length > 0}
+        disabled={!ready || incompleteSteps.length > 0}
       />
     </AssessmentCard>
   );

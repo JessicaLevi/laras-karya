@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/footer";
 import { PageBanner } from "@/components/ui/page-banner";
 import { hasCompletedAssessment } from "@/lib/assessment-status";
 import { fetchGuestPreview } from "@/lib/guest-preview-db";
+
 import { fetchRecommendedJobs } from "@/lib/recommended-jobs-db";
 import { getCurrentUser } from "@/lib/session";
 

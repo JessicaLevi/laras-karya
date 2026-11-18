@@ -22,16 +22,22 @@ import { createClient } from "@/lib/supabase/server";
 export async function saveAssessment(answers) {
   if (!isSupabaseConfigured) return { ok: false, error: "auth" };
   const supabase = await createClient();
+  const { data: sectorRows, error: sectorError } = await supabase.from("sectors").select("code,label");
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
   if (!user) return { ok: false, error: "auth" }; // tamu: jawaban tetap di browser sampai daftar/masuk
 
   // Validasi ulang di server: jangan percaya data dari browser
+  if (sectorError) {
+    console.error("[saveAssessment] sectors:", sectorError.message);
+    return { ok: false, error: "db", detail: "sectors" };
+  }
+  const sectorOptions = sectorRows.map((s) => ({ value: s.code, label: s.label }));
   if (
     !answers?.step_1 || !answers?.step_2 || !answers?.step_3 ||
     !isValid(validateStep1(answers.step_1)) ||
     !isValid(validateStep2(answers.step_2)) ||
-    !isValid(validateStep3(answers.step_3, SKILL_OPTIONS))
+    !isValid(validateStep3(answers.step_3, SKILL_OPTIONS, sectorOptions))
   ) {
     return { ok: false, error: "invalid" };
   }
