@@ -1,0 +1,814 @@
+openapi: 3.0.3
+info:
+  title: Laras Karya API
+  version: 1.0.0
+  description: |
+    API Laras Karya (Next.js + Supabase) untuk asesmen, lamaran, rekomendasi lowongan, lowongan tersimpan,
+    profil, dan jalur belajar.
+
+    **Autentikasi.** Semua endpoint memakai sesi Supabase Auth yang tersimpan di cookie (`sb-<project-ref>-auth-token`).
+    Masuk lewat halaman `/login`, lalu buka dokumentasi ini dari origin yang sama; browser akan mengirim cookie
+    otomatis sehingga tombol **Try it out** bekerja. Tanpa sesi, endpoint mengembalikan `401`.
+
+    **Format galat.** Endpoint `assessment`, `application`, `bookmarks`, dan `recommended-jobs` mengembalikan kode
+    galat singkat (mis. `"auth"`, `"invalid"`). Endpoint `profile` dan `learning-path` mengembalikan pesan teks
+    berbahasa Indonesia. Keduanya memakai bentuk `{ "ok": false, "error": ... }`.
+
+    **Keamanan data.** Semua query memakai sesi user (bukan service role) dan dijaga Row Level Security (RLS), jadi
+    user hanya membaca dan menulis datanya sendiri.
+servers:
+  - url: http://localhost:3000
+    description: Pengembangan lokal
+tags:
+  - name: Assessment
+    description: Asesmen karier (3 langkah) yang mengisi profil dan keahlian user
+  - name: Application
+    description: Lamaran kerja
+  - name: Recommended Jobs
+    description: Rekomendasi lowongan berdasarkan skor kecocokan
+  - name: Bookmarks
+    description: Lowongan yang disimpan user
+  - name: Profile
+    description: Profil user
+  - name: Learning Path
+    description: Pelatihan dan progres belajar
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/assessment:
+    get:
+      tags: [Assessment]
+      summary: Ambil jawaban asesmen terakhir
+      description: |
+        Selalu `200`. `answers` bernilai `null` bila user belum masuk atau belum pernah mengisi asesmen.
+        Bentuk `answers` sama dengan body `POST`, ditambah `step` (4) dan `consent` (true), untuk mengisi ulang form.
+      security: []
+      responses:
+        "200":
+          description: Jawaban terakhir atau null
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, answers]
+                properties:
+                  ok: { type: boolean, example: true }
+                  answers:
+                    nullable: true
+                    allOf:
+                      - $ref: "#/components/schemas/AssessmentAnswers"
+    post:
+      tags: [Assessment]
+      summary: Simpan jawaban asesmen
+      description: |
+        Divalidasi ulang di server. Menyimpan ke `profiles` (bio terisi dari cerita pengalaman bila masih kosong),
+        `educations`, `user_skills` (sumber `manual`), dan arsip `assessments`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssessmentAnswers"
+            example:
+              step_1: { career_situation: switch_or_return, career_break: "no", consent: true }
+              step_2:
+                province: Kalimantan Selatan
+                city: Banjarbaru
+                education: { degree_level: s1, institution: Universitas Lambung Mangkurat, major: Teknik Lingkungan }
+                certifications: []
+                experience_story: Saya pernah mengelola proyek pengolahan limbah di perusahaan lokal selama tiga tahun dan memimpin tim lapangan.
+              step_3:
+                work_arrangement: hybrid
+                interest_sectors: [renewable_energy, waste_environment]
+                skills: [Manajemen Proyek]
+                experience_level: mid
+      responses:
+        "200":
+          description: Tersimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  skippedSkills:
+                    type: integer
+                    description: Jumlah keahlian yang diabaikan karena kodenya tidak ada di tabel `skills`
+                    example: 0
+        "400":
+          $ref: "#/components/responses/BadRequestCode"
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "422":
+          description: Jawaban tidak valid (gagal validasi langkah 1, 2, atau 3)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorCode" }
+              example: { ok: false, error: invalid }
+        "500":
+          description: Gagal menyimpan ke database
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorCode"
+                  - type: object
+                    properties:
+                      detail:
+                        type: string
+                        description: Tahap yang gagal
+                        enum: [profiles, educations, skills, user_skills, assessments]
+              example: { ok: false, error: db, detail: educations }
+
+  /api/application:
+    get:
+      tags: [Application]
+      summary: Daftar lamaran milik user
+      description: Diurutkan dari yang terbaru. Status `diproses` ditampilkan sebagai "Dilamar" di UI.
+      responses:
+        "200":
+          description: Daftar lamaran
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  applications:
+                    type: array
+                    items: { $ref: "#/components/schemas/ApplicationItem" }
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "500":
+          $ref: "#/components/responses/DbErrorCode"
+    post:
+      tags: [Application]
+      summary: Kirim lamaran
+      description: |
+        Menyimpan satu baris ke tabel `applications` dengan `current_status = "diproses"`. Melamar dua kali ke
+        lowongan yang sama ditolak (`409 duplicate`). `profile_snapshot` dan `terms_accepted_at` diisi server,
+        bukan dari body. Berkas CV/portofolio diunggah browser ke bucket Storage `Documents` lebih dulu; di sini
+        hanya path-nya yang dikirim (harus diawali `<user_id>/<job_id>/`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationInput" }
+            example:
+              jobId: 3f1c2a9e-7b64-4c1d-9a0e-5d2b8c7e1f40
+              coverLetter: Saya tertarik pada posisi ini karena pengalaman saya di bidang pengolahan limbah.
+              termsAccepted: true
+              attachments:
+                cv: { source: profile }
+                portfolios: []
+                certifications: []
+      responses:
+        "201":
+          description: Lamaran terkirim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+        "400":
+          $ref: "#/components/responses/BadRequestCode"
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "404":
+          description: Lowongan tidak ditemukan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorCode" }
+              example: { ok: false, error: notfound }
+        "409":
+          description: Lowongan sudah ditutup (`closed`) atau user sudah pernah melamar (`duplicate`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorCode" }
+              example: { ok: false, error: duplicate }
+        "422":
+          description: |
+            Data tidak valid. `invalid` = `jobId` bukan UUID, `terms` = pernyataan belum disetujui
+            (`termsAccepted` harus `true`), `letter` = surat lamaran kosong.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorCode" }
+              example: { ok: false, error: letter }
+        "500":
+          $ref: "#/components/responses/DbErrorCode"
+
+  /api/recommended-jobs:
+    get:
+      tags: [Recommended Jobs]
+      summary: Rekomendasi lowongan untuk user yang sudah masuk
+      description: |
+        Diurutkan dari skor kecocokan tertinggi. Hanya lowongan `published` yang belum lewat deadline dan yang punya
+        skor untuk user ini. Bila skor belum pernah dihitung, server memanggil `refresh_my_recommendations` sekali.
+      responses:
+        "200":
+          description: Daftar rekomendasi
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  jobs:
+                    type: array
+                    items: { $ref: "#/components/schemas/RecommendedJob" }
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "500":
+          $ref: "#/components/responses/DbErrorCode"
+
+  /api/bookmarks:
+    get:
+      tags: [Bookmarks]
+      summary: Daftar lowongan tersimpan
+      description: Diurutkan dari yang paling baru disimpan. Lowongan yang sudah tidak terlihat (ditutup atau dihapus) dilewati.
+      responses:
+        "200":
+          description: Daftar lowongan tersimpan
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  jobs:
+                    type: array
+                    items: { $ref: "#/components/schemas/SavedJob" }
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "500":
+          $ref: "#/components/responses/DbErrorCode"
+    post:
+      tags: [Bookmarks]
+      summary: Simpan atau batalkan simpan lowongan
+      description: Aman dipanggil berulang; menyimpan lowongan yang sudah tersimpan tidak membuat baris ganda.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobId, saved]
+              properties:
+                jobId: { type: string, format: uuid }
+                saved:
+                  type: boolean
+                  description: "`true` untuk menyimpan, `false` untuk membatalkan simpan"
+            example:
+              jobId: 3f1c2a9e-7b64-4c1d-9a0e-5d2b8c7e1f40
+              saved: true
+      responses:
+        "200":
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+        "400":
+          $ref: "#/components/responses/BadRequestCode"
+        "401":
+          $ref: "#/components/responses/UnauthorizedCode"
+        "422":
+          description: "`jobId` bukan UUID atau `saved` bukan boolean"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorCode" }
+              example: { ok: false, error: invalid }
+        "500":
+          $ref: "#/components/responses/DbErrorCode"
+
+  /api/profile:
+    get:
+      tags: [Profile]
+      summary: Ambil profil user
+      description: Profil dalam bentuk yang dipakai halaman `/profile` (gabungan `profiles`, `educations`, `work_experiences`, `user_skills`).
+      responses:
+        "200":
+          description: Profil user
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  profile: { $ref: "#/components/schemas/Profile" }
+        "401":
+          $ref: "#/components/responses/UnauthorizedMessage"
+        "500":
+          description: Profil gagal dimuat
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Profil belum bisa dimuat. Coba lagi beberapa saat lagi. }
+    put:
+      tags: [Profile]
+      summary: Simpan seluruh isi profil
+      description: |
+        Mengganti seluruh profil. Daftar `education`, `experiences`, dan `skills` yang dikirim dianggap daftar
+        lengkap milik user: item yang tidak ikut dikirim akan dihapus. Kirim semua properti daftar (boleh kosong);
+        ambil dulu dengan `GET /api/profile`, ubah, lalu kirim kembali. Properti turunan (`initials`, `completeness`,
+        `remaining`, `missing`) diabaikan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Profile" }
+      responses:
+        "200":
+          description: Tersimpan; berisi profil terbaru dari database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  profile: { $ref: "#/components/schemas/Profile" }
+        "400":
+          description: Body bukan JSON yang valid
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Data yang dikirim bukan JSON yang valid. }
+        "401":
+          $ref: "#/components/responses/UnauthorizedMessage"
+        "422":
+          description: Nama lengkap kosong
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Nama lengkap wajib diisi. }
+        "500":
+          description: Profil gagal disimpan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Profil belum tersimpan. Coba lagi beberapa saat lagi. }
+
+  /api/learning-path:
+    get:
+      tags: [Learning Path]
+      summary: Pelatihan dan progres belajar
+      description: |
+        Tanpa `job`, semua pelatihan yang dipublikasikan. Dengan `job` (UUID lowongan), hanya pelatihan untuk skill
+        teknis lowongan itu yang belum dimiliki user. Bila `job` bukan UUID atau lowongan tidak ditemukan, hasilnya
+        semua pelatihan dengan `jobNotFound: true`.
+      parameters:
+        - name: job
+          in: query
+          required: false
+          description: UUID lowongan untuk memfilter pelatihan sesuai skill gap
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Jalur belajar
+          headers:
+            Cache-Control:
+              schema: { type: string, example: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  learningPath: { $ref: "#/components/schemas/LearningPath" }
+        "401":
+          $ref: "#/components/responses/UnauthorizedMessage"
+        "500":
+          description: Gagal memuat
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Pelatihan belum bisa dimuat. Coba lagi beberapa saat lagi. }
+    post:
+      tags: [Learning Path]
+      summary: Catat progres pelatihan
+      description: |
+        `start` mencatat user mulai mengikuti (`enrolled`); pelatihan yang sudah selesai tidak diturunkan kembali.
+        `complete` menandai selesai (`completed`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId, action]
+              properties:
+                courseId: { type: string, format: uuid }
+                action: { type: string, enum: [start, complete] }
+            example:
+              courseId: 9b2d7e44-1c5a-4f3b-8a6d-2e0f7c1b3a58
+              action: start
+      responses:
+        "200":
+          description: Progres tercatat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  progress:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      status: { type: string, enum: [enrolled, completed] }
+        "400":
+          description: Body bukan JSON yang valid
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Data yang dikirim bukan JSON yang valid. }
+        "401":
+          $ref: "#/components/responses/UnauthorizedMessage"
+        "422":
+          description: "`courseId` bukan UUID atau `action` bukan `start`/`complete`"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500":
+          description: Progres gagal disimpan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+              example: { ok: false, error: Progres belum tersimpan. Coba lagi beberapa saat lagi. }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+      description: |
+        Sesi Supabase Auth. Nama cookie sebenarnya `sb-<project-ref>-auth-token`; browser mengirimnya otomatis
+        setelah login di origin yang sama.
+
+  responses:
+    BadRequestCode:
+      description: Body bukan JSON atau bukan objek
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorCode" }
+          example: { ok: false, error: bad_request }
+    UnauthorizedCode:
+      description: Belum masuk
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorCode" }
+          example: { ok: false, error: auth }
+    DbErrorCode:
+      description: Gagal membaca atau menyimpan data
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorCode" }
+          example: { ok: false, error: db }
+    UnauthorizedMessage:
+      description: Belum masuk
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorMessage" }
+          example: { ok: false, error: Sesi Anda berakhir. Silakan masuk lagi. }
+
+  schemas:
+    ErrorCode:
+      type: object
+      required: [ok, error]
+      properties:
+        ok: { type: boolean, example: false }
+        error:
+          type: string
+          enum: [bad_request, auth, invalid, terms, letter, notfound, closed, duplicate, db]
+    ErrorMessage:
+      type: object
+      required: [ok, error]
+      properties:
+        ok: { type: boolean, example: false }
+        error: { type: string, description: Pesan berbahasa Indonesia }
+
+    AssessmentAnswers:
+      type: object
+      required: [step_1, step_2, step_3]
+      properties:
+        step_1:
+          type: object
+          required: [career_situation, consent]
+          properties:
+            career_situation:
+              type: string
+              enum: [switch_or_return, practical_experience, fresh_start]
+            career_break:
+              type: string
+              nullable: true
+              enum: ["yes", "no", skip]
+              description: Hanya bermakna untuk `switch_or_return`
+            consent:
+              type: boolean
+              description: Harus `true`
+        step_2:
+          type: object
+          required: [province, city, education, experience_story]
+          properties:
+            province: { type: string, example: Kalimantan Selatan }
+            city: { type: string, example: Banjarbaru }
+            education:
+              type: object
+              required: [degree_level, institution]
+              properties:
+                degree_level: { type: string, enum: [sma, d3, s1, s2, s3] }
+                institution: { type: string }
+                major: { type: string }
+            certifications:
+              type: array
+              maxItems: 5
+              items: { type: object, additionalProperties: true }
+            experience_story:
+              type: string
+              minLength: 50
+              maxLength: 600
+        step_3:
+          type: object
+          required: [work_arrangement, interest_sectors, skills, experience_level]
+          properties:
+            work_arrangement: { type: string, enum: [onsite, remote, hybrid] }
+            interest_sectors:
+              type: array
+              minItems: 1
+              items:
+                type: string
+                enum:
+                  - renewable_energy
+                  - sustainable_agriculture_forestry
+                  - waste_environment
+                  - clean_transportation
+                  - climate_carbon_finance
+                  - oil_gas
+                  - manufacturing_industrial
+                  - professional_services
+                  - agribusiness
+                  - transport_logistics
+                  - hospitality
+                  - finance_fintech
+                  - ngo_development
+                  - health_wellness
+            skills:
+              type: array
+              minItems: 1
+              maxItems: 10
+              items: { type: string }
+              description: Label keahlian dari katalog (`lib/skills-catalog.js`)
+            experience_level: { type: string, enum: [entry, junior, mid, senior] }
+
+    ApplicationInput:
+      type: object
+      required: [jobId, coverLetter, termsAccepted]
+      properties:
+        jobId: { type: string, format: uuid }
+        coverLetter:
+          type: string
+          maxLength: 5000
+          description: Surat lamaran (wajib berisi; dipotong di 5000 karakter)
+        termsAccepted:
+          type: boolean
+          description: Harus `true`
+        attachments:
+          type: object
+          properties:
+            cv:
+              type: object
+              properties:
+                source: { type: string, enum: [profile, upload] }
+                fileName: { type: string, nullable: true }
+                path: { type: string, nullable: true, description: "Path di bucket `Documents`, diawali `<user_id>/<job_id>/`" }
+            portfolios:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  source: { type: string }
+                  path: { type: string, nullable: true }
+            certifications:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  issuer: { type: string }
+            saveToProfile: { type: boolean }
+
+    ApplicationItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        jobId: { type: string, format: uuid }
+        title: { type: string }
+        company: { type: string }
+        companyLogoUrl: { type: string, nullable: true }
+        sector: { type: string }
+        appliedAt: { type: string, format: date, description: Tanggal menurut WIB }
+        status: { type: string, enum: [diproses, interview, diterima, ditolak] }
+
+    RecommendedJob:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        company: { type: string }
+        companyLogoUrl: { type: string, nullable: true }
+        sector: { type: string }
+        city: { type: string, nullable: true }
+        mode: { type: string, nullable: true, example: Hybrid }
+        salary: { type: string, example: Rp 8.000.000 – Rp 12.000.000 per bulan }
+        status: { type: string, example: dibuka }
+        match: { type: integer, minimum: 0, maximum: 100, description: Skor kecocokan }
+        description: { type: string, description: Ringkasan satu paragraf }
+        benefits: { type: array, items: { type: string } }
+        skills: { type: array, items: { type: string } }
+        gaps:
+          type: array
+          description: Pasangan `[nama skill, "belum"]` untuk skill yang belum dimiliki user
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items: { type: string }
+        reasons: { type: array, items: { type: string }, description: Alasan lowongan cocok }
+        applied: { type: boolean, description: Sudah dilamar oleh user }
+
+    SavedJob:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        company: { type: string }
+        companyLogoUrl: { type: string, nullable: true }
+        sector: { type: string }
+        mode: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        salary: { type: string }
+        status: { type: string, enum: [dibuka, ditutup] }
+        match: { type: integer, nullable: true, minimum: 0, maximum: 100 }
+        savedAt: { type: string, format: date-time }
+        applied: { type: boolean }
+
+    Profile:
+      type: object
+      required: [name, contact, experiences, education, certifications, skills, languages, industries]
+      properties:
+        name: { type: string }
+        initials: { type: string, readOnly: true }
+        headline: { type: string }
+        status: { type: string, description: Status karier, mis. "Berpindah karier" }
+        bio: { type: string }
+        experienceLevel: { type: string, example: Junior (1–3 tahun) }
+        workArrangement: { type: string, enum: [WFO, Hybrid, Remote, ""] }
+        industries:
+          type: array
+          items: { type: string, example: Energi Terbarukan }
+        contact:
+          type: object
+          required: [location]
+          properties:
+            email: { type: string, readOnly: true }
+            phone: { type: string }
+            location: { type: string, description: 'Format "Kota, Provinsi"', example: "Banjarbaru, Kalimantan Selatan" }
+            linkedin: { type: string }
+        experiences:
+          type: array
+          items:
+            type: object
+            required: [role, company]
+            properties:
+              id: { type: string, description: UUID untuk baris yang sudah ada; selain itu dianggap baru }
+              role: { type: string }
+              company: { type: string }
+              period: { type: string, example: Jan 2022 — Sekarang }
+              description: { type: string }
+        education:
+          type: array
+          items:
+            type: object
+            required: [school]
+            properties:
+              id: { type: string }
+              degree: { type: string, example: S1 Teknik Lingkungan }
+              school: { type: string }
+              period: { type: string, example: 2018 — 2022 }
+              gpa: { type: string, example: "IPK: 3.50 / 4.00" }
+        certifications:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              issuer: { type: string }
+              year: { type: string }
+        skills:
+          type: array
+          items:
+            type: object
+            required: [label]
+            properties:
+              id: { type: string }
+              label: { type: string, description: Label dari katalog keahlian }
+              highlight: { type: boolean }
+        languages:
+          type: array
+          items:
+            type: object
+            required: [name, level]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              level: { type: string, enum: [Native, Profesional, Menengah, Dasar] }
+        completeness: { type: integer, readOnly: true, description: Persen kelengkapan profil }
+        remaining: { type: string, readOnly: true }
+        missing:
+          type: array
+          readOnly: true
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              weight: { type: integer }
+
+    Course:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        provider: { type: string }
+        title: { type: string }
+        level: { type: string, example: Pemula }
+        format: { type: string, example: Online }
+        duration: { type: string }
+        skillTag: { type: string, nullable: true }
+        popular: { type: boolean }
+        imageUrl: { type: string, nullable: true }
+        url: { type: string, format: uri }
+
+    LearningPath:
+      type: object
+      properties:
+        mode: { type: string, enum: [all, job] }
+        job:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            title: { type: string }
+            company: { type: string }
+        jobNotFound: { type: boolean }
+        gap:
+          type: object
+          nullable: true
+          description: Hanya ada pada mode `job`
+          properties:
+            total: { type: integer, description: Jumlah skill teknis lowongan }
+            missing: { type: integer, description: Jumlah yang belum dimiliki user }
+            uncovered:
+              type: array
+              items: { type: string }
+              description: Skill yang belum punya pelatihan di Laras Karya
+            hero: { type: object, additionalProperties: true }
+        target:
+          type: object
+          nullable: true
+          description: Kotak "Target Posisi dan Skill Gap"; `null` pada mode `all`
+          properties:
+            position: { type: string }
+            company: { type: string }
+          additionalProperties: true
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/Course" }
+        progress:
+          type: object
+          description: Peta `courseId` ke status. Pelatihan yang tidak ada di sini berarti belum dimulai.
+          additionalProperties:
+            type: object
+            properties:
+              status: { type: string, enum: [enrolled, completed] }
