@@ -1,0 +1,3058 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Laras Karya",
+    "version": "1.0.0",
+    "description": "Route handler Next.js (App Router) di `/api/*` dengan data di Supabase.\n\n**Autentikasi:** sesi login (cookie). Masuk dulu lewat `/login` di browser yang sama. Data dibatasi sesi user dan RLS, jadi user hanya membaca dan menulis datanya sendiri.\n\n**Respons:** sukses memuat `ok: true`; gagal memuat `ok: false` dan `error`.\n\n**Mencoba langsung:** tombol *Try it out* bekerja bila halaman ini dibuka dari domain yang sama dengan API (mis. `/api-docs/`) dan Anda sudah masuk."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Origin halaman ini (cookie sesi ikut terkirim)"
+    },
+    {
+      "url": "https://laras-karya.vercel.app",
+      "description": "Pengujian (Vercel)"
+    },
+    {
+      "url": "localhost:3000",
+      "description": "Pengujian Local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Profil",
+      "description": "Profil lengkap user yang sedang masuk"
+    },
+    {
+      "name": "Pendidikan",
+      "description": "Riwayat pendidikan (tabel educations)"
+    },
+    {
+      "name": "Pengalaman",
+      "description": "Pengalaman kerja (tabel work_experiences)"
+    },
+    {
+      "name": "Keahlian",
+      "description": "Keahlian dari katalog (tabel user_skills)"
+    },
+    {
+      "name": "Bahasa",
+      "description": "Bahasa dan levelnya; tersinkron ke keahlian"
+    },
+    {
+      "name": "Sektor Diminati",
+      "description": "Bidang industri yang diminati (profiles.interest_sectors)"
+    },
+    {
+      "name": "Asesmen",
+      "description": "Asesmen karier"
+    },
+    {
+      "name": "Lowongan",
+      "description": "Rekomendasi dan lowongan tersimpan"
+    },
+    {
+      "name": "Lamaran",
+      "description": "Lamaran kerja (tabel applications)"
+    },
+    {
+      "name": "Jalur Belajar",
+      "description": "Pelatihan dan progres belajar"
+    },
+    {
+      "name": "Admin Lowongan",
+      "description": "Kelola lowongan, khusus role admin"
+    }
+  ],
+  "paths": {
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "Profil"
+        ],
+        "summary": "Ambil profil saya",
+        "description": "Profil user yang sedang masuk, dalam bentuk yang dipakai halaman `/profile` (profiles, educations, work_experiences, user_skills).",
+        "responses": {
+          "200": {
+            "description": "Profil user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "profile": {
+                      "$ref": "#/components/schemas/Profile"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getProfile"
+      },
+      "put": {
+        "tags": [
+          "Profil"
+        ],
+        "summary": "Simpan seluruh profil",
+        "description": "Body adalah seluruh isi profil (bentuk sama dengan hasil GET). **Daftar pendidikan, pengalaman, dan keahlian yang tidak dikirim akan dihapus**, karena daftar yang dikirim dianggap daftar lengkap milik user. `name` wajib diisi.",
+        "responses": {
+          "200": {
+            "description": "Profil terbaru dari database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "profile": {
+                      "$ref": "#/components/schemas/Profile"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Profile"
+              },
+              "example": {
+                "name": "Hevin",
+                "education": [],
+                "experiences": [],
+                "skills": []
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "putProfile"
+      }
+    },
+    "/api/profile/education": {
+      "get": {
+        "tags": [
+          "Pendidikan"
+        ],
+        "summary": "Daftar pendidikan",
+        "description": "Urutan sama dengan halaman `/profile`: tahun selesai terbaru lebih dulu. Jenjang tersimpan sebagai sma/d3/s1/s2/s3, jadi SMK tampil \"SMA/SMK\" dan D4 tampil \"S1\".",
+        "responses": {
+          "200": {
+            "description": "Daftar pendidikan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "educations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Education"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listEducation"
+      },
+      "post": {
+        "tags": [
+          "Pendidikan"
+        ],
+        "summary": "Tambah pendidikan",
+        "description": "`degree` dan `school` wajib; `period` dan `gpa` boleh dikosongkan (`gpa` boleh juga angka, mis. 3.72).",
+        "responses": {
+          "201": {
+            "description": "Pendidikan dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "education": {
+                      "$ref": "#/components/schemas/Education"
+                    },
+                    "educations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Education"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EducationInput"
+              },
+              "example": {
+                "degree": "S1 Ilmu Lingkungan",
+                "school": "Universitas Lambung Mangkurat",
+                "period": "2016 — 2020",
+                "gpa": "IPK: 3.72 / 4.00"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createEducation"
+      }
+    },
+    "/api/profile/education/{id}": {
+      "put": {
+        "tags": [
+          "Pendidikan"
+        ],
+        "summary": "Ubah pendidikan",
+        "description": "Body sama dengan POST tetapi boleh sebagian; field yang tidak dikirim tetap memakai nilai lama. `period` dan `gpa` dikosongkan dengan mengirim `\"\"`.",
+        "responses": {
+          "200": {
+            "description": "Pendidikan diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "education": {
+                      "$ref": "#/components/schemas/Education"
+                    },
+                    "educations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Education"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID pendidikan, dari GET /api/profile/education",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EducationInput"
+              },
+              "example": {
+                "school": "Universitas Lambung Mangkurat",
+                "gpa": ""
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateEducation"
+      },
+      "delete": {
+        "tags": [
+          "Pendidikan"
+        ],
+        "summary": "Hapus pendidikan",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Terhapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "educations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Education"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID pendidikan",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteEducation"
+      }
+    },
+    "/api/profile/experiences": {
+      "get": {
+        "tags": [
+          "Pengalaman"
+        ],
+        "summary": "Daftar pengalaman kerja",
+        "description": "Urutan sama dengan halaman `/profile`: yang masih berjalan lebih dulu, lalu tanggal mulai terbaru. Saat dibaca, `period` ditambah keterangan lama bekerja, mis. `Jan 2022 — Sekarang (2 tahun 3 bulan)`.",
+        "responses": {
+          "200": {
+            "description": "Daftar pengalaman",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "experiences": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Experience"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listExperiences"
+      },
+      "post": {
+        "tags": [
+          "Pengalaman"
+        ],
+        "summary": "Tambah pengalaman kerja",
+        "description": "`role` dan `company` wajib. `period` memuat tahun mulai, lalu `Sekarang` untuk pekerjaan yang masih berjalan atau tahun selesai (`2019 — 2021`).",
+        "responses": {
+          "201": {
+            "description": "Pengalaman dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "experience": {
+                      "$ref": "#/components/schemas/Experience"
+                    },
+                    "experiences": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Experience"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceInput"
+              },
+              "example": {
+                "role": "Staf Lingkungan",
+                "company": "PT Hijau Lestari",
+                "period": "Jan 2022 — Sekarang",
+                "description": "Mengelola pelaporan emisi bulanan."
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createExperience"
+      }
+    },
+    "/api/profile/experiences/{id}": {
+      "put": {
+        "tags": [
+          "Pengalaman"
+        ],
+        "summary": "Ubah pengalaman kerja",
+        "description": "Body sama dengan POST tetapi boleh sebagian. `period` dan `description` dikosongkan dengan `\"\"`.",
+        "responses": {
+          "200": {
+            "description": "Pengalaman diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "experience": {
+                      "$ref": "#/components/schemas/Experience"
+                    },
+                    "experiences": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Experience"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID pengalaman",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "9b1d7e60-1c2a-4f55-8a3b-2e6d4c8f1a77"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperienceInput"
+              },
+              "example": {
+                "description": ""
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateExperience"
+      },
+      "delete": {
+        "tags": [
+          "Pengalaman"
+        ],
+        "summary": "Hapus pengalaman kerja",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Terhapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "experiences": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Experience"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID pengalaman",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "9b1d7e60-1c2a-4f55-8a3b-2e6d4c8f1a77"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteExperience"
+      }
+    },
+    "/api/profile/skills": {
+      "get": {
+        "tags": [
+          "Keahlian"
+        ],
+        "summary": "Daftar keahlian dan pilihan katalog",
+        "description": "Keahlian hanya boleh dipilih dari katalog (120 keahlian), bukan diketik bebas. `options` berisi keahlian yang masih bisa ditambahkan (belum dimiliki dan bukan keahlian bahasa). `highlight` bernilai true untuk empat keahlian pertama.",
+        "responses": {
+          "200": {
+            "description": "Keahlian dan opsi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "skills": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Skill"
+                      }
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SkillOption"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listSkills"
+      },
+      "post": {
+        "tags": [
+          "Keahlian"
+        ],
+        "summary": "Tambah keahlian dari katalog",
+        "description": "Kirim `code` atau `label` dari `options`; bila keduanya dikirim, `code` dipakai. Keahlian bahasa tidak lewat sini, tetapi lewat `/api/profile/languages`.",
+        "responses": {
+          "201": {
+            "description": "Keahlian ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "skill": {
+                      "$ref": "#/components/schemas/Skill"
+                    },
+                    "skills": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Skill"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "example": "python"
+                  },
+                  "label": {
+                    "type": "string",
+                    "example": "Python"
+                  }
+                }
+              },
+              "example": {
+                "code": "python"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createSkill"
+      }
+    },
+    "/api/profile/skills/{id}": {
+      "delete": {
+        "tags": [
+          "Keahlian"
+        ],
+        "summary": "Hapus keahlian",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Terhapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "skills": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Skill"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Kode keahlian di katalog, dari GET /api/profile/skills",
+            "schema": {
+              "type": "string"
+            },
+            "example": "python"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteSkill"
+      }
+    },
+    "/api/profile/languages": {
+      "get": {
+        "tags": [
+          "Bahasa"
+        ],
+        "summary": "Daftar bahasa",
+        "description": "Bahasa yang punya padanan di katalog keahlian (mis. Inggris menjadi `bahasa_inggris`) otomatis ikut tersimpan di `user_skills` beserta levelnya (`syncedToSkills`).",
+        "responses": {
+          "200": {
+            "description": "Daftar bahasa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "levels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "Native",
+                        "Profesional",
+                        "Menengah",
+                        "Dasar"
+                      ]
+                    },
+                    "languages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Language"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listLanguages"
+      },
+      "post": {
+        "tags": [
+          "Bahasa"
+        ],
+        "summary": "Tambah bahasa",
+        "description": "`name` wajib (maksimal 60 karakter). `level` bawaannya `Profesional`.",
+        "responses": {
+          "201": {
+            "description": "Bahasa ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "language": {
+                      "$ref": "#/components/schemas/Language"
+                    },
+                    "languages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Language"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguageInput"
+              },
+              "example": {
+                "name": "Inggris",
+                "level": "Profesional"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createLanguage"
+      }
+    },
+    "/api/profile/languages/{id}": {
+      "put": {
+        "tags": [
+          "Bahasa"
+        ],
+        "summary": "Ubah bahasa",
+        "description": "`name` boleh dikosongkan untuk tetap memakai nama lama; begitu juga `level`. Id berurutan (`lang-1`, `lang-2`, ...) mengikuti urutan daftar saat ini.",
+        "responses": {
+          "200": {
+            "description": "Bahasa diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "language": {
+                      "$ref": "#/components/schemas/Language"
+                    },
+                    "languages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Language"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id bahasa, dari GET /api/profile/languages",
+            "schema": {
+              "type": "string"
+            },
+            "example": "lang-1"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguageInput"
+              },
+              "example": {
+                "name": "Inggris",
+                "level": "Native"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateLanguage"
+      },
+      "delete": {
+        "tags": [
+          "Bahasa"
+        ],
+        "summary": "Hapus bahasa",
+        "description": "Baris `user_skills` padanannya ikut terhapus.",
+        "responses": {
+          "200": {
+            "description": "Terhapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "languages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Language"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id bahasa",
+            "schema": {
+              "type": "string"
+            },
+            "example": "lang-1"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteLanguage"
+      }
+    },
+    "/api/profile/sectors": {
+      "get": {
+        "tags": [
+          "Sektor Diminati"
+        ],
+        "summary": "Bidang industri yang diminati",
+        "description": "Pilihan berasal dari tabel `sectors`; pilihan user tersimpan di `profiles.interest_sectors`.",
+        "responses": {
+          "200": {
+            "description": "Terpilih dan semua opsi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "selected": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getSectors"
+      },
+      "put": {
+        "tags": [
+          "Sektor Diminati"
+        ],
+        "summary": "Ganti bidang industri yang diminati",
+        "description": "Daftar yang dikirim **menggantikan** pilihan lama. Minimal satu kode, diambil dari `options[].value`.",
+        "responses": {
+          "200": {
+            "description": "Pilihan terbaru",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "selected": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sectors": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "sectors"
+                ]
+              },
+              "example": {
+                "sectors": [
+                  "renewable_energy",
+                  "waste"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "putSectors"
+      }
+    },
+    "/api/assessment": {
+      "get": {
+        "tags": [
+          "Asesmen"
+        ],
+        "summary": "Ambil jawaban asesmen",
+        "description": "Selalu 200. `answers` bernilai `null` bila user belum masuk atau belum pernah mengisi asesmen.",
+        "responses": {
+          "200": {
+            "description": "Jawaban asesmen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "answers": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "Bentuk sama dengan body POST (`step_1`, `step_2`, `step_3`)."
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                },
+                "example": {
+                  "ok": true,
+                  "answers": null
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getAssessment"
+      },
+      "post": {
+        "tags": [
+          "Asesmen"
+        ],
+        "summary": "Simpan asesmen",
+        "description": "Menyimpan ke tabel `assessments` dan juga ke profil user (`profiles`, `educations`, `user_skills`). Validasi ulang dilakukan di server. Isi tiap langkah mengikuti `context/assessment-store.js` di aplikasi (tidak termasuk dalam berkas API yang dibaca untuk dokumen ini).",
+        "responses": {
+          "200": {
+            "description": "Tersimpan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "skippedSkills": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Keahlian dari jawaban yang dilewati karena tidak ada di katalog."
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "step_1": {
+                    "type": "object"
+                  },
+                  "step_2": {
+                    "type": "object"
+                  },
+                  "step_3": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "step_1",
+                  "step_2",
+                  "step_3"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "saveAssessment"
+      }
+    },
+    "/api/recommended-jobs": {
+      "get": {
+        "tags": [
+          "Lowongan"
+        ],
+        "summary": "Rekomendasi lowongan",
+        "description": "Diurutkan dari skor tertinggi. Skor berasal dari `job_recommendations`, sama dengan angka kecocokan di halaman `/recommended-jobs`.",
+        "responses": {
+          "200": {
+            "description": "Daftar rekomendasi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "jobs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "recommendedJobs"
+      }
+    },
+    "/api/bookmarks": {
+      "get": {
+        "tags": [
+          "Lowongan"
+        ],
+        "summary": "Daftar lowongan tersimpan",
+        "description": "Lowongan yang terbaru disimpan berada di atas.",
+        "responses": {
+          "200": {
+            "description": "Lowongan tersimpan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "jobs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listBookmarks"
+      },
+      "post": {
+        "tags": [
+          "Lowongan"
+        ],
+        "summary": "Simpan atau batalkan simpan lowongan",
+        "description": "Aman dipanggil berulang: menyimpan lowongan yang sudah tersimpan tidak membuat baris ganda.",
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "saved": {
+                    "type": "boolean",
+                    "description": "true menyimpan, false membatalkan simpan"
+                  }
+                },
+                "required": [
+                  "jobId",
+                  "saved"
+                ]
+              },
+              "example": {
+                "jobId": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10",
+                "saved": true
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "setBookmark"
+      }
+    },
+    "/api/applications": {
+      "get": {
+        "tags": [
+          "Lamaran"
+        ],
+        "summary": "Daftar lamaran saya",
+        "description": "Terbaru di atas.",
+        "responses": {
+          "200": {
+            "description": "Daftar lamaran",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "applications": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "listApplications"
+      },
+      "post": {
+        "tags": [
+          "Lamaran"
+        ],
+        "summary": "Kirim lamaran",
+        "description": "Memakai logika yang sama dengan Server Action `submitApplication` (validasi ulang di server, sesi user, RLS). Pemetaan galat: `auth` 401; `invalid`, `terms`, `letter` 422; `notfound` 404; `closed`, `duplicate` 409; `db` 500.",
+        "responses": {
+          "201": {
+            "description": "Lamaran tersimpan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "coverLetter": {
+                    "type": "string"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean"
+                  },
+                  "attachments": {
+                    "type": "array",
+                    "items": {},
+                    "description": "Opsional, bentuk mengikuti submitApplication."
+                  }
+                },
+                "required": [
+                  "jobId",
+                  "coverLetter",
+                  "termsAccepted"
+                ]
+              },
+              "example": {
+                "jobId": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10",
+                "coverLetter": "Saya tertarik pada posisi ini karena...",
+                "termsAccepted": true
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "submitApplication"
+      }
+    },
+    "/api/learning-path": {
+      "get": {
+        "tags": [
+          "Jalur Belajar"
+        ],
+        "summary": "Ambil jalur belajar",
+        "description": "Dengan `?job=<UUID lowongan>`, hanya pelatihan untuk skill gap lowongan itu yang dimuat. Tanpa `job` (atau lowongan tidak ditemukan), semua pelatihan.",
+        "responses": {
+          "200": {
+            "description": "Jalur belajar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "learningPath": {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string"
+                        },
+                        "job": {
+                          "type": "object",
+                          "nullable": true
+                        },
+                        "jobNotFound": {
+                          "type": "boolean"
+                        },
+                        "gap": {},
+                        "target": {},
+                        "courses": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "progress": {}
+                      },
+                      "description": "Bentuk dari `getLearningPath` di app/learning-path/actions.js."
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "job",
+            "in": "query",
+            "required": false,
+            "description": "UUID lowongan",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getLearningPath"
+      },
+      "post": {
+        "tags": [
+          "Jalur Belajar"
+        ],
+        "summary": "Mulai atau selesaikan pelatihan",
+        "description": "Pelatihan yang sudah selesai tidak diturunkan kembali ke `enrolled` oleh aksi `start`.",
+        "responses": {
+          "200": {
+            "description": "Progres tersimpan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "progress": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "enrolled",
+                            "completed"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "start",
+                      "complete"
+                    ]
+                  }
+                },
+                "required": [
+                  "courseId",
+                  "action"
+                ]
+              },
+              "example": {
+                "courseId": "5d2e8a14-77a0-4c36-b2a1-9e4f0c3d6b28",
+                "action": "start"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "progressCourse"
+      }
+    },
+    "/api/admin/jobs": {
+      "get": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Daftar lowongan (admin)",
+        "description": "Hanya untuk user ber-role admin. 10 lowongan per halaman, yang terbaru diubah lebih dulu (sama dengan halaman admin).",
+        "responses": {
+          "200": {
+            "description": "Halaman lowongan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "jobs": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Job"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "example": 10
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Cari pada judul atau nama perusahaan",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/JobStatus"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Mulai dari 1",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminListJobs"
+      },
+      "post": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Buat lowongan",
+        "description": "Wajib: `title` (3-150), `company_name` (2-120), `sector` (kode dari `/api/admin/jobs/options`), `description` (20-5000). Bila tidak dikirim: `status` = draft, `employment_type` = full_time, `work_arrangement` = onsite, `is_green_job` = true. `published_at` terisi otomatis bila status published.",
+        "responses": {
+          "201": {
+            "description": "Lowongan dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFields"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobInput"
+              },
+              "example": {
+                "title": "Teknisi Panel Surya",
+                "company_name": "PT Surya Nusantara",
+                "sector": "energi_terbarukan",
+                "description": "Memasang dan merawat panel surya atap untuk pelanggan komersial.",
+                "status": "published",
+                "employment_type": "full_time",
+                "work_arrangement": "onsite",
+                "city": "Banjarmasin",
+                "province": "Kalimantan Selatan",
+                "salary_min": 5000000,
+                "salary_max": 8000000,
+                "deadline": "2026-12-31",
+                "is_green_job": true
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminCreateJob"
+      }
+    },
+    "/api/admin/jobs/options": {
+      "get": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Pilihan untuk formulir lowongan",
+        "description": "Isi dropdown di formulir admin. `value` adalah kode yang dikirim ke API.",
+        "responses": {
+          "200": {
+            "description": "Pilihan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "statuses": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    },
+                    "employmentTypes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    },
+                    "workArrangements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Option"
+                      }
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminJobOptions"
+      }
+    },
+    "/api/admin/jobs/{id}": {
+      "get": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Detail lowongan",
+        "description": "Semua kolom tabel `jobs`.",
+        "responses": {
+          "200": {
+            "description": "Lowongan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID lowongan, dari GET /api/admin/jobs. Id yang bukan UUID dijawab 404.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminGetJob"
+      },
+      "put": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Ubah lowongan",
+        "description": "Field sama dengan POST tetapi boleh sebagian; yang tidak dikirim tetap memakai nilai lama. Field opsional (`city`, `province`, `salary_min`, `salary_max`, `deadline`) dikosongkan dengan `null` atau `\"\"`. `published_at` terisi saat pertama kali berstatus published dan tidak berubah setelahnya.",
+        "responses": {
+          "200": {
+            "description": "Lowongan diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFields"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID lowongan, dari GET /api/admin/jobs. Id yang bukan UUID dijawab 404.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobInput"
+              },
+              "example": {
+                "title": "Teknisi Panel Surya Senior",
+                "deadline": null
+              }
+            }
+          },
+          "description": "Boleh sebagian."
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminUpdateJob"
+      },
+      "patch": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Ubah status lowongan",
+        "description": "Ubah status saja (sama dengan pilihan status cepat di daftar admin).",
+        "responses": {
+          "200": {
+            "description": "Status diubah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID lowongan, dari GET /api/admin/jobs. Id yang bukan UUID dijawab 404.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "$ref": "#/components/schemas/JobStatus"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "example": {
+                "status": "closed"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminPatchJobStatus"
+      },
+      "delete": {
+        "tags": [
+          "Admin Lowongan"
+        ],
+        "summary": "Hapus lowongan",
+        "description": "Lowongan yang sudah punya pelamar atau data terkait tidak bisa dihapus (409); ubah statusnya menjadi `closed`.",
+        "responses": {
+          "200": {
+            "description": "Terhapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "UUID lowongan, dari GET /api/admin/jobs. Id yang bukan UUID dijawab 404.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "0b6f6c0e-8d1f-4b0a-9a55-6f0e2c1d7a10"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "adminDeleteJob"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb-<project-ref>-auth-token",
+        "description": "Sesi login Supabase yang dibuat halaman `/login`. Tidak ada API key atau token Bearer. Masuk dulu di browser; dari Postman atau cURL salin cookie sesi dari DevTools. Nama cookie sebenarnya mengikuti proyek Supabase."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Body bukan JSON yang valid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Data yang dikirim bukan JSON yang valid."
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Belum masuk atau sesi berakhir",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Sesi Anda berakhir. Silakan masuk lagi."
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Bukan admin",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Akses ditolak."
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Data tidak ditemukan",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Data tidak ditemukan."
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Konflik: data sudah ada, lowongan ditutup, atau masih punya data terkait",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Data sudah ada."
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Data tidak lolos validasi",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Data tidak valid."
+            }
+          }
+        }
+      },
+      "ValidationFields": {
+        "description": "Data tidak lolos validasi; `errors` memuat pesan per field",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "example": {
+              "ok": false,
+              "error": "Periksa kembali isian yang bertanda galat.",
+              "errors": {
+                "sector": "Sektor tidak dikenal (lihat GET /api/admin/jobs/options)."
+              }
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Gagal memuat atau menyimpan",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "ok": false,
+              "error": "Profil belum bisa dimuat. Coba lagi beberapa saat lagi."
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Pesan teks Indonesia (profil, admin, jalur belajar) atau kode singkat seperti `auth`, `db`, `bad_request` (lamaran, bookmark, rekomendasi, asesmen)."
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ok",
+          "error",
+          "errors"
+        ]
+      },
+      "Option": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nama lengkap, wajib saat PUT."
+          },
+          "education": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Education"
+            }
+          },
+          "experiences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Experience"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Skill"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Language"
+            }
+          },
+          "industries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Label bidang industri yang diminati."
+          },
+          "industryOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            }
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": true,
+        "description": "Bentuk yang dipakai halaman `/profile` (dari `loadMyProfile`). Field lain (kontak, ringkasan, dst.) ikut dikembalikan; daftar lengkapnya didefinisikan di app/profile/data-actions.js, yang tidak ada dalam berkas API."
+      },
+      "Education": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "school": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "gpa": {
+            "type": "string"
+          }
+        }
+      },
+      "EducationInput": {
+        "type": "object",
+        "properties": {
+          "degree": {
+            "type": "string",
+            "example": "S1 Ilmu Lingkungan"
+          },
+          "school": {
+            "type": "string",
+            "example": "Universitas Lambung Mangkurat"
+          },
+          "period": {
+            "type": "string",
+            "example": "2016 — 2020"
+          },
+          "gpa": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "example": "IPK: 3.72 / 4.00"
+          }
+        },
+        "required": [
+          "degree",
+          "school"
+        ]
+      },
+      "Experience": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ExperienceInput": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "example": "Staf Lingkungan"
+          },
+          "company": {
+            "type": "string",
+            "example": "PT Hijau Lestari"
+          },
+          "period": {
+            "type": "string",
+            "example": "Jan 2022 — Sekarang"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "company"
+        ]
+      },
+      "Skill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Kode di katalog",
+            "example": "python"
+          },
+          "label": {
+            "type": "string",
+            "example": "Python"
+          },
+          "highlight": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SkillOption": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        }
+      },
+      "Language": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "lang-1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Inggris"
+          },
+          "level": {
+            "$ref": "#/components/schemas/LanguageLevel"
+          },
+          "skillCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "bahasa_inggris"
+          },
+          "syncedToSkills": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LanguageLevel": {
+        "type": "string",
+        "enum": [
+          "Native",
+          "Profesional",
+          "Menengah",
+          "Dasar"
+        ]
+      },
+      "LanguageInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "level": {
+            "$ref": "#/components/schemas/LanguageLevel"
+          }
+        }
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "closed"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company_name": {
+            "type": "string"
+          },
+          "sector": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "employment_type": {
+            "type": "string",
+            "enum": [
+              "full_time",
+              "part_time",
+              "contract",
+              "internship"
+            ]
+          },
+          "work_arrangement": {
+            "type": "string",
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "province": {
+            "type": "string",
+            "nullable": true
+          },
+          "salary_min": {
+            "type": "number",
+            "nullable": true
+          },
+          "salary_max": {
+            "type": "number",
+            "nullable": true
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "is_green_job": {
+            "type": "boolean"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": true
+      },
+      "JobInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 150
+          },
+          "company_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "sector": {
+            "type": "string",
+            "description": "Kode dari GET /api/admin/jobs/options"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 5000
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "employment_type": {
+            "type": "string",
+            "enum": [
+              "full_time",
+              "part_time",
+              "contract",
+              "internship"
+            ]
+          },
+          "work_arrangement": {
+            "type": "string",
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "province": {
+            "type": "string",
+            "nullable": true
+          },
+          "salary_min": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "salary_max": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Harus >= salary_min"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "is_green_job": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title",
+          "company_name",
+          "sector",
+          "description"
+        ],
+        "description": "Wajib pada POST; pada PUT boleh sebagian."
+      }
+    }
+  }
+}
