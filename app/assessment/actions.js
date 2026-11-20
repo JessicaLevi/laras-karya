@@ -104,6 +104,12 @@ export async function saveAssessment(answers) {
   });
   if (assessError) return fail("assessments", assessError);
 
+  // 5) Hitung ulang rekomendasi dari profil yang baru disimpan. Tanpa ini, skor yang sempat dihitung
+  // saat profil masih kosong (mis. user baru daftar lalu membuka /recommended-jobs lebih dulu) tidak
+  // pernah diperbarui. Gagal di sini tidak membatalkan penyimpanan; user masih bisa memperbarui manual di Beranda.
+  const { error: refreshError } = await supabase.rpc("refresh_my_recommendations");
+  if (refreshError) console.warn("[saveAssessment] refresh_my_recommendations:", refreshError.message);
+
   return { ok: true, skippedSkills: wanted.length - codes.length };
 }
 
