@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
-
+import { usePathname, useRouter } from "next/navigation";
+import { useSectors } from "@/hooks/use-sectors";
 import { loadMyAssessment, saveAssessment } from "@/app/assessment/actions";
 import { INITIAL_ANSWERS, useAssessment } from "@/context/assessment-store";
 import { useToast } from "@/context/toast-context";
@@ -10,9 +10,11 @@ import { answersKey } from "@/lib/assessment-mapping";
 import { SKILL_OPTIONS } from "@/lib/assessment-options";
 import { isValid, validateStep1, validateStep2, validateStep3 } from "@/lib/assessment-validation";
 
-const isComplete = (a) =>
-  isValid(validateStep1(a.step_1)) && isValid(validateStep2(a.step_2)) && isValid(validateStep3(a.step_3, SKILL_OPTIONS));
-
+const isComplete = (a, sectors) =>
+  Boolean(sectors?.length) &&
+  isValid(validateStep1(a.step_1)) &&
+  isValid(validateStep2(a.step_2)) &&
+  isValid(validateStep3(a.step_3, SKILL_OPTIONS, sectors));
 /**
  * Menyimpan jawaban asesmen ke profil user, di halaman mana pun (dipasang di app/layout.js).
  * - User sudah masuk: tersimpan begitu asesmen lengkap (saat layar proses AI tampil).
@@ -20,22 +22,29 @@ const isComplete = (a) =>
  * Server Action menolak tamu dengan error "auth", dan itu diabaikan di sini.
  */
 export function AssessmentSync() {
+  const { sectors } = useSectors();
+  
   const { answers, markSaved } = useAssessment();
   const { showToast } = useToast();
   const attempted = useRef(null);
   const pathname = usePathname();
+  const router = useRouter();
   // Saat masih mengisi/mengedit langkah 1–4, tunggu sampai "Proses Rekomendasi" (layar loading),
   // supaya setiap perubahan kecil tidak membuat arsip asesmen baru.
   const editing = /^\/assessment(\/[1-4])?$/.test(pathname ?? "");
 
-  const complete = isComplete(answers);
+  const complete = isComplete(answers, sectors);
   const key = complete && !editing ? answersKey(answers) : null;
 
   useEffect(() => {
     if (!key || answers.saved_key === key || attempted.current === key) return;
     attempted.current = key;
     saveAssessment(answers).then((res) => {
-      if (res.ok) return markSaved(key);
+     if (res.ok) {
+      markSaved(key);
+      router.refresh();
+      return;
+    }
       // Gagal: boleh dicoba lagi di halaman berikutnya. "auth" = belum masuk; setelah daftar/masuk,
       // pengguna berpindah halaman sehingga penyimpanan otomatis dicoba ulang.
       attempted.current = null;
