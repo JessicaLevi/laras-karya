@@ -4,20 +4,20 @@ import Link from "next/link";
 
 import {
   ArrowRight,
-  Gift,
   ListChecks,
   MapPin,
   Star,
   Wallet,
 } from "lucide-react";
-import MatchPanel, { splitSkills } from "./match-panel";
+import MatchPanel, { GuestMatchPanel, splitSkills } from "./match-panel";
+import { FacilityBadges } from "./facility-badges";
 
 import { useHasApplied } from "@/lib/demo-history";
 import { AppliedBadge } from "@/components/ui/applied-badge";
 import { CompanyAvatar, sectorTone } from "@/components/ui/company-avatar";
 
 function TopRow({ job, showMatch = true, hideApplied = false }) {
-  const applied = useHasApplied(job.id);
+  const applied = useHasApplied(job.id, job.applied);
   return (
     <div className="flex items-center justify-between gap-3">
       <span
@@ -27,7 +27,7 @@ function TopRow({ job, showMatch = true, hideApplied = false }) {
       </span>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {!hideApplied && applied && <AppliedBadge />}
-        {showMatch && (
+        {showMatch && job.match != null && (
           <span className="rounded-full bg-ai/10 px-3 py-1 text-xs font-semibold text-ai">
             {job.match}% Cocok
           </span>
@@ -37,8 +37,9 @@ function TopRow({ job, showMatch = true, hideApplied = false }) {
   );
 }
 
-function Meta({ job }) {
-  const place = job.mode === "Remote" ? "Remote" : `${job.city} • ${job.mode}`;
+function Meta({ job, selectedFacilities = [] }) {
+  // Kota atau pola kerja bisa kosong di data database; yang kosong dilewati.
+  const place = job.mode === "Remote" ? "Remote" : [job.city, job.mode].filter(Boolean).join(" • ") || "Lokasi tidak dicantumkan";
   return (
     <ul className="mt-3 space-y-1.5 text-sm text-slate-600">
       <li className="flex items-center gap-2">
@@ -48,9 +49,8 @@ function Meta({ job }) {
         <Wallet className="h-4 w-4 shrink-0" aria-hidden /> {job.salary}
       </li>
       {job.benefits?.length > 0 && (
-        <li className="flex items-center gap-2">
-          <Gift className="h-4 w-4 shrink-0" aria-hidden /> Benefit:{" "}
-          {job.benefits.join(", ")}
+        <li>
+          <FacilityBadges benefits={job.benefits} selected={selectedFacilities} className="mt-2.5" />
         </li>
       )}
     </ul>
@@ -72,7 +72,7 @@ function SkillSummary({ job }) {
 }
 
 /** hideApplied: sembunyikan lencana "Sudah Dilamar" (dipakai pratinjau tamu, yang belum punya lamaran). */
-export function FeaturedJobCard({ job, hideApplied = false }) {
+export function FeaturedJobCard({ job, hideApplied = false, guest = false, selectedFacilities = [] }) {
   return (
     <section
       aria-label="Rekomendasi paling cocok"
@@ -89,6 +89,7 @@ export function FeaturedJobCard({ job, hideApplied = false }) {
             <CompanyAvatar
               company={job.company}
               sector={job.sector}
+              logoUrl={job.companyLogoUrl}
               className="h-16 w-16 text-xl"
             />
             <div className="min-w-0">
@@ -99,7 +100,7 @@ export function FeaturedJobCard({ job, hideApplied = false }) {
           <p className="mt-4 leading-relaxed text-slate-700">
             {job.description}
           </p>
-          <Meta job={job} />
+          <Meta job={job} selectedFacilities={selectedFacilities} />
 
           <p className="mt-5 text-sm font-semibold text-ink">
             Keterampilan yang dibutuhkan
@@ -126,24 +127,24 @@ export function FeaturedJobCard({ job, hideApplied = false }) {
           </div>
         </article>
 
-        <MatchPanel job={job} />
+        {guest ? <GuestMatchPanel /> : <MatchPanel job={job} />}
       </div>
     </section>
   );
 }
 
-export function JobCard({ job }) {
+export function JobCard({ job, selectedFacilities = [] }) {
   return (
     <article className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-sm">
       <TopRow job={job} />
       <div className="mt-4 flex items-center gap-3">
-        <CompanyAvatar company={job.company} sector={job.sector} />
+        <CompanyAvatar company={job.company} sector={job.sector} logoUrl={job.companyLogoUrl} />
         <div className="min-w-0">
           <h3 className="text-xl font-bold text-ink">{job.title}</h3>
           <p className="text-slate-600">{job.company}</p>
         </div>
       </div>
-      <Meta job={job} />
+      <Meta job={job} selectedFacilities={selectedFacilities} />
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
         <SkillSummary job={job} />

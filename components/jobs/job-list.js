@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { SearchX, Sparkles } from "lucide-react";
-import { JOBS } from "@/lib/mock-jobs";
+import { ArrowRight, SearchX, Sparkles } from "lucide-react";
 import { hasApplied } from "@/lib/applications-data";
 import { useHistoryStage } from "@/lib/demo-history";
 import { getOpenJobsAppliedLast } from "@/lib/job-ordering";
 import { FeaturedJobCard, JobCard } from "./job-card";
+import { FacilityFilter } from "./facility-filter";
+import { FACILITIES, hasAllFacilities } from "@/lib/job-catalog";
 import Pagination from "./pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -22,7 +24,7 @@ const MODES = [
   { label: "Remote", value: "Remote" },
 ];
 
-// Sementara. Nanti recommended_jobs() di database yang menyaring ini.
+// Daftar `jobs` sudah disaring dan diurutkan database (job_recommendations, lib/recommended-jobs-db.js).
 // Aturan urutan ada di lib/job-ordering.js (sama dengan Beranda). Akun baru belum punya lamaran,
 // jadi tidak ada lowongan yang dipindah ke belakang (lib/demo-history.js).
 const NO_APPLICATIONS = () => false;
@@ -66,31 +68,43 @@ function SectionTitle({ children, titleRef }) {
 }
 
 /** Membaca ?q= dari URL (mis. dari pencarian di Beranda). Dibungkus <Suspense> di halaman. */
-export function JobListFromUrl() {
+export function JobListFromUrl({ jobs, assessmentDone = true }) {
   const initialQuery = useSearchParams().get("q") ?? "";
-  return <JobList initialQuery={initialQuery} />;
+  return <JobList jobs={jobs} initialQuery={initialQuery} assessmentDone={assessmentDone} />;
 }
 
-export default function JobList({ initialQuery = "" }) {
+export default function JobList({ jobs = [], initialQuery = "", assessmentDone = true }) {
   const stage = useHistoryStage();
   const history = stage === "riwayat";
   const openJobs = useMemo(
-    () => getOpenJobsAppliedLast(JOBS, history ? hasApplied : NO_APPLICATIONS),
-    [history],
+    // job.applied (dari database) menang; lowongan contoh dijawab dari data contoh seperti sebelumnya.
+    () =>
+      getOpenJobsAppliedLast(jobs, (id, job) =>
+        typeof job?.applied === "boolean" ? job.applied : history ? hasApplied(id) : NO_APPLICATIONS(id),
+      ),
+    [jobs, history],
   );
   const [mode, setMode] = useState("semua");
+  const [facilities, setFacilities] = useState([]);
   const [query, setQuery] = useState(initialQuery);
   const [page, setPage] = useState(1);
   const othersRef = useRef(null);
   const urlTimer = useRef(null);
   useEffect(() => () => clearTimeout(urlTimer.current), []);
 
-  const filtered = useMemo(
-    () =>
-      openJobs.filter(
-        (j) => (mode === "semua" || j.mode === mode) && matchesQuery(jobSearchFields(j), query),
-      ),
+  // Lolos pola kerja dan pencarian (dasar untuk angka di chip fasilitas). Urutan skor/lamaran tidak berubah:
+  // filter hanya menyaring, jadi kartu utama = lowongan paling atas yang masih lolos.
+  const baseJobs = useMemo(
+    () => openJobs.filter((j) => (mode === "semua" || j.mode === mode) && matchesQuery(jobSearchFields(j), query)),
     [openJobs, mode, query],
+  );
+  const filtered = useMemo(() => baseJobs.filter((j) => hasAllFacilities(j, facilities)), [baseJobs, facilities]);
+  const facilityCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        FACILITIES.map((f) => [f.value, baseJobs.filter((j) => hasAllFacilities(j, [...new Set([...facilities, f.value])])).length]),
+      ),
+    [baseJobs, facilities],
   );
   const searching = query.trim().length > 0;
 
@@ -111,8 +125,17 @@ export default function JobList({ initialQuery = "" }) {
     clearTimeout(urlTimer.current);
     urlTimer.current = setTimeout(() => replaceQueryParam(v), 300);
   }
+  function toggleFacility(value) {
+    setFacilities((list) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]));
+    setPage(1);
+  }
+  function clearFacilities() {
+    setFacilities([]);
+    setPage(1);
+  }
   function resetFilters() {
     setMode("semua");
+    setFacilities([]);
     changeQuery("");
   }
   function changePage(p) {
@@ -126,6 +149,40 @@ export default function JobList({ initialQuery = "" }) {
     });
   }
 
+  // Belum ada satu pun rekomendasi untuk user ini (bukan hasil filter/pencarian).
+  // Yang belum asesmen diajak mulai (tombol utama); yang sudah asesmen diarahkan ke Beranda, tempat tombol
+  // Perbarui Rekomendasi berada. Mengulang asesmen bukan cara memperbarui rekomendasi.
+  if (jobs.length === 0) {
+    return assessmentDone ? (
+      <EmptyState
+        icon={Sparkles}
+        title="Belum ada lowongan yang cocok saat ini"
+        text="Buka Beranda, lalu tekan Perbarui Rekomendasi untuk menghitung ulang."
+      >
+        <Link
+          href="/home"
+          className="inline-flex rounded-full border border-brand px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand-light"
+        >
+          Ke Beranda
+        </Link>
+      </EmptyState>
+    ) : (
+      <EmptyState
+        icon={Sparkles}
+        title="Belum ada rekomendasi untuk Anda"
+        text="Jawab asesmen singkat untuk membuka rekomendasi lowongan hijau yang cocok."
+      >
+        <Link
+          href="/assessment"
+          className="cta-shine group inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-white transition hover:bg-brand/90"
+        >
+          Mulai Asesmen
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
+        </Link>
+      </EmptyState>
+    );
+  }
+
   // Tunggu tahap pengguna diketahui supaya kartu utama tidak berganti sesaat setelah tampil.
   if (stage === "pending") return <div className="mt-6 min-h-[60vh]" aria-busy="true" />;
 
@@ -133,7 +190,7 @@ export default function JobList({ initialQuery = "" }) {
     <div className="mt-6">
       <SearchBar
         label="Cari lowongan"
-        placeholder="Cari posisi, perusahaan, kota, atau skill"
+        placeholder="Cari posisi, perusahaan, kota, skill, atau fasilitas"
         value={query}
         onChange={changeQuery}
         className="mb-4 max-w-xl"
@@ -152,10 +209,18 @@ export default function JobList({ initialQuery = "" }) {
         </p>
       </div>
 
+      <FacilityFilter
+        selected={facilities}
+        counts={facilityCounts}
+        onToggle={toggleFacility}
+        onClear={clearFacilities}
+        fadeClass="from-surface"
+      />
+
       {top ? (
         <>
           <div className="mt-6">
-            <FeaturedJobCard job={top} />
+            <FeaturedJobCard job={top} selectedFacilities={facilities} />
           </div>
 
           {visible.length > 0 && (
@@ -165,7 +230,7 @@ export default function JobList({ initialQuery = "" }) {
               </SectionTitle>
               <div className="mt-4 grid items-stretch gap-5 md:grid-cols-2">
                 {visible.map((job) => (
-                  <JobCard key={job.id} job={job} />
+                  <JobCard key={job.id} job={job} selectedFacilities={facilities} />
                 ))}
               </div>
               <Pagination
@@ -187,7 +252,9 @@ export default function JobList({ initialQuery = "" }) {
           text={
             searching
               ? "Coba kata lain, misalnya nama posisi, kota, atau skill, atau ganti pola kerja."
-              : "Coba ganti pola kerja untuk melihat rekomendasi lain."
+              : facilities.length > 1
+                ? "Coba kurangi fasilitas yang dipilih, atau ganti pola kerja."
+                : "Coba ganti pola kerja atau fasilitas untuk melihat rekomendasi lain."
           }
         >
           <button

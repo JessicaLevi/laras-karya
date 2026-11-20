@@ -2,34 +2,30 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
   Check,
+  ChevronDown,
   Clock,
   Compass,
   ExternalLink,
-  Lock,
   SearchX,
+  X,
   Sparkle,
   Sparkles,
-  Upload,
+  Tag,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import Pagination from "@/components/jobs/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import { courseSearchFields, matchesQuery, replaceQueryParam } from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 import { completeCourse, getLearningPath, startCourse } from "./actions";
-
-const STEP_CARD = {
-  completed: "border-2 border-brand/30 bg-white",
-  active: "border-2 border-brand bg-brand-light",
-  locked: "border-2 border-dashed border-line bg-white",
-};
 
 const GAP_DOT = {
   red: "bg-red-500",
@@ -43,10 +39,11 @@ const GAP_TEXT = {
   green: "text-lime-300",
 };
 
-const LEVEL_BADGE = {
-  Beginner: "bg-brand-light text-brand",
-  Intermediate: "bg-amber-100 text-amber-700",
-  Advanced: "bg-red-100 text-red-700",
+// Warna teks level pada lencana di atas gambar (latar putih transparan diberikan oleh ImageBadge).
+const LEVEL_TEXT = {
+  Pemula: "text-brand",
+  Menengah: "text-amber-700",
+  Lanjutan: "text-red-700",
 };
 
 function LoadingView() {
@@ -57,10 +54,21 @@ function LoadingView() {
   );
 }
 
-/** ?q= dibaca dari URL (mis. dari pencarian di Beranda); useSearchParams wajib di dalam <Suspense>. */
+/**
+ * ?q= dibaca dari URL (mis. dari pencarian di Beranda); useSearchParams wajib di dalam <Suspense>.
+ * ?job=<id lowongan> memfilter pelatihan sesuai skill gap lowongan itu (tombol "Lihat Pelatihan" di halaman lowongan).
+ * `key={job}` memuat ulang data saat berpindah antara semua pelatihan dan pelatihan per lowongan.
+ */
 function LearningPathFromUrl() {
-  const initialQuery = useSearchParams().get("q") ?? "";
-  return <LearningPathContent initialQuery={initialQuery} />;
+  const params = useSearchParams();
+  const initialQuery = params.get("q") ?? "";
+  const job = params.get("job") ?? "";
+  // ?rekomendasi=1 (dari "Lihat Semua Pelatihan" di Beranda): hanya pelatihan yang direkomendasikan untuk user.
+  // Bila ?job= juga ada, ?job= yang dipakai.
+  const recommended = params.get("rekomendasi") === "1";
+  return (
+    <LearningPathContent key={`${job}|${recommended}`} initialQuery={initialQuery} job={job} recommended={recommended} />
+  );
 }
 
 export default function LearningPathPage() {
@@ -71,59 +79,310 @@ export default function LearningPathPage() {
   );
 }
 
-function LearningPathContent({ initialQuery = "" }) {
+const PAGE_SIZE = 9; // 3 kolom x 3 baris
+// "Mulai Belajar" dan "Lanjutkan Belajar" membuka tautan course (courses.url) di tab baru. "Sudah Selesai Diikuti"
+// menandai selesai, lalu membuka dialog "Tambah Sertifikasi" di /profile dengan nama terisi judul course.
+const LEVEL_ORDER = ["Pemula", "Menengah", "Lanjutan"];
+
+/**
+ * Gambar sampul course (courses.image_url, 240x135 = rasio 16:9). Kotak gambar mengikuti rasio itu
+ * (aspect-video) supaya gambar tidak terpotong. Bila kosong atau gagal dimuat, tampil placeholder.
+ */
+function CourseImage({ src }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="relative aspect-video w-full overflow-hidden bg-brand-light">
+      {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : (
+        <span className="absolute inset-0 grid place-items-center text-brand/40">
+          <BookOpen className="size-10" aria-hidden="true" />
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Pilihan level di samping kotak pencarian. */
+function LevelSelect({ value, onChange, options }) {
+  return (
+    <div className="relative">
+      <label htmlFor="level-filter" className="sr-only">
+        Filter level pelatihan
+      </label>
+      <select
+        id="level-filter"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "min-h-12 appearance-none rounded-full border bg-white pl-4 pr-10 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
+          value ? "border-brand font-semibold text-brand" : "border-slate-200 text-ink"
+        )}
+      >
+        <option value="">Semua level</option>
+        {options.map(({ level, count }) => (
+          <option key={level} value={level}>
+            {level} ({count})
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-500"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+/** Lencana kecil di atas gambar sampul. */
+function ImageBadge({ className, children }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm backdrop-blur",
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Kartu satu pelatihan. Interaktif: kartu terangkat dan gambar membesar pelan saat disorot atau difokus,
+ * panah di tombol bergeser, dan garis progres di atas kartu mengikuti status (belum mulai / sedang diikuti / selesai).
+ * Semua gerak dimatikan bila pengguna memilih "kurangi gerakan" (motion-safe / motion-reduce).
+ */
+function CourseCard({ course, status, onStart, onComplete }) {
+  const completed = status === "completed";
+  const enrolled = status === "enrolled";
+
+  return (
+    <article
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300",
+        "motion-safe:hover:-translate-y-1 hover:border-brand hover:shadow-xl hover:shadow-brand/10",
+        "focus-within:border-brand focus-within:ring-3 focus-within:ring-brand/20",
+        completed ? "border-brand/40 bg-brand-light/40" : "border-line"
+      )}
+    >
+      {/* Garis progres: 0% belum mulai, setengah sedang diikuti, penuh selesai */}
+      <div className="h-1 w-full bg-line/70" aria-hidden="true">
+        <div
+          className={cn(
+            "h-full bg-brand transition-all duration-500",
+            completed ? "w-full" : enrolled ? "w-1/2" : "w-0"
+          )}
+        />
+      </div>
+
+      <div className="relative overflow-hidden">
+        <div className="transition-transform duration-500 motion-safe:group-hover:scale-105">
+          <CourseImage src={course.imageUrl} />
+        </div>
+        {/* Gradasi tipis di bawah gambar supaya lencana level dan format tetap terbaca */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent"
+          aria-hidden="true"
+        />
+
+        {/* Kiri atas: status */}
+        <div className="absolute left-3 top-3">
+          {completed ? (
+            <ImageBadge className="bg-brand text-white">
+              <Check className="size-3" aria-hidden="true" />
+              Selesai
+            </ImageBadge>
+          ) : enrolled ? (
+            <ImageBadge className="bg-white/90 text-brand">
+              <span className="relative flex size-2" aria-hidden="true">
+                <span className="absolute inline-flex size-full rounded-full bg-brand opacity-60 motion-safe:animate-ping" />
+                <span className="relative inline-flex size-2 rounded-full bg-brand" />
+              </span>
+              Sedang diikuti
+            </ImageBadge>
+          ) : (
+            course.popular && (
+              <ImageBadge className="bg-accent-light text-accent">
+                <Sparkle className="size-3 fill-current" aria-hidden="true" />
+                Paling Populer
+              </ImageBadge>
+            )
+          )}
+        </div>
+
+        {/* Kiri bawah: level. Kanan bawah: format */}
+        <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+          <ImageBadge className={cn("bg-white/90", LEVEL_TEXT[course.level] ?? "text-ink")}>{course.level}</ImageBadge>
+          <ImageBadge className="bg-white/90 text-ink/80">{course.format}</ImageBadge>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <p className="flex min-w-0 items-center gap-2.5 text-sm text-ink/80">
+          <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand-light text-brand transition-colors group-hover:bg-brand group-hover:text-white">
+            <BookOpen className="size-4" aria-hidden="true" />
+          </span>
+          <span className="truncate">{course.provider}</span>
+        </p>
+
+        <h4 className="mt-4 min-h-14 text-lg font-bold leading-snug text-ink transition-colors group-hover:text-brand">
+          {course.title}
+        </h4>
+
+        {/* Durasi, lalu kategori tepat di bawahnya */}
+        <div className="mt-4 space-y-2.5 border-t border-line pt-4 text-sm text-ink/80">
+          <p className="flex items-center gap-2">
+            <Clock className="size-4 shrink-0" aria-hidden="true" />
+            {course.duration}
+          </p>
+          {course.skillTag && (
+            <p className="flex items-center gap-2">
+              <Tag className="size-4 shrink-0 text-accent" aria-hidden="true" />
+              <span className="rounded-md border border-accent px-2 py-0.5 text-xs font-medium text-accent">
+                {course.skillTag}
+              </span>
+            </p>
+          )}
+        </div>
+
+        <div className="mt-auto pt-5">
+          {completed ? (
+            <p className="flex h-12 items-center justify-center gap-2 rounded-full bg-brand-light text-sm font-bold text-brand">
+              <Check className="size-4" aria-hidden="true" />
+              Selesai
+            </p>
+          ) : enrolled ? (
+            <div className="space-y-2">
+              <Button
+                href={course.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="lg"
+                className="w-full bg-brand hover:bg-brand/90"
+              >
+                Lanjutkan Belajar
+                <ExternalLink
+                  className="size-4 transition-transform motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-0.5"
+                  aria-hidden="true"
+                />
+              </Button>
+              <Button
+                size="sm"
+                variant="muted"
+                className="w-full inline-flex min-h-11 items-center gap-1.5 border-brand px-3.5 text-xs font-semibold text-brand transition-colors hover:bg-brand-light disabled:opacity-70 md:min-h-8"
+                onClick={() => onComplete(course.id)}
+              >
+                <Check className="size-3.5" aria-hidden="true" />
+                Sudah Selesai Diikuti
+              </Button>
+            </div>
+          ) : (
+            <Button
+              href={course.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="lg"
+              className="w-full bg-brand hover:bg-brand/90"
+              onClick={() => onStart(course.id)}
+            >
+              Mulai Belajar
+              <ExternalLink
+                className="size-4 transition-transform motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-0.5"
+                aria-hidden="true"
+              />
+            </Button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function LearningPathContent({ initialQuery = "", job = "", recommended = false }) {
+  const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const urlTimer = useRef(null);
   useEffect(() => () => clearTimeout(urlTimer.current), []);
   const [target, setTarget] = useState(null);
-  const [steps, setSteps] = useState([]);
+  const [jobInfo, setJobInfo] = useState(null); // lowongan yang jadi filter (null = semua pelatihan)
+  const [gap, setGap] = useState(null);
+  const [recInfo, setRecInfo] = useState(null); // ringkasan mode rekomendasi (null = bukan mode itu)
+  const [jobNotFound, setJobNotFound] = useState(false);
+  const [courses, setCourses] = useState([]);
   const [progress, setProgress] = useState({});
+  const [level, setLevel] = useState("");
+  const [page, setPage] = useState(1);
+  const listRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
 
   const isCompleted = (courseId) => progress[courseId]?.status === "completed";
 
-  // Status langkah dihitung dari status course:
-  // selesai  = semua course di langkah itu completed
-  // aktif    = langkah sebelumnya selesai (atau langkah pertama)
-  // terkunci = langkah sebelumnya belum selesai
-  const stepViews = steps.map((step, index) => {
-    const doneCount = step.courses.filter((course) => isCompleted(course.id)).length;
-    const previousDone =
-      index === 0 || steps[index - 1].courses.every((course) => isCompleted(course.id));
-
-    const state =
-      doneCount === step.courses.length ? "completed" : previousDone ? "active" : "locked";
-
-    return { ...step, doneCount, state };
-  });
-
-  // Pencarian hanya menyaring TAMPILAN; status langkah tetap dihitung dari semua course di atas.
+  // Semua level digabung dalam satu daftar. Pencarian dan pilihan level hanya menyaring TAMPILAN;
+  // progres tetap dihitung dari semua course.
   const searching = query.trim().length > 0;
-  const visibleSteps = stepViews
-    .map((step) => ({
-      ...step,
-      shownCourses: step.courses.filter((course) => matchesQuery(courseSearchFields(course), query)),
-    }))
-    .filter((step) => !searching || step.shownCourses.length > 0);
-  const matchCount = visibleSteps.reduce((sum, step) => sum + step.shownCourses.length, 0);
+  const levelOptions = LEVEL_ORDER.map((name) => ({
+    level: name,
+    count: courses.filter((course) => course.level === name).length,
+  })).filter((option) => option.count > 0);
+  const filtered = courses.filter(
+    (course) =>
+      (!level || course.level === level) && matchesQuery(courseSearchFields(course), query)
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const firstIndex = (currentPage - 1) * PAGE_SIZE;
+  const pageCourses = filtered.slice(firstIndex, firstIndex + PAGE_SIZE);
 
   const changeQuery = (value) => {
     setQuery(value);
+    setPage(1);
     clearTimeout(urlTimer.current);
     urlTimer.current = setTimeout(() => replaceQueryParam(value), 300);
   };
 
-  const totalCourses = steps.reduce((sum, step) => sum + step.courses.length, 0);
-  const completedCourses = stepViews.reduce((sum, step) => sum + step.doneCount, 0);
+  const changeLevel = (value) => {
+    setLevel(value);
+    setPage(1);
+  };
+
+  const resetFilters = () => {
+    changeQuery("");
+    setLevel("");
+  };
+
+  // Pindah halaman, lalu gulir ke awal daftar supaya kartu pertama langsung terlihat.
+  const goToPage = (next) => {
+    setPage(next);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    listRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  };
+
+  const totalCourses = courses.length;
+  const completedCourses = courses.filter((course) => isCompleted(course.id)).length;
   const percent = totalCourses ? Math.round((completedCourses / totalCourses) * 100) : 0;
 
   useEffect(() => {
-    getLearningPath()
+    getLearningPath(job || null, recommended)
       .then((data) => {
         setTarget(data.target);
-        setSteps(data.steps);
+        setJobInfo(data.job);
+        setGap(data.gap);
+        setRecInfo(data.recommended);
+        setJobNotFound(data.jobNotFound);
+        setCourses(data.courses);
         setProgress(data.progress);
         setLoading(false);
       })
@@ -131,10 +390,10 @@ function LearningPathContent({ initialQuery = "" }) {
         setError(error.message);
         setLoading(false);
       });
-  }, []);
+  }, [job, recommended]);
 
-  // Dipanggil saat user klik "Daftar": catat sebagai "Sedang diikuti".
-  // Pendaftaran sebenarnya terjadi di situs provider (tab baru).
+  // Dipanggil saat user klik "Mulai Belajar": catat sebagai "Sedang diikuti".
+  // Course dikerjakan di situs provider (tab baru).
   const handleStart = (courseId) => {
     setActionError("");
 
@@ -144,15 +403,27 @@ function LearningPathContent({ initialQuery = "" }) {
       )
       .catch((error) => setActionError(error.message));
   };
-const handleComplete = (courseId) => {
+
+  // "Sudah Selesai Diikuti": simpan status selesai, lalu buka /profile dengan dialog "Tambah Sertifikasi"
+  // yang sudah terisi (nama = judul course, penerbit = penyedia, tahun = tahun ini).
+  const handleComplete = (courseId) => {
     setActionError("");
+    const course = courses.find((c) => c.id === courseId);
 
     completeCourse(courseId)
-      .then(({ status }) =>
-        setProgress((prev) => ({ ...prev, [courseId]: { status } }))
-      )
+      .then(({ status }) => {
+        setProgress((prev) => ({ ...prev, [courseId]: { status } }));
+        if (!course) return;
+        const params = new URLSearchParams({
+          sertifikasi: course.title,
+          penerbit: course.provider ?? "",
+          tahun: String(new Date().getFullYear()),
+        });
+        router.push(`/profile?${params.toString()}`);
+      })
       .catch((error) => setActionError(error.message));
   };
+
   if (error) {
     return (
       <main className="flex min-h-[70vh] items-center justify-center px-6">
@@ -199,59 +470,130 @@ const handleComplete = (courseId) => {
             Jalur Belajar &amp; Pelatihan untuk Menutup Skill Gap
           </h1>
           <p className="mt-4 text-muted-foreground">
-            Rekomendasi pelatihan yang dipersonalisasi berdasarkan analisis AI
-            terhadap profil Anda.
+            {jobInfo
+              ? "Pelatihan yang menutup skill teknis yang belum Anda miliki untuk lowongan ini."
+              : recInfo
+                ? "Pelatihan yang menutup skill gap dari lowongan yang cocok untuk Anda."
+                : "Semua pelatihan di Laras Karya. Buka dari detail lowongan atau Beranda untuk melihat yang sesuai skill gap Anda."}
           </p>
         </div>
 
-        <div className="mt-10 space-y-8">
-          {/* Target posisi & skill gap */}
-          <section
-            aria-label="Target posisi dan skill gap"
-            className="grid gap-8 rounded-3xl bg-brand px-6 py-8 text-white md:grid-cols-[1fr_auto_1fr] md:items-center md:px-10"
+        {jobNotFound ? (
+          <p
+            role="status"
+            className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
           >
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/90">
-                Target Posisi
+            Lowongan yang dimaksud tidak ditemukan, jadi semua pelatihan ditampilkan.
+          </p>
+        ) : null}
+
+        {jobInfo ? (
+          <div
+            role="status"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm text-ink"
+          >
+            <p>
+              Menampilkan pelatihan untuk:{" "}
+              <span className="font-bold text-brand">
+                {jobInfo.title}
+                {jobInfo.company ? `, ${jobInfo.company}` : ""}
+              </span>
+            </p>
+            <Link
+              href="/learning-path"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand px-4 text-xs font-bold text-brand transition-colors hover:bg-white md:min-h-9"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+              Hapus filter
+            </Link>
+          </div>
+        ) : null}
+
+        {recInfo && !jobInfo ? (
+          <div
+            role="status"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm text-ink"
+          >
+            <p>
+              {courses.length > 0 ? (
+                <>
+                  Menampilkan{" "}
+                  <span className="font-bold text-brand">{courses.length} pelatihan rekomendasi</span>, disusun dari
+                  skill gap pada {recInfo.jobCount} lowongan yang cocok untuk Anda.
+                </>
+              ) : (
+                "Pelatihan rekomendasi untuk Anda."
+              )}
+            </p>
+            <Link
+              href="/learning-path"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand px-4 text-xs font-bold text-brand transition-colors hover:bg-white md:min-h-9"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+              Lihat semua pelatihan
+            </Link>
+            {courses.length > 0 && recInfo.uncovered.length > 0 ? (
+              <p className="basis-full text-xs text-ink/70">
+                Belum ada pelatihan untuk: {recInfo.uncovered.slice(0, 5).join(", ")}
+                {recInfo.uncovered.length > 5 ? ` dan ${recInfo.uncovered.length - 5} lainnya` : ""}.
               </p>
-              <h2 className="mt-2 text-3xl font-bold">{target.position}</h2>
-              <p className="mt-1 text-base text-white/85">{target.company}</p>
-            </div>
+            ) : null}
+          </div>
+        ) : null}
 
-            <div
-              className="hidden h-24 w-px bg-white/20 md:block"
-              aria-hidden="true"
-            />
-
-            <div className="md:pr-2">
-              <div className="flex items-start justify-between gap-4">
+        <div className="mt-10 space-y-8">
+          {/* Target posisi & skill gap (hanya saat ?job= dipilih) */}
+          {target ? (
+            <section
+              aria-label="Target posisi dan skill gap"
+              className="grid gap-8 rounded-3xl bg-brand px-6 py-8 text-white md:grid-cols-[1fr_auto_1fr] md:items-center md:px-10"
+            >
+              <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-white/90">
-                  Skill Gap Teridentifikasi
+                  Target Posisi
                 </p>
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-accent-light px-3 py-1 text-xs font-bold text-accent">
-                  <Sparkle className="size-3 fill-current" aria-hidden="true" />
-                  Dianalisis oleh AI
-                </span>
+                <h2 className="mt-2 text-3xl font-bold">{target.position}</h2>
+                <p className="mt-1 text-base text-white/85">{target.company}</p>
               </div>
 
-              <ul className="mt-3 space-y-2">
-                {target.skillGaps.map(({ skill, status, tone }) => (
-                  <li key={skill} className="flex items-center gap-3 text-sm">
-                    <span
-                      className={cn("size-2.5 shrink-0 rounded-full", GAP_DOT[tone])}
-                      aria-hidden="true"
-                    />
-                    <span>
-                      <span className="font-semibold">{skill}</span>
-                      <span className={cn("ml-1.5", GAP_TEXT[tone])}>
-                        — {status}
+              <div
+                className="hidden h-24 w-px bg-white/20 md:block"
+                aria-hidden="true"
+              />
+
+              <div className="md:pr-2">
+                <div className="flex items-start justify-between gap-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/90">
+                    Skill Gap Teridentifikasi
+                  </p>
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-accent-light px-3 py-1 text-xs font-bold text-accent">
+                    <Sparkle className="size-3 fill-current" aria-hidden="true" />
+                    Analisis skill gap
+                  </span>
+                </div>
+
+                <ul className="mt-3 space-y-2">
+                  {target.skillGaps.map(({ skill, status, tone }) => (
+                    <li key={skill} className="flex items-center gap-3 text-sm">
+                      <span
+                        className={cn("size-2.5 shrink-0 rounded-full", GAP_DOT[tone])}
+                        aria-hidden="true"
+                      />
+                      <span>
+                        <span className="font-semibold">{skill}</span>
+                        <span className={cn("ml-1.5", GAP_TEXT[tone])}>
+                          — {status}
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
+                    </li>
+                  ))}
+                </ul>
+                {target.moreSkills > 0 ? (
+                  <p className="mt-2 text-xs text-white/80">+{target.moreSkills} keterampilan lainnya</p>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           {/* Jalur belajar + course */}
           <section
@@ -268,9 +610,7 @@ const handleComplete = (courseId) => {
                 </h2>
                 <p className="mt-0.5 text-sm text-ink/70">
                   Course dikerjakan di situs penyedia (Udemy, Kemnaker, dll).
-                  Tandai Sudah Selesai Diikuti setelah selesai, dan langkah
-                  berikutnya terbuka setelah semua course di langkah sebelumnya
-                  selesai.
+                  Tandai Sudah Selesai Diikuti setelah selesai, lalu tambahkan sertifikatnya ke profil Anda.
                 </p>
               </div>
             </div>
@@ -301,210 +641,126 @@ const handleComplete = (courseId) => {
               <p className="mt-4 text-sm text-destructive">{actionError}</p>
             )}
 
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <SearchBar
                 label="Cari pelatihan"
                 placeholder="Cari pelatihan, penyedia, atau skill"
                 value={query}
                 onChange={changeQuery}
-                className="w-full max-w-xl"
+                className="w-full max-w-xl sm:flex-1"
               />
-              {searching && matchCount > 0 ? (
-                <p aria-live="polite" className="text-sm text-ink/70">
-                  {matchCount} pelatihan cocok dengan “{query.trim()}”
-                </p>
+              {levelOptions.length > 0 ? (
+                <LevelSelect value={level} onChange={changeLevel} options={levelOptions} />
               ) : null}
             </div>
 
-            {searching && matchCount === 0 ? (
-              <EmptyState
-                icon={SearchX}
-                title={`Tidak ada pelatihan untuk “${query.trim()}”`}
-                text="Coba kata lain, misalnya nama skill seperti AMDAL, atau nama penyedia seperti Kemnaker."
-              >
-                <button
-                  type="button"
-                  onClick={() => changeQuery("")}
-                  className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
-                >
-                  Hapus pencarian
-                </button>
-              </EmptyState>
+            {gap?.uncovered.length > 0 && courses.length > 0 ? (
+              <p className="mt-3 text-sm text-ink/70">
+                Belum ada pelatihan di Laras Karya untuk: {gap.uncovered.join(", ")}.
+              </p>
             ) : null}
 
-            <ol className="mt-8 space-y-6">
-              {visibleSteps.map((step) => (
-                <li
-                  key={step.n}
-                  aria-current={step.state === "active" ? "step" : undefined}
-                  className={cn("rounded-2xl p-5 md:p-6", STEP_CARD[step.state])}
+            {filtered.length > 0 ? (
+              <p aria-live="polite" className="mt-3 text-sm text-ink/70">
+                Menampilkan {firstIndex + 1}–{firstIndex + pageCourses.length} dari {filtered.length} pelatihan
+                {searching ? ` untuk “${query.trim()}”` : ""}
+              </p>
+            ) : null}
+
+            <div ref={listRef} className="mt-6 scroll-mt-24">
+              {courses.length === 0 && recInfo ? (
+                <EmptyState
+                  icon={recInfo.reason === "no-gap" ? Check : SearchX}
+                  title={
+                    recInfo.reason === "no-recommendations"
+                      ? "Belum ada rekomendasi pelatihan"
+                      : recInfo.reason === "no-gap"
+                        ? "Keahlian Anda sudah memenuhi lowongan yang cocok"
+                        : "Belum ada pelatihan untuk skill yang kurang"
+                  }
+                  text={
+                    recInfo.reason === "no-recommendations"
+                      ? "Rekomendasi muncul setelah asesmen karier selesai. Tekan Perbarui Rekomendasi di Beranda, lalu kembali ke sini."
+                      : recInfo.reason === "no-gap"
+                        ? "Tidak ada skill gap yang perlu ditutup saat ini. Anda bisa melihat pelatihan lain."
+                        : `Belum ada pelatihan di Laras Karya untuk: ${recInfo.uncovered.slice(0, 5).join(", ")}. Cari di penyedia lain, atau lihat semua pelatihan.`
+                  }
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex items-start gap-4">
-                      <span
-                        className={cn(
-                          "grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold",
-                          step.state === "locked"
-                            ? "bg-brand-light text-brand"
-                            : "bg-brand text-white"
-                        )}
-                      >
-                        {step.state === "completed" ? (
-                          <Check className="size-4" aria-hidden="true" />
-                        ) : step.state === "locked" ? (
-                          <Lock className="size-4" aria-hidden="true" />
-                        ) : (
-                          step.n
-                        )}
-                      </span>
-
-                      <div>
-                        <h3 className="text-lg font-bold text-brand">
-                          Langkah {step.n}: {step.title}
-                        </h3>
-                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink/80">
-                          {step.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="text-sm sm:text-right">
-                      <p className="font-semibold text-ink">
-                        {step.doneCount}/{step.courses.length} course selesai
-                      </p>
-                      <p className="text-ink/70">
-                        {step.state === "completed" && "Langkah selesai"}
-                        {step.state === "active" && "Langkah saat ini"}
-                        {step.state === "locked" &&
-                          `Selesaikan semua course di Langkah ${step.n - 1} untuk membuka`}
-                      </p>
-                    </div>
+                  <Link
+                    href="/learning-path"
+                    className="inline-flex rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+                  >
+                    Lihat semua pelatihan
+                  </Link>
+                </EmptyState>
+              ) : courses.length === 0 && gap ? (
+                <EmptyState
+                  icon={gap.missing === 0 ? Check : SearchX}
+                  title={
+                    gap.total === 0
+                      ? "Lowongan ini belum mencantumkan keterampilan teknis"
+                      : gap.missing === 0
+                        ? "Anda sudah memenuhi semua skill untuk lowongan ini"
+                        : "Belum ada pelatihan untuk skill yang kurang"
+                  }
+                  text={
+                    gap.missing === 0
+                      ? "Tidak ada skill teknis yang perlu dilengkapi. Anda bisa langsung melamar, atau lihat pelatihan lain."
+                      : `Belum ada pelatihan di Laras Karya untuk: ${gap.uncovered.join(", ")}. Cari di penyedia lain, atau lihat semua pelatihan.`
+                  }
+                >
+                  <Link
+                    href="/learning-path"
+                    className="inline-flex rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+                  >
+                    Lihat semua pelatihan
+                  </Link>
+                </EmptyState>
+              ) : filtered.length === 0 ? (
+                <EmptyState
+                  icon={SearchX}
+                  title={
+                    courses.length === 0
+                      ? "Belum ada pelatihan"
+                      : searching
+                        ? `Tidak ada pelatihan untuk “${query.trim()}”`
+                        : "Tidak ada pelatihan untuk level ini"
+                  }
+                  text={
+                    courses.length === 0
+                      ? "Pelatihan akan muncul di sini setelah ditambahkan."
+                      : "Coba kata lain, misalnya nama skill seperti AMDAL, atau nama penyedia seperti Kemnaker."
+                  }
+                >
+                  {courses.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand/90"
+                    >
+                      Hapus pencarian dan filter
+                    </button>
+                  ) : null}
+                </EmptyState>
+              ) : (
+                <>
+                  <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                    {pageCourses.map((course) => (
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        status={progress[course.id]?.status}
+                        onStart={handleStart}
+                        onComplete={handleComplete}
+                      />
+                    ))}
                   </div>
-
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    {step.shownCourses.map((course) => {
-                      const status = progress[course.id]?.status;
-                      const locked = step.state === "locked";
-
-                      return (
-                        <article
-                          key={course.id}
-                          className={cn(
-                            "flex flex-col rounded-2xl border border-line bg-white p-6",
-                            locked && "opacity-60"
-                          )}
-                        >
-                          <header className="flex items-center justify-between gap-3">
-                            <p className="flex min-w-0 items-center gap-2.5 text-sm text-ink/80">
-                              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand-light text-brand">
-                                <BookOpen className="size-4" aria-hidden="true" />
-                              </span>
-                              <span className="truncate">{course.provider}</span>
-                            </p>
-
-                            {status === "completed" ? (
-                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-white">
-                                <Check className="size-3" aria-hidden="true" />
-                                Selesai
-                              </span>
-                            ) : status === "enrolled" ? (
-                              <span className="shrink-0 rounded-full bg-brand-light px-2.5 py-1 text-xs font-bold text-brand">
-                                Sedang diikuti
-                              </span>
-                            ) : (
-                              course.popular && (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-light px-2.5 py-1 text-xs font-bold text-accent">
-                                  <Sparkle className="size-3 fill-current" aria-hidden="true" />
-                                  Paling Populer
-                                </span>
-                              )
-                            )}
-                          </header>
-
-                          <h4 className="mt-5 min-h-12 text-lg font-bold leading-snug text-ink">
-                            {course.title}
-                          </h4>
-
-                          <div className="mt-5 flex flex-wrap gap-2">
-                            <span
-                              className={cn(
-                                "rounded-full px-2.5 py-1 text-xs font-bold",
-                                LEVEL_BADGE[course.level]
-                              )}
-                            >
-                              {course.level}
-                            </span>
-                            <span className="rounded-full border border-line px-2.5 py-1 text-xs font-medium text-ink/80">
-                              {course.format}
-                            </span>
-                          </div>
-
-                          <div className="mt-5 flex min-h-8 items-center justify-between gap-3 border-t border-line pt-4 text-sm text-ink/80">
-                            <span className="inline-flex items-center gap-2">
-                              <Clock className="size-4" aria-hidden="true" />
-                              {course.duration}
-                            </span>
-
-                            {course.skillTag && (
-                              <span className="rounded-md border border-accent px-2 py-0.5 text-xs font-medium text-accent">
-                                {course.skillTag}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="mt-5">
-                            {status === "completed" ? (
-                              <p className="flex h-12 items-center justify-center gap-2 rounded-full bg-brand-light text-sm font-bold text-brand">
-                                <Check className="size-4" aria-hidden="true" />
-                                Selesai
-                              </p>
-                            ) : status === "enrolled" ? (
-                             <div className="space-y-2">
-                                <Button
-                                  href={course.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  size="lg"
-                                  className="w-full bg-brand hover:bg-brand/90"
-                                >
-                                  Lanjutkan Belajar {course.provider}
-                                  <ExternalLink className="size-4" aria-hidden="true" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="muted"
-                                  className="w-full inline-flex min-h-11 items-center gap-1.5 border-brand px-3.5 text-xs font-semibold text-brand transition-colors hover:bg-brand-light disabled:opacity-70 md:min-h-8"
-                                  onClick={() => handleComplete(course.id)}
-                                >
-                                  Sudah Selesai Diikuti
-                                </Button>
-                              </div>
-                            ) : locked ? (
-                              <Button size="lg" variant="muted" className="w-full" disabled>
-                                <Lock className="size-4" aria-hidden="true" />
-                                Terkunci
-                              </Button>
-                            ) : (
-                              <Button
-                                href={course.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                size="lg"
-                                className="w-full bg-brand hover:bg-brand/90"
-                                onClick={() => handleStart(course.id)}
-                              >
-                                Daftar di {course.provider}
-                                <ExternalLink className="size-4" aria-hidden="true" />
-                              </Button>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </li>
-              ))}
-            </ol>
+                  {totalPages > 1 ? (
+                    <Pagination label="Halaman pelatihan" page={currentPage} totalPages={totalPages} onChange={goToPage} />
+                  ) : null}
+                </>
+              )}
+            </div>
           </section>
 
           <aside className="flex flex-col gap-3 rounded-2xl border border-brand/15 bg-brand-light px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -512,15 +768,15 @@ const handleComplete = (courseId) => {
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-accent">
                 <Sparkles className="size-4" aria-hidden="true" />
               </span>
-              Setelah menyelesaikan pelatihan, profil dan tingkat kecocokan
-              lamaran Anda akan diperbarui secara otomatis.
+              Setelah menyelesaikan pelatihan, tambahkan sertifikatnya ke profil Anda,
+              lalu tekan Perbarui Rekomendasi di Beranda agar kecocokan Anda ikut diperbarui.
             </p>
 
             <Link
-              href="#"
+              href="/home"
               className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-brand hover:underline"
             >
-              Pelajari Selengkapnya
+              Ke Beranda
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </aside>

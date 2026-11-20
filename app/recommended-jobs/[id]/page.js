@@ -1,16 +1,23 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
-import { FitReasonBanner } from "@/components/jobs/fit-reason-banner";
+import { AiFitSummary } from "@/components/jobs/ai-fit-summary";
+import { FitMatchLine, FitReasonBanner } from "@/components/jobs/fit-reason-banner";
 import { JobHeader } from "@/components/jobs/job-header";
 import { JobRequirements } from "@/components/jobs/job-requirements";
 import { JobSidebarInfo } from "@/components/jobs/job-sidebar-info";
+import { SkillGapPlan } from "@/components/jobs/skill-gap-plan";
 import { MatchSkillGapCard } from "@/components/jobs/match-skill-gap-card";
 import { MobileApplyBar } from "@/components/jobs/mobile-apply-bar";
 //import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { countMissingSkills, getJobDetail } from "@/lib/job-detail-data";
+import { fetchJobDetail } from "@/lib/job-detail-db";
+import { isUuid } from "@/lib/job-detail-mapping";
+import { loginTo } from "@/lib/routes";
+import { getCurrentUser } from "@/lib/session";
 
 /*
   Metadata statis. generateMetadata yang membaca `params` dihapus karena
@@ -42,13 +49,28 @@ function JobDetailSkeleton() {
 }
 
 /**
+ * Id UUID = lowongan dari database Supabase (wajib masuk, karena skor dan keahlian milik user).
+ * Id angka (1–15) = data contoh untuk demo, tetap berjalan seperti sebelumnya.
+ */
+async function loadJob(id) {
+  if (!isUuid(id)) return getJobDetail(id);
+
+  const user = await getCurrentUser();
+  if (!user) redirect(loginTo(`/recommended-jobs/${id}`));
+
+  const job = await fetchJobDetail(id, user);
+  if (!job) notFound();
+  return job;
+}
+
+/**
  * Bagian yang membaca `params`. Dipisah dan dibungkus <Suspense> di halaman,
  * sehingga `await params` tidak lagi memblokir prerender (aturan Next.js 16).
  * @param {{ params: Promise<{ id: string }> }} props
  */
 async function JobDetailContent({ params }) {
   const { id } = await params;
-  const job = getJobDetail(id);
+  const job = await loadJob(id);
 
   return (
     <>
@@ -58,13 +80,22 @@ async function JobDetailContent({ params }) {
           <FitReasonBanner
             job={job}
             missingCount={countMissingSkills(job.skills)}
+            // Lowongan dari database: ringkasan AI di-stream; fallback = baris kecocokan biasa (halaman tidak menunggu AI).
+            summary={
+              isUuid(job.id) ? (
+                <Suspense fallback={<FitMatchLine job={job} />}>
+                  <AiFitSummary job={job} />
+                </Suspense>
+              ) : undefined
+            }
           />
           <JobSidebarInfo job={job} />
+          <SkillGapPlan job={job} />
           <JobRequirements job={job} />
         </div>
 
         <aside aria-label="Kecocokan profil dan aksi melamar">
-          <MatchSkillGapCard job={job} />
+          <MatchSkillGapCard job={job} planHref="rencana-belajar" />
         </aside>
       </div>
       <MobileApplyBar job={job} />

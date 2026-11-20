@@ -1,175 +1,124 @@
+"use server";
+
+import { fetchLearningPath } from "@/lib/learning-path-db";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
+
 // Data & action untuk halaman Jalur Belajar.
-// Saat ini masih mock (dummy). Ganti isi fungsi dengan fetch / Supabase saat backend siap.
+// - Pelatihan dibaca dari tabel courses (hanya yang is_published). Tanpa parameter semua pelatihan tampil; dengan
+//   ?job=<uuid lowongan> hanya pelatihan untuk skill teknis lowongan itu yang belum dimiliki user; dengan
+//   ?rekomendasi=1 semua pelatihan yang direkomendasikan untuk user (sama dengan bagian pelatihan di Beranda)
+//   (lib/learning-path-db.js; urutan pelatihan di lib/course-order.js, titik sambung engine rekomendasi).
+// - Progres user disimpan di tabel user_course_progress. Memakai sesi user (bukan service role),
+//   jadi dijaga RLS: user hanya membaca dan menulis progresnya sendiri.
+// - Kotak "Target Posisi & Skill Gap" hanya tampil dengan ?job= (datanya dari lowongan sungguhan);
+//   tanpa ?job= tidak ada target, jadi kotak itu disembunyikan. Pelatihan per skill butuh tabel course_skills terisi.
 
-// Target = lowongan demo "Sustainability Officer, PT Hijau Lestari" (lib/mock-jobs.js, id 1), supaya
-// ceritanya nyambung dengan halaman rekomendasi. Skill gap sama dengan gap lowongan itu:
-// Pelaporan ESG dan Regulasi Keberlanjutan belum dikuasai; Analisis Data dan Koordinasi Proyek sudah.
-// Kalau kedua skill gap terpenuhi, skor kecocokan lowongan ini naik dari 83 ke 95.
-const LEARNING_TARGET = {
-  position: "Sustainability Officer",
-  company: "PT Hijau Lestari",
-  skillGaps: [
-    { skill: "Pelaporan ESG", status: "Belum dikuasai", tone: "red" },
-    { skill: "Regulasi Keberlanjutan", status: "Belum dikuasai", tone: "red" },
-    { skill: "Analisis Data", status: "Sudah baik", tone: "green" },
-    { skill: "Koordinasi Proyek", status: "Sudah baik", tone: "green" },
-  ],
-};
+// Status di database (user_course_progress.status) -> status di halaman.
+// "planned" = belum dimulai, jadi tidak dikirim ke halaman.
+const DB_TO_UI = { in_progress: "enrolled", completed: "completed" };
 
-// Satu bidang (keberlanjutan), berjenjang: Dasar -> Menengah -> Lanjutan.
-// Setiap langkah berisi course milik pihak ketiga (Udemy, Kemnaker, dll).
-// Judul & `url` di bawah hanya contoh: ganti dengan link course asli.
-const LEARNING_STEPS = [
-  {
-    n: 1,
-    title: "Dasar Keberlanjutan & Regulasi",
-    description:
-      "Pahami kerangka ESG dan regulasi keberlanjutan yang berlaku di Indonesia.",
-    courses: [
-      {
-        id: "c1",
-        provider: "Udemy",
-        title: "Pengantar ESG dan Keberlanjutan untuk Pemula",
-        level: "Beginner",
-        format: "Kursus Online",
-        duration: "4 minggu",
-        skillTag: "Pelaporan ESG",
-        popular: true,
-        url: "https://www.udemy.com",
-      },
-      {
-        id: "c2",
-        provider: "Udemy",
-        title: "Dasar Regulasi Keberlanjutan di Indonesia",
-        level: "Beginner",
-        format: "Kursus Online",
-        duration: "2 minggu",
-        skillTag: "Regulasi Keberlanjutan",
-        popular: false,
-        url: "https://www.udemy.com",
-      },
-    ],
-  },
-  {
-    n: 2,
-    title: "Pelaporan Keberlanjutan",
-    description:
-      "Susun laporan keberlanjutan dengan standar GRI dan pantau kepatuhan terhadap regulasi.",
-    courses: [
-      {
-        id: "c3",
-        provider: "Kemnaker",
-        title: "Penyusunan Laporan Keberlanjutan (GRI Standards)",
-        level: "Intermediate",
-        format: "Workshop",
-        duration: "3 hari",
-        skillTag: "Pelaporan ESG",
-        popular: false,
-        url: "https://kemnaker.go.id",
-      },
-      {
-        id: "c4",
-        provider: "Kemnaker",
-        title: "Pemantauan Kepatuhan Regulasi Keberlanjutan",
-        level: "Intermediate",
-        format: "Workshop",
-        duration: "2 hari",
-        skillTag: "Regulasi Keberlanjutan",
-        popular: false,
-        url: "https://kemnaker.go.id",
-      },
-    ],
-  },
-  {
-    n: 3,
-    title: "Sertifikasi Profesional",
-    description:
-      "Perkuat kompetensi dengan sertifikasi pelaporan dan kepatuhan yang diakui industri.",
-    courses: [
-      {
-        id: "c5",
-        provider: "Udemy",
-        title: "Sertifikasi Profesional Pelaporan ESG",
-        level: "Advanced",
-        format: "Sertifikasi",
-        duration: "5 hari",
-        skillTag: "Pelaporan ESG",
-        popular: false,
-        url: "https://www.udemy.com",
-      },
-      {
-        id: "c6",
-        provider: "Kemnaker",
-        title: "Kepatuhan Regulasi Keberlanjutan untuk Perusahaan",
-        level: "Advanced",
-        format: "Sertifikasi",
-        duration: "3 minggu",
-        skillTag: "Regulasi Keberlanjutan",
-        popular: false,
-        url: "https://kemnaker.go.id",
-      },
-    ],
-  },
-];
-
-// Course yang sudah dimulai user (klik "Daftar" lalu pindah ke situs provider).
-// Mock: disimpan di memori (hilang saat refresh). Nanti ganti dengan tabel enrollments.
-let startedIds = [];
-
-// Course yang ditandai user "Sudah Selesai Diikuti".
-// Mock: disimpan di memori. Nanti ganti dengan kolom status di tabel enrollments.
-let completedIds = [];
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function currentUser() {
+  if (!isSupabaseConfigured) return { supabase: null, user: null };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  return { supabase, user: data?.user ?? null };
+}
 
 /**
  * Status tiap course milik user: { [courseId]: { status: "enrolled" | "completed" } }
- * - enrolled  : user sudah klik daftar / mulai di situs provider
- * - completed : user menekan "Sudah Selesai Diikuti" (menimpa "enrolled")
+ * - enrolled  : user sudah klik daftar / mulai di situs provider (in_progress di database)
+ * - completed : user menekan "Sudah Selesai Diikuti"
  * Course yang tidak ada di objek ini = belum dimulai.
  */
-function buildProgress() {
+function toProgress(rows) {
   const progress = {};
-
-  startedIds.forEach((id) => {
-    progress[id] = { status: "enrolled" };
-  });
-
-  completedIds.forEach((id) => {
-    progress[id] = { status: "completed" };
-  });
-
+  for (const row of rows ?? []) {
+    const status = DB_TO_UI[row.status];
+    if (status) progress[row.course_id] = { status };
+  }
   return progress;
 }
 
-/** Ambil target posisi, langkah + course, dan status course milik user. */
-export async function getLearningPath() {
-  await wait(600);
+/**
+ * Ambil pelatihan + progres milik user.
+ * @param {string | null} [jobParam] nilai ?job= dari URL: id (UUID) lowongan untuk memfilter pelatihan sesuai skill gap-nya
+ * @param {boolean} [recommended] true bila ?rekomendasi=1: tampilkan pelatihan yang direkomendasikan untuk user
+ */
+export async function getLearningPath(jobParam = null, recommended = false) {
+  const { supabase, user } = await currentUser();
+  if (!supabase) throw new Error("Koneksi database belum dikonfigurasi.");
+  // Skill gap dihitung dari skill milik user, jadi wajib masuk (halaman ini juga dijaga proxy).
+  if (!user) throw new Error("Sesi Anda berakhir. Silakan masuk lagi.");
+
+  const path = await fetchLearningPath(supabase, user, typeof jobParam === "string" ? jobParam : null, recommended === true);
+
+  const { data: progressRows, error: progressError } = await supabase
+    .from("user_course_progress")
+    .select("course_id, status")
+    .eq("user_id", user.id);
+  if (progressError) {
+    console.error("[getLearningPath] progress:", progressError.message);
+    throw new Error("Progres belajar belum bisa dimuat. Coba lagi beberapa saat lagi.");
+  }
 
   return {
-    target: LEARNING_TARGET,
-    steps: LEARNING_STEPS,
-    progress: buildProgress(),
+    mode: path.mode,
+    job: path.job,
+    jobNotFound: path.jobNotFound,
+    gap: path.gap,
+    recommended: path.recommended,
+    // Hanya mode lowongan yang punya target; mode semua pelatihan: null (kotak target disembunyikan).
+    target:
+      path.mode === "job"
+        ? { position: path.job.title, company: path.job.company, ...path.gap.hero }
+        : null,
+    courses: path.courses,
+    progress: toProgress(progressRows),
   };
 }
 
-/** Catat bahwa user mulai mengikuti course (status "Sedang diikuti"). */
-export async function startCourse(id) {
-  await wait(300);
+async function requireUser() {
+  const { supabase, user } = await currentUser();
+  if (!user) throw new Error("Sesi Anda berakhir. Silakan masuk lagi.");
+  return { supabase, user };
+}
 
-  if (!startedIds.includes(id)) {
-    startedIds = [...startedIds, id];
-  }
+function failSave(step, error) {
+  console.error(`[${step}]`, error?.message ?? error);
+  return new Error("Progres belum tersimpan. Coba lagi beberapa saat lagi.");
+}
+
+/** Catat bahwa user mulai mengikuti course (status "Sedang diikuti"). Course yang sudah selesai tidak diturunkan. */
+export async function startCourse(id) {
+  const { supabase, user } = await requireUser();
+
+  const { data: existing, error: readError } = await supabase
+    .from("user_course_progress")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("course_id", id)
+    .maybeSingle();
+  if (readError) throw failSave("startCourse", readError);
+  if (existing?.status === "completed") return { id, status: "completed" };
+
+  const { error } = await supabase
+    .from("user_course_progress")
+    .upsert({ user_id: user.id, course_id: id, status: "in_progress" }, { onConflict: "user_id,course_id" });
+  if (error) throw failSave("startCourse", error);
 
   return { id, status: "enrolled" };
 }
+
 /** Tandai course selesai ("Sudah Selesai Diikuti"). */
 export async function completeCourse(id) {
-  await wait(300);
+  const { supabase, user } = await requireUser();
 
-  if (!completedIds.includes(id)) {
-    completedIds = [...completedIds, id];
-  }
+  const { error } = await supabase.from("user_course_progress").upsert(
+    { user_id: user.id, course_id: id, status: "completed", completed_at: new Date().toISOString() },
+    { onConflict: "user_id,course_id" }
+  );
+  if (error) throw failSave("completeCourse", error);
 
   return { id, status: "completed" };
 }

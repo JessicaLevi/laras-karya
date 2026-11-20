@@ -1,5 +1,9 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/plus-jakarta-sans/700.css";
 import { Navbar } from "@/components/layout/navbar";
+import { AssessmentSync } from "@/components/assessment/assessment-sync";
 import PwaRegister from "@/components/pwa-register";
 import "./globals.css";
 
@@ -7,12 +11,6 @@ import { Suspense } from "react";
 import NavbarGate from "@/components/layout/navbar-gate";
 
 import { ToastProvider } from "@/context/toast-context";
-
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-});
 
 export const metadata = {
   title: "Laras Karya",
@@ -36,7 +34,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
+    <html lang="id" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <ToastProvider>
           <Suspense fallback={null}>
@@ -45,6 +43,9 @@ export default function RootLayout({ children }) {
             </NavbarGate>
           </Suspense>
           {children}
+          <Suspense fallback={null}>
+            <AssessmentSync />
+          </Suspense>
           <PwaRegister />
         </ToastProvider>
       </body>

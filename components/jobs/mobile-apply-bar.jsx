@@ -12,13 +12,15 @@ import { useHasApplied } from "@/lib/demo-history";
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function MobileApplyBar({ job }) {
-  const applied = useHasApplied(job.id);
+  const applied = useHasApplied(job.id, job.applied);
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-[1040px] items-center gap-3 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="shrink-0">
-          <p className="text-lg font-bold leading-none text-brand">{job.matchPercent}%</p>
+          <p className="text-lg font-bold leading-none text-brand">
+            {job.matchPercent == null ? "–" : `${job.matchPercent}%`}
+          </p>
           <p className="mt-0.5 text-xs text-ink/70">Kecocokan</p>
         </div>
 

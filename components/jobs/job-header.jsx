@@ -1,16 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, MapPin } from "lucide-react";
+import { Bookmark, ExternalLink, Globe, Leaf, MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+import { setJobSaved } from "@/app/bookmarks/actions";
+import { useToast } from "@/context/toast-context";
+import { isUuid } from "@/lib/is-uuid";
 
 import { useHasApplied } from "@/lib/demo-history";
 import { AppliedBadge } from "@/components/ui/applied-badge";
 import { CompanyAvatar } from "@/components/ui/company-avatar";
+import { FacilityBadges } from "@/components/jobs/facility-badges";
 
 /** Cincin persentase kecil (sisi kanan header). */
 function MatchRing({ value, size = 44, strokeWidth = 3 }) {
+  // Skor belum dihitung (user belum menyelesaikan asesmen / rekomendasi belum dibuat)
+  if (value == null) {
+    return (
+      <div
+        className="grid shrink-0 place-items-center rounded-full border-2 border-dashed border-mint-line text-[11px] font-bold text-ink/50"
+        style={{ width: size, height: size }}
+        role="img"
+        aria-label="Kecocokan belum dihitung"
+      >
+        –
+      </div>
+    );
+  }
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -53,8 +71,27 @@ function MatchRing({ value, size = 44, strokeWidth = 3 }) {
  * @param {{ job: import("@/lib/job-detail-data").JobDetail }} props
  */
 export function JobHeader({ job }) {
-  const [saved, setSaved] = useState(false);
-  const applied = useHasApplied(job.id);
+  const [saved, setSaved] = useState(Boolean(job.saved));
+  const [busy, setBusy] = useState(false);
+  const { showToast } = useToast();
+  const applied = useHasApplied(job.id, job.applied);
+
+  // Lowongan dari database disimpan ke saved_jobs; data contoh (id angka) hanya berubah di layar.
+  async function toggleSaved() {
+    if (busy) return;
+    const next = !saved;
+    setSaved(next);
+    if (!isUuid(job.id)) return;
+    setBusy(true);
+    const res = await setJobSaved(job.id, next);
+    setBusy(false);
+    if (!res.ok) {
+      setSaved(!next);
+      showToast({ message: "Belum bisa menyimpan lowongan. Coba lagi.", icon: "alert", role: "alert", tone: "dark" });
+    } else if (next) {
+      showToast({ message: "Lowongan disimpan.", action: { label: "Lihat tersimpan", href: "/bookmarks" } });
+    }
+  }
 
   return (
     <header className="rounded-xl bg-white p-5 shadow-sm">
@@ -62,6 +99,7 @@ export function JobHeader({ job }) {
         <CompanyAvatar
           company={job.company}
           sector={job.sector}
+          logoUrl={job.companyLogoUrl}
           className="size-12 text-base md:size-14 md:text-lg"
         />
 
@@ -70,6 +108,19 @@ export function JobHeader({ job }) {
             {job.title}
           </h1>
           <p className="mt-0.5 text-sm font-bold text-brand">{job.company}</p>
+          {job.companyWebsite && (
+            <a
+              href={job.companyWebsite.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-0.5 inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-ink/70 hover:text-brand hover:underline md:min-h-0"
+            >
+              <Globe className="size-3.5 shrink-0" aria-hidden="true" />
+              {job.companyWebsite.label}
+              <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+              <span className="sr-only"> (website perusahaan, membuka tab baru)</span>
+            </a>
+          )}
 
           <p className="mt-1 flex items-start gap-1.5 text-xs text-ink/75">
             <MapPin className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden="true" />
@@ -83,7 +134,8 @@ export function JobHeader({ job }) {
         <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
-            onClick={() => setSaved((v) => !v)}
+            onClick={toggleSaved}
+            disabled={busy}
             aria-pressed={saved}
             aria-label={
               saved ? "Hapus dari lowongan tersimpan" : "Simpan lowongan"
@@ -100,11 +152,21 @@ export function JobHeader({ job }) {
               aria-hidden="true"
             />
           </button>
-          <MatchRing value={job.matchPercent} />
+          {/* Skor belum ada: cincin kosong disembunyikan (pesannya sudah ada di banner dan kartu hijau). */}
+          {job.matchPercent != null && <MatchRing value={job.matchPercent} />}
         </div>
       </div>
 
+      {/* Fasilitas ramah perempuan terlihat tanpa menggulir; lebar penuh agar tidak sempit di mobile */}
+      <FacilityBadges benefits={job.facilities} max={job.facilities.length} className="mt-4" />
+
       <div className="mt-4 flex flex-wrap items-center gap-2">
+        {job.isGreenJob && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+            <Leaf className="size-3" aria-hidden="true" />
+            Green Job
+          </span>
+        )}
         <span className="rounded-full bg-surface px-2.5 py-0.5 text-xs font-medium text-ink/75 ring-1 ring-inset ring-line">
           {job.employmentType}
         </span>

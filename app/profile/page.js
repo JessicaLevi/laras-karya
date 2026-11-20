@@ -32,6 +32,7 @@ import {
   deleteCertification,
   deleteEducation,
   deleteExperience,
+  deleteLanguage,
   deleteResume,
   deleteSkill,
   downloadResume,
@@ -40,25 +41,36 @@ import {
   editContact,
   editEducation,
   editExperience,
+  editLanguage,
   editPreferences,
   editProfileHeader,
   generateResume,
+  industryLabels,
   parseLocation,
-  saveProfile,
 } from "./actions";
+import { loadMyProfile, saveMyProfile } from "./data-actions";
+import { suggestSkillsFromCertificate } from "./skill-actions";
+
+import Link from "next/link";
 
 import { LinkedinIcon } from "@/components/icons";
 import { Footer } from "@/components/layout/footer";
+import { DocumentsSection } from "@/components/profile/documents-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PROFILE, PROFILE_REMAINING } from "@/lib/profile-data";
 import {
   EXPERIENCE_LEVELS,
-  INDUSTRIES,
+  LANGUAGE_LEVELS,
+  LANGUAGE_OPTIONS,
   PROVINCES,
   SKILL_OPTIONS,
   WORK_ARRANGEMENTS,
 } from "@/lib/profile-options";
+import { LANGUAGE_SKILL_CODES, SKILLS_CATALOG } from "@/lib/skills-catalog";
+
+// Jumlah bidang minat yang langsung tampil di kartu Preferensi Karier; sisanya dibuka lewat "Lihat lainnya".
+const INDUSTRIES_PREVIEW = 4;
 
 const CARD = "rounded-3xl border border-line bg-white p-6 md:p-8";
 const CARD_TITLE = "flex items-center gap-3 text-xl font-semibold text-ink";
@@ -125,7 +137,7 @@ const FORMS = {
     title: { edit: "Ubah Preferensi Karier" },
     fields: [
       { name: "workArrangement", label: "Pola kerja yang Anda inginkan", type: "radio", options: WORK_ARRANGEMENTS, required: true },
-      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", options: INDUSTRIES, required: true },
+      { name: "industries", label: "Bidang industri yang Anda minati (pilih satu atau lebih)", type: "checkboxes", required: true },
       { name: "experienceLevel", label: "Tingkat pengalaman kerja", type: "select", options: EXPERIENCE_LEVELS, placeholder: "Pilih tingkat pengalaman", required: true },
     ],
   },
@@ -144,11 +156,10 @@ const FORMS = {
     fields: [{ name: "label", label: "Nama Skill", type: "skill-select", required: true }],
   },
   language: {
-    title: { add: "Tambah Bahasa" },
+    title: { add: "Tambah Bahasa", edit: "Ubah Bahasa" },
     fields: [
-      { name: "name", label: "Bahasa", required: true },
-      // Daftar level harus sama dengan LANGUAGE_LEVELS di actions.js
-      { name: "level", label: "Tingkat", type: "select", options: ["Native", "Profesional", "Menengah", "Dasar"], defaultValue: "Profesional" },
+      { name: "name", label: "Bahasa", type: "language-select", required: true },
+      { name: "level", label: "Tingkat", type: "select", options: Object.keys(LANGUAGE_LEVELS), defaultValue: "Profesional" },
     ],
   },
 };
@@ -163,7 +174,7 @@ const ACTIONS = {
   certification: { add: addCertification, edit: editCertification },
   contact: { edit: editContact },
   skill: { add: addSkill },
-  language: { add: addLanguage },
+  language: { add: addLanguage, edit: editLanguage },
 };
 
 function formatAddedAt(iso) {
@@ -191,6 +202,7 @@ function getValues(profile, type, id) {
     experience: profile.experiences,
     education: profile.education,
     certification: profile.certifications,
+    language: profile.languages,
   };
   return lists[type]?.find((item) => item.id === id) ?? {};
 }
@@ -200,7 +212,9 @@ function getValues(profile, type, id) {
 function SkillSelectField({ field, ownedSkills }) {
   const [value, setValue] = useState("");
   const owned = new Set(ownedSkills.map((skill) => skill.label.toLowerCase()));
-  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
+  // Keahlian bahasa (mis. "Bahasa Inggris") ditambahkan lewat bagian Bahasa supaya levelnya ikut tersimpan.
+  const languageLabels = new Set(SKILLS_CATALOG.filter((s) => LANGUAGE_SKILL_CODES.has(s.code)).map((s) => s.label.toLowerCase()));
+  const options = SKILL_OPTIONS.filter((option) => !owned.has(option.toLowerCase()) && !languageLabels.has(option.toLowerCase()));
 
   return (
     <>
@@ -222,6 +236,34 @@ function SkillSelectField({ field, ownedSkills }) {
         ))}
       </select>
     </>
+  );
+}
+
+// Dropdown bahasa: bahasa yang sudah dimiliki disembunyikan (kecuali yang sedang diedit).
+function LanguageSelectField({ field, languages, current }) {
+  const owned = new Set(languages.map((lang) => lang.name.trim().toLowerCase()));
+  if (current) owned.delete(current.trim().toLowerCase());
+  const options = LANGUAGE_OPTIONS.filter((option) => !owned.has(option.toLowerCase()));
+  // Bahasa lama yang diketik bebas (di luar daftar) tetap bisa dipilih saat diedit.
+  if (current && !options.some((option) => option.toLowerCase() === current.trim().toLowerCase())) options.unshift(current);
+
+  return (
+    <select
+      id={`field-${field.name}`}
+      name={field.name}
+      defaultValue={current ?? ""}
+      required={field.required}
+      className={`${INPUT} h-11`}
+    >
+      <option value="" disabled>
+        Pilih bahasa
+      </option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -250,10 +292,10 @@ function RadioCards({ field, defaultValue }) {
 }
 
 // Pilih satu atau lebih (bidang industri), ditampilkan sebagai chip.
-function CheckboxChips({ field, defaultValue = [] }) {
+function CheckboxChips({ field, options, defaultValue = [] }) {
   return (
     <div role="group" aria-labelledby={`label-${field.name}`} className="flex flex-wrap gap-2.5">
-      {field.options.map((option) => (
+      {options.map((option) => (
         <label
           key={option}
           className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line bg-white px-4 text-sm text-ink transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-light has-[:checked]:font-semibold has-[:checked]:text-brand has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/30"
@@ -273,20 +315,53 @@ function CheckboxChips({ field, defaultValue = [] }) {
 }
 
 export default function ProfilePage() {
-  // `saved` = data yang sudah disimpan, `draft` = data yang sedang diubah di layar.
-  // Sementara disimpan di state (hilang saat halaman dimuat ulang), nanti diganti Supabase.
-  const [saved, setSaved] = useState(PROFILE);
-  const [draft, setDraft] = useState(PROFILE);
+  // `saved` = data terakhir di database, `draft` = data yang sedang diubah di layar.
+  // null = masih dimuat dari Supabase. PROFILE (tokoh contoh) hanya dipakai bila Supabase belum dikonfigurasi.
+  const [saved, setSaved] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [dialog, setDialog] = useState(null);
   const [toast, setToast] = useState("");
   const [resumes, setResumes] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [showAllIndustries, setShowAllIndustries] = useState(false);
+  // Saran keahlian AI dari sertifikat yang baru ditambahkan: { status: "idle" | "loading" | "done", source, labels }.
+  const [aiSkills, setAiSkills] = useState({ status: "idle", source: "", labels: [] });
+  const aiRequestRef = useRef(0);
   const dialogRef = useRef(null);
 
   const p = draft;
 
   // Tombol Simpan Perubahan hanya aktif kalau ada tambah / edit / hapus yang belum disimpan.
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(saved);
+
+  // Muat profil user yang sedang masuk dari Supabase.
+  useEffect(() => {
+    let alive = true;
+    loadMyProfile().then((loaded) => {
+      if (!alive) return;
+      const data = loaded ?? PROFILE;
+      setSaved(data);
+      setDraft(data);
+
+      // Dari /learning-path ("Sudah Selesai Diikuti"): buka dialog Tambah Sertifikasi yang sudah terisi.
+      // Parameter dihapus dari alamat supaya dialog tidak terbuka lagi saat halaman dimuat ulang.
+      const params = new URLSearchParams(window.location.search);
+      const certName = params.get("sertifikasi")?.trim();
+      if (certName) {
+        window.history.replaceState(null, "", window.location.pathname);
+        setDialog({
+          type: "certification",
+          mode: "add",
+          key: Date.now(),
+          values: { name: certName, issuer: params.get("penerbit") ?? "", year: params.get("tahun") ?? "" },
+        });
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Buka / tutup dialog bawaan browser mengikuti state `dialog`.
   useEffect(() => {
@@ -320,6 +395,44 @@ export default function ProfilePage() {
 
     setDraft((current) => ACTIONS[type][mode](current, formData, id));
     setDialog(null);
+
+    if (type === "certification" && mode === "add") {
+      suggestSkillsForCertificate(String(formData.get("name") ?? ""), String(formData.get("issuer") ?? ""));
+    }
+  }
+
+  // Sertifikat baru dari kartu "Tambah Dokumen": masuk ke draf profil (disimpan lewat Simpan Perubahan).
+  function handleAddCertificate({ name, issuer, year }, askAi) {
+    const id = `cert-new-${crypto.randomUUID()}`;
+    setDraft((current) => ({ ...current, certifications: [...current.certifications, { id, name, issuer, year }] }));
+    if (askAi) suggestSkillsForCertificate(name, issuer);
+  }
+
+  // Minta saran keahlian dari nama sertifikat. Jika gagal, diam saja: sertifikat tetap tertambah.
+  // Penghitung permintaan memastikan jawaban lama tidak menimpa yang lebih baru.
+  async function suggestSkillsForCertificate(name, issuer) {
+    const requestId = ++aiRequestRef.current;
+    setAiSkills({ status: "loading", source: name, labels: [] });
+    let labels = [];
+    try {
+      const res = await suggestSkillsFromCertificate({ name, issuer });
+      if (res.ok) labels = res.labels;
+    } catch {
+      // abaikan
+    }
+    if (requestId !== aiRequestRef.current) return;
+    setAiSkills(labels.length > 0 ? { status: "done", source: name, labels } : { status: "idle", source: "", labels: [] });
+  }
+
+  function addSuggestedSkill(label) {
+    const formData = new FormData();
+    formData.set("label", label);
+    setDraft((current) => addSkill(current, formData));
+  }
+
+  function dismissAiSkills() {
+    aiRequestRef.current += 1;
+    setAiSkills({ status: "idle", source: "", labels: [] });
   }
 
   function handleDelete(deleteAction, id, label) {
@@ -327,9 +440,17 @@ export default function ProfilePage() {
     setDraft((current) => deleteAction(current, id));
   }
 
-  function handleSave() {
-    if (!hasChanges) return;
-    setSaved(saveProfile(draft));
+  async function handleSave() {
+    if (!hasChanges || saving) return;
+    setSaving(true);
+    const res = await saveMyProfile(draft);
+    setSaving(false);
+    if (!res.ok) {
+      setToast(res.error);
+      return;
+    }
+    setSaved(res.profile);
+    setDraft(res.profile);
     setToast("Perubahan profil tersimpan.");
   }
 
@@ -359,6 +480,22 @@ export default function ProfilePage() {
   }
 
   const form = dialog ? FORMS[dialog.type] : null;
+
+  if (!p) {
+    return (
+      <main className="flex-1 bg-surface" aria-busy="true">
+        <div className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 md:px-6 md:py-10 xl:px-8">
+          <p className="sr-only">Memuat profil…</p>
+          <div className="h-48 animate-pulse rounded-3xl bg-white motion-reduce:animate-none" />
+          <div className="h-72 animate-pulse rounded-3xl bg-white motion-reduce:animate-none" />
+        </div>
+      </main>
+    );
+  }
+
+  // Saran AI yang belum dimiliki user (skill yang sudah ada tidak ditawarkan lagi).
+  const ownedSkills = new Set(p.skills.map((skill) => skill.label.toLowerCase()));
+  const freshAiSkills = aiSkills.labels.filter((label) => !ownedSkills.has(label.toLowerCase()));
 
   return (
     <main className="flex-1 bg-surface">
@@ -411,7 +548,7 @@ export default function ProfilePage() {
             >
               <div className="h-full rounded-full bg-brand" style={{ width: `${p.completeness}%` }} />
             </div>
-            <p className="mt-2 text-sm text-ink/70">{PROFILE_REMAINING || "Profil Anda sudah lengkap"}</p>
+            <p className="mt-2 text-sm text-ink/70">{(p.remaining ?? PROFILE_REMAINING) || "Profil Anda sudah lengkap"}</p>
           </div>
         </section>
 
@@ -494,22 +631,43 @@ export default function ProfilePage() {
                   <dt className="font-semibold text-ink">Bidang industri yang diminati</dt>
                   <dd className="mt-1.5">
                     {p.industries?.length > 0 ? (
-                      <ul className="flex flex-wrap gap-2">
-                        {p.industries.map((industry) => (
-                          <li
-                            key={industry}
-                            className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
+                      <>
+                        {/* Ringkas: tampil beberapa dulu, sisanya dibuka lewat tombol, supaya kartu tidak penuh */}
+                        <ul className="flex flex-wrap gap-2">
+                          {(showAllIndustries ? p.industries : p.industries.slice(0, INDUSTRIES_PREVIEW)).map((industry) => (
+                            <li
+                              key={industry}
+                              className="inline-flex min-h-8 items-center rounded-full border border-brand bg-brand-light px-3 text-sm font-medium text-brand"
+                            >
+                              {industry}
+                            </li>
+                          ))}
+                        </ul>
+                        {p.industries.length > INDUSTRIES_PREVIEW && (
+                          <button
+                            type="button"
+                            aria-expanded={showAllIndustries}
+                            onClick={() => setShowAllIndustries((open) => !open)}
+                            className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-brand hover:underline focus-visible:ring-3 focus-visible:ring-brand/30 focus-visible:outline-none"
                           >
-                            {industry}
-                          </li>
-                        ))}
-                      </ul>
+                            {showAllIndustries
+                              ? "Tampilkan lebih sedikit"
+                              : `Lihat ${p.industries.length - INDUSTRIES_PREVIEW} lainnya`}
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <span className="text-ink/70">Belum diisi</span>
                     )}
                   </dd>
                 </div>
               </dl>
+              <p className="mt-5 border-t border-line pt-4 text-sm text-ink/70">
+                Situasi karier Anda berubah?{" "}
+                <Link href="/assessment/1" className="font-semibold text-brand hover:underline">
+                  Perbarui asesmen
+                </Link>
+              </p>
             </section>
 
             {/* Pengalaman kerja */}
@@ -639,67 +797,12 @@ export default function ProfilePage() {
             </section>
 
             {/* Sertifikasi & portofolio */}
-            <section aria-labelledby="sertifikasi-title" className={CARD}>
-              <header className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="sertifikasi-title" className={CARD_TITLE}>
-                  <span className={CARD_ICON}>
-                    <Award className="size-5" aria-hidden="true" />
-                  </span>
-                  Sertifikasi &amp; Portofolio
-                </h2>
-                <Button type="button" variant="outline" onClick={() => openDialog("certification", "add")} className={PILL_BUTTON}>
-                  <Plus className="size-4" aria-hidden="true" />
-                  Tambah Sertifikasi
-                </Button>
-              </header>
-              <div className="mt-6">
-                {p.certifications.length > 0 && (
-                  <ul className="divide-y divide-line">
-                    {p.certifications.map((cert) => (
-                      <li key={cert.id} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-4 first:pt-0">
-                        <div className="min-w-0">
-                          <h3 className="text-base font-semibold text-ink">{cert.name}</h3>
-                          <p className="text-sm text-ink/70">
-                            {cert.issuer}
-                            {cert.year && ` • ${cert.year}`}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm font-semibold">
-                          <a href="#" className="inline-flex min-h-9 items-center gap-1.5 text-brand underline underline-offset-2">
-                            <FileText className="size-4" aria-hidden="true" />
-                            Lihat Sertifikat
-                          </a>
-                          <button
-                            type="button"
-                            aria-label={`Edit ${cert.name}`}
-                            onClick={() => openDialog("certification", "edit", cert.id)}
-                            className={EDIT_LINK}
-                          >
-                            <Pencil className="size-4" aria-hidden="true" />
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Hapus ${cert.name}`}
-                            onClick={() => handleDelete(deleteCertification, cert.id, cert.name)}
-                            className={DELETE_LINK}
-                          >
-                            <Trash2 className="size-4" aria-hidden="true" />
-                            Hapus
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <label className="mt-4 flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-dashed border-brand bg-white px-6 py-8 text-center text-sm text-ink/80 transition-colors focus-within:ring-3 focus-within:ring-brand/30 hover:bg-brand-light/50">
-                  <UploadCloud className="size-6 text-brand" aria-hidden="true" />
-                  <span>Seret file PDF atau klik untuk mengunggah portofolio</span>
-                  <input type="file" accept="application/pdf" className="sr-only" />
-                </label>
-              </div>
-            </section>
+            <DocumentsSection
+              certifications={p.certifications}
+              onAddCertification={handleAddCertificate}
+              onDeleteCertification={(cert) => handleDelete(deleteCertification, cert.id, cert.name)}
+              onRemoveCertificationFromDraft={(id) => setDraft((current) => deleteCertification(current, id))}
+            />
           </div>
 
           <div className="space-y-6">
@@ -792,6 +895,43 @@ export default function ProfilePage() {
                 ) : (
                   <p className="text-sm text-ink/70">Belum ada keahlian. Tambahkan untuk meningkatkan rekomendasi AI.</p>
                 )}
+
+                {aiSkills.status === "loading" && (
+                  <p className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-ai" role="status">
+                    <Sparkles className="size-3.5 motion-safe:animate-pulse" aria-hidden="true" />
+                    AI sedang membaca sertifikat “{aiSkills.source}”…
+                  </p>
+                )}
+                {aiSkills.status === "done" && freshAiSkills.length > 0 && (
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-ai">
+                        <Sparkles className="size-3.5" aria-hidden="true" />
+                        Disarankan AI dari sertifikat “{aiSkills.source}”:
+                      </p>
+                      <button
+                        type="button"
+                        onClick={dismissAiSkills}
+                        className="text-xs font-semibold text-ink/70 hover:underline focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {freshAiSkills.map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => addSuggestedSkill(label)}
+                          className="inline-flex items-center gap-1 rounded-full border border-ai/40 bg-pink-50 px-3 py-1.5 text-[13px] hover:border-ai"
+                        >
+                          <Plus className="size-3.5" aria-hidden="true" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -809,28 +949,52 @@ export default function ProfilePage() {
                   Tambah Bahasa
                 </Button>
               </header>
-              <ul className="mt-6 space-y-5">
-                {p.languages.map((lang) => (
-                  <li key={lang.id}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-ink">{lang.name}</span>
-                      <Badge tone={lang.tone} className="px-2.5 py-0.5">
-                        {lang.level}
-                      </Badge>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={lang.percent}
-                      className="mt-2 h-2 overflow-hidden rounded-full bg-line"
-                    >
-                      <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {p.languages.length > 0 ? (
+                <ul className="mt-6 space-y-5">
+                  {p.languages.map((lang) => (
+                    <li key={lang.id}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-semibold text-ink">{lang.name}</span>
+                        <Badge tone={lang.tone} className="px-2.5 py-0.5">
+                          {lang.level}
+                        </Badge>
+                      </div>
+                      <div
+                        role="progressbar"
+                        aria-label={`Kemahiran ${lang.name}: ${lang.level}`}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={lang.percent}
+                        className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+                      >
+                        <div className="h-full rounded-full bg-brand" style={{ width: `${lang.percent}%` }} />
+                      </div>
+                      <div className="mt-1 flex items-center gap-4 text-sm font-semibold">
+                        <button
+                          type="button"
+                          aria-label={`Edit bahasa ${lang.name}`}
+                          onClick={() => openDialog("language", "edit", lang.id)}
+                          className={EDIT_LINK}
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Hapus bahasa ${lang.name}`}
+                          onClick={() => handleDelete(deleteLanguage, lang.id, lang.name)}
+                          className={DELETE_LINK}
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                          Hapus
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-6 text-sm text-ink/70">Belum ada bahasa.</p>
+              )}
             </section>
 
             {/* Resume */}
@@ -917,10 +1081,10 @@ export default function ProfilePage() {
             <Button
               type="button"
               onClick={handleSave}
-              disabled={!hasChanges}
+              disabled={!hasChanges || saving}
               className="h-12 rounded-full bg-brand px-6 text-sm font-semibold hover:bg-brand/90"
             >
-              Simpan Perubahan
+              {saving ? "Menyimpan…" : "Simpan Perubahan"}
             </Button>
           </div>
         </section>
@@ -967,10 +1131,12 @@ export default function ProfilePage() {
                     />
                   ) : field.type === "skill-select" ? (
                     <SkillSelectField field={field} ownedSkills={draft.skills} />
+                  ) : field.type === "language-select" ? (
+                    <LanguageSelectField field={field} languages={draft.languages} current={dialog.values[field.name]} />
                   ) : field.type === "radio" ? (
                     <RadioCards field={field} defaultValue={dialog.values[field.name]} />
                   ) : field.type === "checkboxes" ? (
-                    <CheckboxChips field={field} defaultValue={dialog.values[field.name]} />
+                    <CheckboxChips field={field} options={field.options ?? industryLabels(draft)} defaultValue={dialog.values[field.name]} />
                   ) : field.type === "select" ? (
                     <select
                       id={`field-${field.name}`}

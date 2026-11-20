@@ -1,0 +1,145 @@
+"use server";
+
+import { dbToProfile, profileToDb } from "@/lib/profile-mapping";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
+
+/*
+  Server Action halaman /profile: membaca dan menyimpan profil user yang sedang masuk.
+  Memakai sesi user (bukan service role), jadi dijaga RLS: user hanya membaca/menulis datanya sendiri.
+*/
+
+async function currentUser() {
+  if (!isSupabaseConfigured) return { supabase: null, user: null };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  return { supabase, user: data?.user ?? null };
+}
+
+async function readProfile(supabase, user) {
+  const [profile, educations, experiences, skills, sectors, assessment, certDocs] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("educations").select("*").eq("user_id", user.id),
+    supabase.from("work_experiences").select("*").eq("user_id", user.id),
+    supabase.from("user_skills").select("skill_code").eq("user_id", user.id),
+    // Daftar bidang industri = tabel sectors (sumber yang sama dengan lowongan).
+    supabase.from("sectors").select("code,label"),
+    supabase
+      .from("assessments")
+      .select("answers")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Jumlah sertifikat yang diunggah (dihitung untuk kelengkapan profil); gagal dibaca dianggap 0, bukan error.
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", user.id).eq("type", "certificate"),
+  ]);
+  const failed = [profile, educations, experiences, skills].find((r) => r.error);
+  if (failed) throw failed.error;
+  // Tabel sectors gagal dibaca: pakai daftar bawaan (buildSectorOptions), bukan error.
+  if (sectors.error) console.warn("[readProfile] sectors:", sectors.error.message);
+  return dbToProfile({
+    email: user.email,
+    profile: profile.data,
+    educations: educations.data,
+    experiences: experiences.data,
+    skillCodes: skills.data.map((s) => s.skill_code),
+    sectors: sectors.data ?? [],
+    careerBreak: assessment.data?.answers?.step_1?.career_break ?? null,
+    certificateDocs: certDocs.count ?? 0,
+  });
+}
+
+/** Profil user yang masuk dalam bentuk halaman /profile, atau null (tamu / Supabase belum dikonfigurasi). */
+export async function loadMyProfile() {
+  const { supabase, user } = await currentUser();
+  if (!user) return null;
+  try {
+    return await readProfile(supabase, user);
+  } catch (error) {
+    console.error("[loadMyProfile]", error?.message ?? error);
+    return null;
+  }
+}
+
+/** Simpan seluruh isi halaman profil. Hasil: { ok: true, profile } | { ok: false, error } */
+export async function saveMyProfile(draft) {
+  const { supabase, user } = await currentUser();
+  if (!user) return { ok: false, error: "Sesi Anda berakhir. Silakan masuk lagi." };
+  if (!draft?.name?.trim()) return { ok: false, error: "Nama lengkap wajib diisi." };
+
+  const { profile, educations, experiences, skillCodes, languageSkills } = profileToDb(draft);
+  const fail = (step, error) => {
+    console.error(`[saveMyProfile] ${step}:`, error?.message ?? error);
+    return { ok: false, error: "Profil belum tersimpan. Coba lagi beberapa saat lagi." };
+  };
+
+  const { error: pErr } = await supabase.from("profiles").update(profile).eq("id", user.id);
+  if (pErr) return fail("profiles", pErr);
+
+  // Daftar baris (pendidikan / pengalaman): hapus yang dibuang, ubah yang ada, tambah yang baru.
+  async function syncRows(table, rows) {
+    const keep = rows.filter((r) => r.id).map((r) => r.id);
+    let del = supabase.from(table).delete().eq("user_id", user.id);
+    if (keep.length) del = del.not("id", "in", `(${keep.join(",")})`);
+    const { error: dErr } = await del;
+    if (dErr) return dErr;
+    for (const { id, ...row } of rows.filter((r) => r.id)) {
+      const { error } = await supabase.from(table).update(row).eq("id", id).eq("user_id", user.id);
+      if (error) return error;
+    }
+    const added = rows.filter((r) => !r.id).map(({ id: _omit, ...row }) => ({ ...row, user_id: user.id }));
+    if (added.length) {
+      const { error } = await supabase.from(table).insert(added);
+      if (error) return error;
+    }
+    return null;
+  }
+  const eduErr = await syncRows("educations", educations);
+  if (eduErr) return fail("educations", eduErr);
+  const expErr = await syncRows("work_experiences", experiences);
+  if (expErr) return fail("work_experiences", expErr);
+
+  // Keahlian: daftar di halaman profil adalah daftar lengkap milik user.
+  // Bahasa yang ada di katalog keahlian ikut disimpan di sini beserta levelnya (user_skills.level),
+  // jadi kodenya harus ikut daftar yang dipertahankan, kalau tidak akan terhapus oleh langkah di bawah.
+  const keepCodes = [...skillCodes, ...languageSkills.map((l) => l.skill_code)];
+  let delSkills = supabase.from("user_skills").delete().eq("user_id", user.id);
+  if (keepCodes.length) delSkills = delSkills.not("skill_code", "in", `(${keepCodes.map((c) => `"${c}"`).join(",")})`);
+  const { error: sDel } = await delSkills;
+  if (sDel) return fail("user_skills", sDel);
+  if (skillCodes.length) {
+    const { error } = await supabase
+      .from("user_skills")
+      .upsert(skillCodes.map((skill_code) => ({ user_id: user.id, skill_code, source: "manual" })), {
+        onConflict: "user_id,skill_code",
+        ignoreDuplicates: true,
+      });
+    if (error) return fail("user_skills", error);
+  }
+  if (languageSkills.length) {
+    // Level yang berubah harus menimpa baris lama. Dilakukan dengan hapus lalu tambah (bukan upsert/UPDATE),
+    // karena role user di tabel ini hanya punya hak SELECT, INSERT, dan DELETE.
+    const { error: lDel } = await supabase
+      .from("user_skills")
+      .delete()
+      .eq("user_id", user.id)
+      .in("skill_code", languageSkills.map((l) => l.skill_code));
+    if (lDel) return fail("user_skills (hapus bahasa lama)", lDel);
+    const rows = languageSkills.map(({ skill_code, level }) => ({ user_id: user.id, skill_code, source: "manual", level }));
+    let { error } = await supabase.from("user_skills").insert(rows);
+    // Kolom `level` bermasalah (belum ada / nilainya ditolak): simpan tanpa level agar profil tetap tersimpan.
+    if (error && (error.code === "42703" || error.code === "PGRST204" || error.code === "23514" || error.code === "22P02" || /level/i.test(error.message ?? ""))) {
+      console.warn("[saveMyProfile] user_skills.level bermasalah, bahasa disimpan tanpa level:", error.message);
+      ({ error } = await supabase.from("user_skills").insert(rows.map(({ level: _omit, ...row }) => row)));
+    }
+    if (error) return fail("user_skills (bahasa)", error);
+  }
+
+  try {
+    return { ok: true, profile: await readProfile(supabase, user) };
+  } catch (error) {
+    return fail("reload", error);
+  }
+}

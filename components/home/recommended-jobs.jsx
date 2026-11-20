@@ -1,19 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
 
+import { refreshRecommendations } from "@/app/home/actions";
 import { JobCard } from "@/components/home/job-card";
+import { useRefreshPhase } from "@/components/home/refresh-status";
 import { cn } from "@/lib/utils";
 
-/** Seksi rekomendasi lowongan. Tombol "Perbarui Rekomendasi" mensimulasikan refresh (loading 900 ms). */
-export function RecommendedJobs({ jobs }) {
-  const [isUpdating, setIsUpdating] = useState(false);
+/** Seksi rekomendasi lowongan. Tombol "Perbarui Rekomendasi" meminta database menghitung ulang, lalu memuat ulang halaman. */
+export function RecommendedJobs({ jobs, assessmentDone = true }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState(null);
+  const isUpdating = updating || isPending;
+  // Memberi tahu bagian saran pelatihan (komponen lain) bahwa rekomendasi sedang dihitung ulang.
+  const { setPhase } = useRefreshPhase();
+  const refreshedRef = useRef(false);
 
-  function handleUpdate() {
-    setIsUpdating(true);
-    setTimeout(() => setIsUpdating(false), 900); // ganti dengan fetch rekomendasi saat back-end siap
+  // Selesai = permintaan berhasil dan halaman sudah selesai dimuat ulang (isPending kembali false).
+  useEffect(() => {
+    if (!isUpdating && refreshedRef.current) {
+      refreshedRef.current = false;
+      setPhase("done");
+    }
+  }, [isUpdating, setPhase]);
+
+  async function handleUpdate() {
+    setUpdating(true);
+    setError(null);
+    setPhase("updating");
+    try {
+      const result = await refreshRecommendations();
+      if (result.ok) {
+        refreshedRef.current = true;
+        startTransition(() => router.refresh());
+      } else {
+        setError(result.error);
+        setPhase("idle");
+      }
+    } catch {
+      setError("Rekomendasi belum bisa diperbarui. Coba lagi beberapa saat lagi.");
+      setPhase("idle");
+    }
+    setUpdating(false);
   }
 
   const topId = jobs
@@ -56,6 +89,39 @@ export function RecommendedJobs({ jobs }) {
           </Link>
         </div>
       </div>
+
+      {error ? (
+        <p role="alert" className="text-xs font-semibold text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      {jobs.length === 0 && !isUpdating ? (
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-mint-line bg-white px-5 py-5 text-center sm:flex-row sm:text-left">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-light text-brand">
+            <Sparkles className="size-6" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-bold text-ink">
+              {assessmentDone ? "Belum ada lowongan yang cocok saat ini" : "Belum ada rekomendasi untuk Anda"}
+            </p>
+            <p className="mt-0.5 text-sm text-ink/75">
+              {assessmentDone
+                ? "Tekan Perbarui Rekomendasi untuk menghitung ulang."
+                : "Jawab asesmen singkat untuk membuka rekomendasi lowongan hijau yang cocok."}
+            </p>
+          </div>
+          {!assessmentDone ? (
+            <Link
+              href="/assessment"
+              className="cta-shine group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-brand px-7 text-base font-semibold text-white transition hover:bg-brand/90"
+            >
+              Mulai Asesmen
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3" aria-busy={isUpdating}>
         {isUpdating

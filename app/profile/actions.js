@@ -5,14 +5,8 @@
 // Nanti tiap fungsi diganti menjadi Server Action ("use server") yang menulis ke database.
 // Catatan: file "use server" hanya boleh mengekspor fungsi async.
 
-import { EXPERIENCE_LEVELS, INDUSTRIES, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
-
-const LANGUAGE_LEVELS = {
-  Native: { percent: 100, tone: "brand" },
-  Profesional: { percent: 80, tone: "blue" },
-  Menengah: { percent: 55, tone: "neutral" },
-  Dasar: { percent: 30, tone: "amber" },
-};
+import { EXPERIENCE_LEVELS, LANGUAGE_LEVELS, SKILL_OPTIONS, WORK_ARRANGEMENTS } from "@/lib/profile-options";
+import { languageSkillCodeOf, skillCodeOf } from "@/lib/skills-catalog";
 
 /** Ambil beberapa kolom dari FormData sebagai objek teks yang sudah dirapikan. */
 function pick(formData, keys) {
@@ -57,12 +51,17 @@ export function editBio(profile, formData) {
 
 // Pola kerja (satu pilihan), bidang industri (satu atau lebih), dan tingkat pengalaman kerja secara umum
 // (bukan per pengalaman). Nilai di luar daftar opsi diabaikan.
+// Bidang industri yang boleh dipilih: dari database (profile.industryOptions); daftar bawaan bila belum ada.
+export function industryLabels(profile) {
+  return profile.industryOptions?.map((option) => option.label) ?? [];
+}
+
 export function editPreferences(profile, formData) {
   const { workArrangement, experienceLevel } = pick(formData, ["workArrangement", "experienceLevel"]);
   const industries = formData
     .getAll("industries")
     .map((value) => String(value).trim())
-    .filter((value) => INDUSTRIES.includes(value));
+    .filter((value) => industryLabels(profile).includes(value));
 
   return {
     ...profile,
@@ -158,10 +157,37 @@ export function deleteSkill(profile, id) {
 
 /* ---------- Bahasa ---------- */
 
+const sameLanguage = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+
+// Bahasa yang sudah ada tidak ditambah dua kali. Bahasa yang punya keahlian padanan (mis. "Bahasa Inggris")
+// otomatis dihapus dari daftar Keahlian di layar supaya tidak tampil dobel; saat disimpan, bahasa itu
+// masuk ke user_skills beserta levelnya (lihat profileToDb).
 export function addLanguage(profile, formData) {
   const { name, level } = pick(formData, ["name", "level"]);
+  if (!name || profile.languages.some((lang) => sameLanguage(lang.name, name))) return profile;
   const { percent, tone } = LANGUAGE_LEVELS[level] ?? LANGUAGE_LEVELS.Profesional;
-  return { ...profile, languages: [...profile.languages, { id: newId("lang"), name, level, tone, percent }] };
+  const code = languageSkillCodeOf(name);
+  return {
+    ...profile,
+    languages: [...profile.languages, { id: newId("lang"), name, level: LANGUAGE_LEVELS[level] ? level : "Profesional", tone, percent }],
+    skills: code ? profile.skills.filter((skill) => skillCodeOf(skill.label) !== code) : profile.skills,
+  };
+}
+
+export function editLanguage(profile, formData, id) {
+  const { name, level } = pick(formData, ["name", "level"]);
+  if (!name || profile.languages.some((lang) => lang.id !== id && sameLanguage(lang.name, name))) return profile;
+  const { percent, tone } = LANGUAGE_LEVELS[level] ?? LANGUAGE_LEVELS.Profesional;
+  const code = languageSkillCodeOf(name);
+  return {
+    ...profile,
+    languages: updateById(profile.languages, id, { name, level: LANGUAGE_LEVELS[level] ? level : "Profesional", tone, percent }),
+    skills: code ? profile.skills.filter((skill) => skillCodeOf(skill.label) !== code) : profile.skills,
+  };
+}
+
+export function deleteLanguage(profile, id) {
+  return { ...profile, languages: removeById(profile.languages, id) };
 }
 
 /* ---------- Simpan / Batal ---------- */
