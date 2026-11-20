@@ -155,7 +155,7 @@
   --color-ai: #be185d; /* aksen AI untuk teks, kontras ±6:1 */
   --color-accent: #be185d;
   --color-accent-light: #fce7f3;
-   --font-jakarta: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Fokus keyboard terlihat */
